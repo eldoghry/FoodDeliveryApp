@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+
+# Environment variables
+.env
+env/*
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Coverage directory used by testing tools
+coverage/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+package-lock.json
