@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import ApiRouter from './routes/api.routes';
 import { ErrorHandler, NotFoundHandler } from './middlewares';
+import { defaultRateLimiter } from './config/ratelimiter';
 
 export const createApp = (): Application => {
   const app = express();
@@ -14,6 +15,7 @@ export const createApp = (): Application => {
   app.use(cors());
   app.use(helmet());
   app.use(morgan('dev'));
+  app.use(defaultRateLimiter);
 
   // setup routes
   app.use('/api/v1', ApiRouter);
