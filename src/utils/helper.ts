@@ -22,10 +22,7 @@ export function secondsToMilliseconds(seconds: number) {
  * @returns The client's IP address as a string, or null if it cannot be determined.
  */
 export function getIpFromRequest(req: Request): string | null {
-  const xForwardedFor = req.headers['x-forwarded-for'] as
-    | string
-    | string[]
-    | undefined;
+  const xForwardedFor = req.headers['x-forwarded-for'] as string | string[] | undefined;
   if (xForwardedFor) {
     // The 'x-forwarded-for' header can contain a comma-separated list of IPs.
     // The first one is usually the client's original IP.

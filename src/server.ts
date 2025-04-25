@@ -10,9 +10,7 @@ async function startServer() {
     // start redis connection
 
     app.listen(config.port, () => {
-      logger.info(
-        `Server running on http://localhost:${config.port} | ENV:(${config.env})`
-      );
+      logger.info(`Server running on http://localhost:${config.port} | ENV:(${config.env})`);
     });
   } catch (error) {
     logger.error('Failed to start server', error);
