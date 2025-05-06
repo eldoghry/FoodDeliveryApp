@@ -4,7 +4,6 @@ CREATE TABLE order_item (
     -- item_id INT NOT NULL REFERENCES item(item_id),
     quantity INT NOT NULL CHECK (quantity > 0),
     item_price DECIMAL(10,2) NOT NULL CHECK (item_price >= 0.00),
-    vat DECIMAL(5,2) NOT NULL CHECK (vat >= 0.00),
     total_price DECIMAL(10,2) NOT NULL CHECK (total_price >= 0.00),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
