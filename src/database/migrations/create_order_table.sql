@@ -1,9 +1,9 @@
 CREATE TABLE "order" (
     order_id SERIAL PRIMARY KEY,
-    -- order_status_id INT NOT NULL REFERENCES order_status(order_status_id),
-    -- branch_id INT NOT NULL REFERENCES branch(branch_id),
-    -- customer_id INT NOT NULL REFERENCES customer(customer_id),
-    -- delivery_address_id INT NOT NULL REFERENCES address(address_id),
+    order_status_id INT NOT NULL REFERENCES order_status(order_status_id),
+    branch_id INT NOT NULL REFERENCES branch(branch_id),
+    customer_id INT NOT NULL REFERENCES customer(customer_id),
+    delivery_address_id INT NOT NULL REFERENCES address(address_id),
     restaurant_note TEXT DEFAULT '',
     total_items INT NOT NULL CHECK (total_items > 0),
     total_items_amount DECIMAL(10,2) NOT NULL CHECK (total_items_amount >= 0.00),
