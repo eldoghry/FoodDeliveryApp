@@ -1,5 +1,5 @@
 CREATE TABLE payment_status (
-    status_id SERIAL PRIMARY KEY,
+    payment_status_id SERIAL PRIMARY KEY,
     status VARCHAR(20) NOT NULL CHECK ( CHAR_LENGTH(status) BETWEEN 2 AND 20),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
