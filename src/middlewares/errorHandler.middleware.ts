@@ -18,7 +18,7 @@ export const ErrorHandler: ErrorRequestHandler = (err: Error, req: Request, res:
       requestAt: req.requestAt,
       responseAt,
       details: err?.data,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+      // stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
     });
   } else {
     logger.error(err?.message || 'Unexpected Error:', err);
@@ -30,7 +30,7 @@ export const ErrorHandler: ErrorRequestHandler = (err: Error, req: Request, res:
       responseAt,
       isOperational: false,
       message: err?.message || ErrMessages.http.InternalServerError,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+      // stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
     });
   }
 };
