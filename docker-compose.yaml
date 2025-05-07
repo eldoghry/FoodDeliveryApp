@@ -1,0 +1,49 @@
+services:
+  node-app:
+    container_name: food-delivery
+    build: .
+    ports:
+      - '4000:4000'
+    # env_file:
+    #   - ./.env
+    depends_on:
+      - redis-srv
+      - postgres-srv
+    networks:
+      - app_network
+
+  redis-srv:
+    image: redis
+    networks:
+      - app_network
+
+  nginx-srv:
+    image: nginx
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - node-app
+
+  postgres-srv:
+    image: postgres
+    restart: always
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    ports:
+      - 6700:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+volumes:
+  postgres-db:
+
+networks:
+  app_network:
+    driver: bridge

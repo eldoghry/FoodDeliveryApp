@@ -1,0 +1,9 @@
+services:
+  node-app:
+    env_file:
+      - ./env/production.env
+    build:
+      context: .
+      target: production
+    environment:
+      - NODE_ENV=production
