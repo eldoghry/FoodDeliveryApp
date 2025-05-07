@@ -1,9 +1,8 @@
 {
-  "name": "FoodDeliveryApp",
+  "name": "Food_Delivery_App",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "prepare": "husky install",
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "cross-env NODE_ENV=development nodemon --legacy-watch",
