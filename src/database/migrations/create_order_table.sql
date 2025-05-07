@@ -2,6 +2,7 @@ CREATE TABLE "order" (
     order_id SERIAL PRIMARY KEY,
     order_status_id INT NOT NULL REFERENCES order_status(order_status_id),
     branch_id INT NOT NULL REFERENCES branch(branch_id),
+    cart_id INT NOT NULL REFERENCES cart(cart_id),
     customer_id INT NOT NULL REFERENCES customer(customer_id),
     delivery_address_id INT NOT NULL REFERENCES address(address_id),
     restaurant_note TEXT DEFAULT '',
