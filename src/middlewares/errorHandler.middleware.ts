@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response, ErrorRequestHandler } from 'express';
 import logger from '../config/logger';
-import { sendResponse } from '../utils/sendResponse';
-import BaseError from '../errors/base.error';
-import { HttpStatusCodes } from '../enums';
+import HttpStatusCodes from 'http-status-codes';
+import ErrMessages from '../errors/error-messages';
+import ApplicationError from '../errors/application.error';
 
 export const ErrorHandler: ErrorRequestHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
   const responseAt = new Date().toISOString();
 
-  if (err instanceof BaseError) {
+  if (err instanceof ApplicationError) {
     logger.error('', err);
 
     res.status(err.statusCode).json({
@@ -23,13 +23,13 @@ export const ErrorHandler: ErrorRequestHandler = (err: Error, req: Request, res:
   } else {
     logger.error(err?.message || 'Unexpected Error:', err);
 
-    res.status(HttpStatusCodes.InternalServerError).json({
+    res.status(HttpStatusCodes.INTERNAL_SERVER_ERROR).json({
       name: err.name,
       status: 'error',
       requestAt: req.requestAt,
       responseAt,
       isOperational: false,
-      message: err?.message || 'Internal Server Error',
+      message: err?.message || ErrMessages.http.InternalServerError,
       stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
     });
   }

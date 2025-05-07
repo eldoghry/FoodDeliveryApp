@@ -1,13 +1,13 @@
-import { HttpStatusCodes } from '../enums';
+import HttpStatusCodes from 'http-status-codes';
 
-export default class BaseError extends Error {
+export default class ApplicationError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean;
   public readonly data?: any;
 
   constructor(
     message: string,
-    statusCode: number = HttpStatusCodes.InternalServerError,
+    statusCode: number = HttpStatusCodes.INTERNAL_SERVER_ERROR,
     isOperational: boolean = true,
     data?: any
   ) {
