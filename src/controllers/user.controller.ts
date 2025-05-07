@@ -10,4 +10,9 @@ export class UserController {
     const user = await this.userService.createUser({});
     sendResponse(res, HttpStatusCodes.OK, 'User created successfully', user);
   }
+
+  async getAll(req: Request, res: Response) {
+    const users = await this.userService.getAll();
+    sendResponse(res, HttpStatusCodes.OK, 'List users', users);
+  }
 }

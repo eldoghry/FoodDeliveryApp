@@ -6,4 +6,8 @@ export class UserService {
     const newUser = await this.repo.createUser(data);
     return newUser;
   }
+
+  async getAll() {
+    return this.repo.getAll();
+  }
 }

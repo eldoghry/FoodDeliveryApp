@@ -17,6 +17,8 @@ const envSchema = Joi.object({
   DATABASE_USERNAME: Joi.string().required(),
   DATABASE_PASSWORD: Joi.string().required(),
   DATABASE_NAME: Joi.string().required(),
+  DATABASE_LOGGING: Joi.boolean().default(false),
+  DATABASE_SYNCHRONIZE: Joi.boolean().default(false),
   // TODO: add more env variable here
 }).unknown(true);
 
@@ -41,5 +43,7 @@ export const config = {
     name: envVars.DATABASE_NAME,
     username: envVars.DATABASE_USERNAME,
     password: envVars.DATABASE_PASSWORD,
+    logging: envVars.DATABASE_LOGGING,
+    synchronize: envVars.DATABASE_SYNCHRONIZE,
   },
 };
