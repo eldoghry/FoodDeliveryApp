@@ -18,11 +18,6 @@ A scalable and modular backend application for a food delivery service, built wi
 
 ---
 
-## Project Structure
-
-`FoodDeliveryApp/ ├── src/ │ ├── abstract/ # Base abstract classes │ ├── config/ # Configuration files (e.g., database, logger, redis) │ ├── controllers/ # API controllers │ ├── errors/ # Custom error classes and messages │ ├── middlewares/ # Express middlewares │ ├── models/ # Database entities │ ├── routes/ # API routes │ ├── services/ # Business logic services │ ├── shared/ # Shared utilities (e.g., Redis service) │ ├── utils/ # Helper functions │ ├── app.ts # Express app setup │ ├── server.ts # Server entry point ├── env/ # Environment-specific .env files ├── logs/ # Log files ├── Dockerfile # Docker configuration ├── docker-compose.yaml # Docker Compose configuration ├── package.json # Project dependencies and scripts ├── tsconfig.json # TypeScript configuration └── README.md
-`
-
 # Project documentation
 
 ## Prerequisites
