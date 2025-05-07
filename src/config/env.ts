@@ -19,6 +19,9 @@ const envSchema = Joi.object({
   DATABASE_NAME: Joi.string().required(),
   DATABASE_LOGGING: Joi.boolean().default(false),
   DATABASE_SYNCHRONIZE: Joi.boolean().default(false),
+  REDIS_HOST: Joi.string().required(),
+  REDIS_PORT: Joi.number().default(6379),
+  REDIS_DEFAULT_TTL: Joi.number().default(3600),
   // TODO: add more env variable here
 }).unknown(true);
 
@@ -45,5 +48,10 @@ export const config = {
     password: envVars.DATABASE_PASSWORD,
     logging: envVars.DATABASE_LOGGING,
     synchronize: envVars.DATABASE_SYNCHRONIZE,
+  },
+  redis: {
+    host: envVars.REDIS_HOST,
+    port: envVars.REDIS_PORT,
+    ttl: envVars.REDIS_DEFAULT_TTL,
   },
 };

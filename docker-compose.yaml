@@ -7,15 +7,17 @@ services:
     # env_file:
     #   - ./.env
     depends_on:
-      - redis
-      - postgres
+      - redis-srv
+      - postgres-srv
     networks:
       - app_network
 
-  redis:
+  redis-srv:
     image: redis
+    networks:
+      - app_network
 
-  nginx:
+  nginx-srv:
     image: nginx
     ports:
       - '80:80'
@@ -24,7 +26,7 @@ services:
     depends_on:
       - node-app
 
-  postgres:
+  postgres-srv:
     image: postgres
     restart: always
     # set shared memory limit when using docker-compose

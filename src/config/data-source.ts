@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { config } from './env';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
+import logger from './logger';
 
 // ssss
 export const AppDataSource = new DataSource({
@@ -22,3 +23,13 @@ export const AppDataSource = new DataSource({
   },
   namingStrategy: new SnakeNamingStrategy(),
 });
+
+export const startDataSource = async () => {
+  // start database connection
+  try {
+    await AppDataSource.initialize();
+    logger.info('Database connected successfully');
+  } catch (error) {
+    logger.error('Error connecting to the database:', error);
+  }
+};
