@@ -5,7 +5,7 @@ CREATE TABLE "order" (
     cart_id INT NOT NULL REFERENCES cart(cart_id),
     customer_id INT NOT NULL REFERENCES customer(customer_id),
     delivery_address_id INT NOT NULL REFERENCES address(address_id),
-    restaurant_note TEXT DEFAULT '',
+    customer_instructions TEXT DEFAULT '',
     total_items INT NOT NULL CHECK (total_items > 0),
     total_items_amount DECIMAL(10,2) NOT NULL CHECK (total_items_amount >= 0.00),
     delivery_fees DECIMAL(5,2) NOT NULL CHECK (delivery_fees >= 0.00),
