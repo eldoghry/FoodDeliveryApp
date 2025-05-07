@@ -16,6 +16,7 @@ CREATE TABLE "order" (
     delivered_at TIMESTAMP NOT NULL,
     cancelled_by CHECK (cancelled_by IN ('customer','restaurant','system','driver')),
     cancellation_reason TEXT DEFAULT '',
+    cancelled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
