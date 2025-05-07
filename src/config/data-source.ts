@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { config } from './env';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 // ssss
 export const AppDataSource = new DataSource({
@@ -19,4 +20,5 @@ export const AppDataSource = new DataSource({
     connectionTimeoutMillis: 2000, // Timeout for acquiring a connection
     idleTimeoutMillis: 30000, // Time before an idle connection is closed
   },
+  namingStrategy: new SnakeNamingStrategy(),
 });
