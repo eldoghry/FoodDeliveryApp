@@ -14,6 +14,7 @@ CREATE TABLE "order" (
     total_amount DECIMAL(10,2) NOT NULL CHECK (total_amount >= 0.00),
     placed_at TIMESTAMP NOT NULL,
     delivered_at TIMESTAMP NOT NULL,
+    cancelled_by CHECK (cancelled_by IN ('customer','restaurant','system','driver')),
     cancellation_reason TEXT DEFAULT '',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
