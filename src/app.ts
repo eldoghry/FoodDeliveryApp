@@ -7,23 +7,23 @@ import { addRequestTimeMiddleware, ErrorHandler, NotFoundHandler } from './middl
 import { defaultRateLimiter } from './config/ratelimiter';
 
 export const createApp = (): Application => {
-  const app = express();
+	const app = express();
 
-  // register middlewares
-  app.use(addRequestTimeMiddleware); // add request time
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
-  app.use(cors());
-  app.use(helmet());
-  app.use(morgan('dev'));
-  app.use(defaultRateLimiter);
+	// register middlewares
+	app.use(addRequestTimeMiddleware); // add request time
+	app.use(express.json());
+	app.use(express.urlencoded({ extended: true }));
+	app.use(cors());
+	app.use(helmet());
+	app.use(morgan('dev'));
+	app.use(defaultRateLimiter);
 
-  // setup routes
-  app.use('/api/v1', ApiRouter);
+	// setup routes
+	app.use('/api/v1', ApiRouter);
 
-  // error handler
-  app.use(NotFoundHandler);
-  app.use(ErrorHandler);
+	// error handler
+	app.use(NotFoundHandler);
+	app.use(ErrorHandler);
 
-  return app;
+	return app;
 };
