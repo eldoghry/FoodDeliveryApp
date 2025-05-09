@@ -124,3 +124,10 @@ Configured using _express-rate-limit_ with Redis for persistence.
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
+
+## Resource and Documentation
+
+- [Joi](https://joi.dev/api/?v=17.13.3)
+- [Typeorm](https://typeorm.io/)
+- [winston](https://github.com/winstonjs/winston#readme)
+- [ioredis](https://redis.io/docs/latest/develop/data-types/)
