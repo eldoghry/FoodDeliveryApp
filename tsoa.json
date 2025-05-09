@@ -1,0 +1,17 @@
+{
+	"entryFile": "src/server.ts",
+	"noImplicitAdditionalProperties": "throw-on-extras",
+	"controllerPathGlobs": ["src/controllers/*.ts"],
+	"spec": {
+		"outputDirectory": "dist",
+		"specVersion": 3,
+		"basePath": "/api/v1"
+	},
+	"routes": {
+		"routesDir": "src/routes",
+		"basePath": "/api/v1"
+	},
+	"validation": {
+		"enabled": true
+	}
+}

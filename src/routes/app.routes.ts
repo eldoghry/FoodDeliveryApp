@@ -1,10 +1,10 @@
-import { Router } from 'express';
-import { AppController } from '../controllers/app.controller';
+// import { Router } from 'express';
+// import { AppController } from '../controllers/app.controller';
 
-const AppRouter = Router();
+// const AppRouter = Router();
 
-const controller = new AppController();
+// const controller = new AppController();
 
-AppRouter.use('/health', controller.checkHealth.bind(controller));
+// AppRouter.use('/health', controller.checkHealth.bind(controller));
 
-export default AppRouter;
+// export default AppRouter;

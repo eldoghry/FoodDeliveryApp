@@ -127,6 +127,8 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 ## Resource and Documentation
 
+- [tsoa](https://tsoa-community.github.io/docs/getting-started.html)
+- [class-validator](https://github.com/typestack/class-validator)
 - [Joi](https://joi.dev/api/?v=17.13.3)
 - [Typeorm](https://typeorm.io/)
 - [winston](https://github.com/winstonjs/winston#readme)

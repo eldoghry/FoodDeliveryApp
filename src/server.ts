@@ -16,6 +16,7 @@ async function startServer() {
 
 	app.listen(config.port, () => {
 		logger.info(`Server running on http://localhost:${config.port} | ENV:(${config.env})`);
+		logger.info(`Documentation http://localhost:${config.port}/docs`);
 	});
 }
 
