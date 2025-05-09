@@ -3,7 +3,7 @@ import { config } from './env';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import logger from './logger';
 
-// ssss
+//
 export const AppDataSource = new DataSource({
 	type: 'postgres',
 	host: config.database.host, // Replace with your DB host
