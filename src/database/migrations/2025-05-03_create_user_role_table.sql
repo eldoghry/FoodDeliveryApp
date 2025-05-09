@@ -5,6 +5,4 @@ CREATE TABLE user_role (
     UNIQUE(user_id, role_id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
-
 );
