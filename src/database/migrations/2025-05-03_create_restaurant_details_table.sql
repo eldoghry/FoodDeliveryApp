@@ -1,6 +1,8 @@
 CREATE TABLE restaurant_details (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    restaurant_id UUID NOT NULL REFERENCES restaurant(id) ON DELETE CASCADE,
+    restaurant_details_id SERIAL PRIMARY KEY,
+    restaurant_id INT NOT NULL REFERENCES restaurant(restaurant_id) ON DELETE CASCADE,
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
 );
