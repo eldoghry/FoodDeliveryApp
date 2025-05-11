@@ -5,6 +5,8 @@ import morgan from 'morgan';
 import ApiRouter from './routes/api.routes';
 import { addRequestTimeMiddleware, ErrorHandler, NotFoundHandler } from './middlewares';
 import { defaultRateLimiter } from './config/ratelimiter';
+import swaggerUi from 'swagger-ui-express';
+import swaggerJsDocSpecs from './swagger/swagger';
 
 export const createApp = (): Application => {
 	const app = express();
@@ -20,6 +22,9 @@ export const createApp = (): Application => {
 
 	// setup routes
 	app.use('/api/v1', ApiRouter);
+
+	// swagger
+	app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerJsDocSpecs));
 
 	// error handler
 	app.use(NotFoundHandler);
