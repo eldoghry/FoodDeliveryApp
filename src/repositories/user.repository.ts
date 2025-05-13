@@ -1,5 +1,5 @@
 import { AppDataSource } from '../config/data-source';
-import { User } from '../models/user.entity';
+import { User } from '../models/user/user.entity';
 
 export class UserRepository {
 	private repo = AppDataSource.getRepository<User>('User');
@@ -16,7 +16,7 @@ export class UserRepository {
 	async getOne(id: number) {
 		return this.repo.findOne({
 			where: {
-				id
+				userId: id
 			}
 		});
 	}
