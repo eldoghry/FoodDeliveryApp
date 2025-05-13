@@ -14,7 +14,7 @@ export class UserController {
 
 	async getAll(req: Request, res: Response) {
 		const { limit, page } = req.validated?.query;
-		const users = await this.userService.getAll(limit);
+		const users = await this.userService.getActiveUsers(limit);
 		sendResponse(res, HttpStatusCodes.OK, 'List users', users);
 	}
 
