@@ -19,7 +19,7 @@ export class PaymentMethodConfig extends AbstractEntity {
 	paymentMethodId!: number;
 
 	@ManyToOne(() => PaymentMethod)
-	@JoinColumn()
+	@JoinColumn({ name: 'payment_method_Id' })
 	paymentMethod!: PaymentMethod;
 
 	@Column({ type: 'jsonb' })

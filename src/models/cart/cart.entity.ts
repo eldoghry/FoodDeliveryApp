@@ -20,14 +20,14 @@ export class Cart extends AbstractEntity {
 	customerId!: number;
 
 	@ManyToOne(() => Customer)
-	@JoinColumn()
+	@JoinColumn({ name: 'customer_id' })
 	customer!: Customer;
 
 	@Column()
 	restaurantId!: number;
 
 	@ManyToOne(() => Restaurant)
-	@JoinColumn()
+	@JoinColumn({ name: 'restaurant_id' })
 	restaurant!: Restaurant;
 
 	@Column({ default: 0 })

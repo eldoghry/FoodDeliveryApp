@@ -20,7 +20,7 @@ export class Address extends AbstractEntity {
 	userId!: number;
 
 	@ManyToOne(() => User)
-	@JoinColumn()
+	@JoinColumn({ name: 'user_id' })
 	user!: User;
 
 	@Column({ type: 'text' })

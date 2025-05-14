@@ -121,6 +121,27 @@ Configured using _express-rate-limit_ with Redis for persistence.
 | REDIS_PORT        | Redis port                         | 6379          |
 | REDIS_DEFAULT_TTL | Redis default ttl time for caching | 3600          |
 
+## Database Seeder
+
+This project includes a database seeder utility located at `src/database/seeders/index.ts`. The seeder will clear all tables, reset sequences, and populate the database with initial data.
+
+### Usage
+
+1. Ensure your environment variables are set correctly in the `env/{NODE_ENV}.env` file.
+2. Run the seeder with:
+
+```bash
+npm run seed
+```
+
+3. The seeder will:
+
+- Clear all tables
+- Reset all sequences
+- Insert seed data from src/database/seeders/seeded-data.ts
+
+_You can further customize this section as needed for your project._
+
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
