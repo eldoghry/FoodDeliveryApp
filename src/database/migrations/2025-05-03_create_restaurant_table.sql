@@ -4,7 +4,7 @@ CREATE TABLE restaurant (
     name VARCHAR(255) NOT NULL,
     logo_url VARCHAR(512) DEFAULT '',
     banner_url VARCHAR(512) NOT NULL DEFAULT '',
-    location JSONB,
+    location JSONB NOT NULL,
     status VARCHAR(6) NOT NULL CHECK (status IN ('open', 'busy', 'pause', 'closed')),
     commercial_registration_number VARCHAR(20) UNIQUE NOT NULL,
     vat_number VARCHAR(15) UNIQUE NOT NULL,
