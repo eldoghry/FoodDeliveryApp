@@ -12,14 +12,14 @@ export class OrderItem extends AbstractEntity {
 	orderId!: number;
 
 	@ManyToOne(() => Order)
-	@JoinColumn()
+	@JoinColumn({ name: 'order_id' })
 	order!: Order;
 
 	@Column()
 	itemId!: number;
 
 	@ManyToOne(() => Item)
-	@JoinColumn()
+	@JoinColumn({ name: 'item_id' })
 	item!: Item;
 
 	@Column()

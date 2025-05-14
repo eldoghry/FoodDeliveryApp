@@ -20,14 +20,14 @@ export class RestaurantMenu extends AbstractEntity {
 	restaurantId!: number;
 
 	@ManyToOne(() => Restaurant)
-	@JoinColumn()
+	@JoinColumn({ name: 'restaurant_id' })
 	restaurant!: Restaurant;
 
 	@Column()
 	menuId!: number;
 
 	@ManyToOne(() => Menu)
-	@JoinColumn()
+	@JoinColumn({ name: 'menu_id' })
 	menu!: Menu;
 
 	@Column({ default: 0 })

@@ -20,14 +20,14 @@ export class CartItem extends AbstractEntity {
 	cartId!: number;
 
 	@ManyToOne(() => Cart)
-	@JoinColumn()
+	@JoinColumn({ name: 'cart_id' })
 	cart!: Cart;
 
 	@Column()
 	itemId!: number;
 
 	@ManyToOne(() => Item)
-	@JoinColumn()
+	@JoinColumn({ name: 'item_id' })
 	item!: Item;
 
 	@Column()

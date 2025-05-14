@@ -20,14 +20,14 @@ export class UserRole extends AbstractEntity {
 	userId!: number;
 
 	@ManyToOne(() => User)
-	@JoinColumn()
+	@JoinColumn({ name: 'user_id' })
 	user!: User;
 
 	@Column()
 	roleId!: number;
 
 	@ManyToOne(() => Role)
-	@JoinColumn()
+	@JoinColumn({ name: 'role_id' })
 	role!: Role;
 
 	@CreateDateColumn()

@@ -19,7 +19,7 @@ export class Customer extends AbstractEntity {
 	userId!: number;
 
 	@OneToOne(() => User)
-	@JoinColumn()
+	@JoinColumn({ name: 'user_id' })
 	user!: User;
 
 	@Column({ type: 'date', nullable: true })
