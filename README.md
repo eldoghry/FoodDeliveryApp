@@ -121,6 +121,9 @@ Configured using _express-rate-limit_ with Redis for persistence.
 | REDIS_PORT        | Redis port                         | 6379          |
 | REDIS_DEFAULT_TTL | Redis default ttl time for caching | 3600          |
 
+## Data Model
+![ERD](./ERD.png)
+
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
