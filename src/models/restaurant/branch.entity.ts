@@ -19,7 +19,7 @@ export class Branch extends AbstractEntity {
 	restaurantId!: number;
 
 	@ManyToOne(() => Restaurant)
-	@JoinColumn()
+	@JoinColumn({ name: 'restaurant_id' })
 	restaurant!: Restaurant;
 
 	@Column()

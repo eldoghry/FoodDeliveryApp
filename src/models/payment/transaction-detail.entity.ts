@@ -11,7 +11,7 @@ export class TransactionDetail extends AbstractEntity {
 	transactionId!: number;
 
 	@ManyToOne(() => Transaction)
-	@JoinColumn()
+	@JoinColumn({ name: 'transaction_id' })
 	transaction!: Transaction;
 
 	@Column({ type: 'jsonb' })

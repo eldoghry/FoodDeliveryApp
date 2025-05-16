@@ -22,21 +22,21 @@ export class Transaction extends AbstractEntity {
 	customerId!: number;
 
 	@ManyToOne(() => Customer)
-	@JoinColumn()
+	@JoinColumn({ name: 'customer_id' })
 	customer!: Customer;
 
 	@Column()
 	paymentMethodId!: number;
 
 	@ManyToOne(() => PaymentMethod)
-	@JoinColumn()
+	@JoinColumn({ name: 'payment_method_id' })
 	paymentMethod!: PaymentMethod;
 
 	@Column()
 	orderId!: number;
 
 	@ManyToOne(() => Order)
-	@JoinColumn()
+	@JoinColumn({ name: 'order_id' })
 	order!: Order;
 
 	@Column({ type: 'decimal', precision: 10, scale: 2 })
@@ -46,7 +46,7 @@ export class Transaction extends AbstractEntity {
 	paymentStatusId!: number;
 
 	@ManyToOne(() => PaymentStatus)
-	@JoinColumn()
+	@JoinColumn({ name: 'payment_status_id' })
 	paymentStatus!: PaymentStatus;
 
 	@Column({ length: 100 })

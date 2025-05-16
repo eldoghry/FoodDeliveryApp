@@ -20,7 +20,7 @@ export class Restaurant extends AbstractEntity {
 	userId!: number;
 
 	@OneToOne(() => User)
-	@JoinColumn()
+	@JoinColumn({ name: 'user_id' })
 	user!: User;
 
 	@Column()
