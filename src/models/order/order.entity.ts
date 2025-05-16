@@ -23,35 +23,35 @@ export class Order extends AbstractEntity {
 	orderStatusId!: number;
 
 	@ManyToOne(() => OrderStatus)
-	@JoinColumn()
+	@JoinColumn({ name: 'order_status_id' })
 	orderStatus!: OrderStatus;
 
 	@Column()
 	branchId!: number;
 
 	@ManyToOne(() => Branch)
-	@JoinColumn()
+	@JoinColumn({ name: 'branch_id' })
 	branch!: Branch;
 
 	@Column()
 	cartId!: number;
 
 	@ManyToOne(() => Cart)
-	@JoinColumn()
+	@JoinColumn({ name: 'cart_id' })
 	cart!: Cart;
 
 	@Column()
 	customerId!: number;
 
 	@ManyToOne(() => Customer)
-	@JoinColumn()
+	@JoinColumn({ name: 'customer_id' })
 	customer!: Customer;
 
 	@Column()
 	deliveryAddressId!: number;
 
 	@ManyToOne(() => Address)
-	@JoinColumn()
+	@JoinColumn({ name: 'delivery_address_id' })
 	deliveryAddress!: Address;
 
 	@Column({ type: 'text', default: '' })

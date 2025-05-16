@@ -9,13 +9,13 @@ export class MenuItem extends AbstractEntity {
 	menuId!: number;
 
 	@ManyToOne(() => Menu)
-	@JoinColumn()
+	@JoinColumn({ name: 'menu_id' })
 	menu!: Menu;
 
 	@PrimaryColumn()
 	itemId!: number;
 
 	@ManyToOne(() => Item)
-	@JoinColumn()
+	@JoinColumn({ name: 'item_id' })
 	item!: Item;
 }

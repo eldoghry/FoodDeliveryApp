@@ -10,7 +10,7 @@ import {
 import { AbstractEntity } from '../../abstract/base.entity';
 import { UserType } from './user-type.entity';
 
-@Entity()
+@Entity('users')
 export class User extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	userId!: number;
@@ -34,7 +34,9 @@ export class User extends AbstractEntity {
 	userTypeId?: number;
 
 	@ManyToOne(() => UserType)
-	@JoinColumn()
+	@JoinColumn({
+		name: 'user_type_id'
+	})
 	userType?: UserType;
 
 	@CreateDateColumn()
