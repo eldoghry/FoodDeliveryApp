@@ -54,6 +54,16 @@ const ErrMessages = {
 		CartAlreadyExists: 'Cart Already Exists',
 		CartItemNotFound: 'Cart Item Not Found',
 		CartItemAlreadyExists: 'Cart Item Already Exists'
+	},
+
+	restaurant: {
+		RestaurantNotFound: 'Restaurant not found',
+		RestaurantNotAvailable:
+			'Sorry restaurant cannot process your order right now, try again later or choose different one'
+	},
+
+	item: {
+		ItemNotFound: 'Item Not Found'
 	}
 };
 

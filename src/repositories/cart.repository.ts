@@ -33,7 +33,7 @@ export class CartRepository {
 	}
 
 	async updateCart(cartId: number, data: Partial<Cart>): Promise<Cart | null> {
-		await this.cartRepo.update(cartId, data);
+		await this.cartRepo.update({ cartId }, data);
 		return await this.getCartById(cartId);
 	}
 
