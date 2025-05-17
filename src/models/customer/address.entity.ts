@@ -3,25 +3,15 @@ import {
 	PrimaryGeneratedColumn,
 	Column,
 	CreateDateColumn,
-	UpdateDateColumn,
-	ManyToOne,
-	JoinColumn
+	UpdateDateColumn
 } from 'typeorm';
 import { AbstractEntity } from '../../abstract/base.entity';
-import { User } from '../user/user.entity';
 
 // Address entity
 @Entity()
 export class Address extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	addressId!: number;
-
-	@Column()
-	userId!: number;
-
-	@ManyToOne(() => User)
-	@JoinColumn()
-	user!: User;
 
 	@Column({ type: 'text' })
 	addressLine1!: string;
