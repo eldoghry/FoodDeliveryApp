@@ -54,12 +54,15 @@ export class CartRepository {
 	// 	return await this.cartItemRepo.find({
 	// 		where: { cartId },
 	// 		relations: ['menuItem.item']
-	// 	}); 
+	// 	});
 	// }
 
 	async getCartItems(cartId: number): Promise<any[]> {
-		return await this.cartItemRepo.createQueryBuilder('ci')
+		return await this.cartItemRepo
+			.createQueryBuilder('ci')
 			.select([
+				'ci.cartId as cart_id',
+				'ci.cartItemId as cart_item_id',
 				'ci.quantity as quantity',
 				'ci.price as total_price_before',
 				'ci.discount as discount',
@@ -74,7 +77,6 @@ export class CartRepository {
 			.where('ci.cartId = :cartId', { cartId })
 			.getRawMany();
 	}
-
 
 	async getCartItem(cartItemId: number): Promise<CartItem | null> {
 		return await this.cartItemRepo.findOne({

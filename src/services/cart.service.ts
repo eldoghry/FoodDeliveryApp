@@ -32,6 +32,8 @@ export class CartService {
 
     private formatCartItem(item: any): any {
         return {
+			cartId:item.cart_id,
+			cartItemId:item.cart_item_id,
             id: item.item_id,
             name: item.name,
             imagePath: item.image_path,
@@ -44,7 +46,7 @@ export class CartService {
 
     private formatCartResponse(cart: any, items: any[], totalPrice: string): any {
         return {
-            cartId: cart.cartId,
+            id: cart.cartId,
             customerId: cart.customerId,
             restaurant: {
                 id: cart.restaurant.restaurantId,
