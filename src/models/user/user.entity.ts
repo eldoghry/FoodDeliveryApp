@@ -25,7 +25,7 @@ export class User extends AbstractEntity {
 	@Column({ type: 'varchar', length: 100, unique: true })
 	email!: string;
 
-	@Column({ type: 'varchar', length: 30 })
+	@Column({ type: 'varchar', length: 30, nullable: true, unique: true })
 	phone!: string;
 
 	@Column({ type: 'varchar', length: 250 })
