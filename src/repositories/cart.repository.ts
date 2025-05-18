@@ -55,7 +55,7 @@ export class CartRepository {
 	// 		where: { cartId },
 	// 		relations: ['menuItem.item']
 	// 	});
-	// }
+
 
 	async getCartItems(cartId: number): Promise<any[]> {
 		return await this.cartItemRepo
@@ -78,6 +78,10 @@ export class CartRepository {
 			.getRawMany();
 	}
 
+   async getCartItemById(cartItemId: number):Promise<CartItem | null>{
+		return await this.cartItemRepo.findOneBy({cartItemId})
+   }
+
 	async getCartItem(cartItemId: number): Promise<CartItem | null> {
 		return await this.cartItemRepo.findOne({
 			where: { cartItemId },
@@ -87,8 +91,9 @@ export class CartRepository {
 
 	async updateCartItem(cartItemId: number, data: Partial<CartItem>): Promise<CartItem | null> {
 		await this.cartItemRepo.update(cartItemId, data);
-		return await this.getCartItem(cartItemId);
+		return await this.getCartItemById(cartItemId);
 	}
+
 
 	async deleteCartItem(cartItemId: number): Promise<void> {
 		await this.cartItemRepo.delete(cartItemId);
@@ -98,19 +103,4 @@ export class CartRepository {
 		await this.cartItemRepo.delete({ cartId });
 	}
 
-	// Helper methods
-	// async calculateCartTotal(cartId: number): Promise<number> {
-	// 	const cartItems = await this.getCartItems(cartId);
-	// 	return cartItems.reduce((total, item) => total + item.totalPrice, 0);
-	// }
-
-	// async updateCartTotalItems(cartId: number): Promise<void> {
-	// 	const cartItems = await this.getCartItems(cartId);
-	// 	const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
-	// 	await this.updateCart(cartId, { totalItems });
-	// }
-
-	// async getCartDetails(cartId: number): Promise<Cart | null> {
-
-	// }
 }

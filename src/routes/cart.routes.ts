@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import { CartController } from '../controllers/cart.controller';
 import { validateRequest } from '../middlewares/validate-request.middleware';
-import { createCartBodySchema, getCartParamsSchema } from '../validators/cart.validator';
+import {
+	createCartBodySchema,
+	getCartParamsSchema,
+	updateQuantityBodySchema,
+	updateQuantityParamsSchema
+} from '../validators/cart.validator';
 
 const CartRouter = Router();
 const controller = new CartController();
@@ -121,4 +126,9 @@ CartRouter.get('/', controller.getAllCarts.bind(controller));
  */
 CartRouter.get('/:cartId', validateRequest({ params: getCartParamsSchema }), controller.viewCart.bind(controller));
 
+CartRouter.patch(
+	'/:cartId/items/:cartItemId',
+	validateRequest({ params: updateQuantityParamsSchema, body: updateQuantityBodySchema }),
+	controller.updateQuantity.bind(controller)
+);
 export default CartRouter;
