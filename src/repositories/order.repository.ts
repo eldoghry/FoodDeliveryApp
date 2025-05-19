@@ -36,6 +36,32 @@ export class OrderRepository {
 		});
 	}
 
+	async findOrderDetailsById(orderId: number): Promise<any | null> {
+		// Create a query builder to join all the necessary tables
+		const order = await this.orderRepo
+			.createQueryBuilder('order')
+			.leftJoinAndSelect('order.orderStatus', 'orderStatus')
+			.leftJoinAndSelect('order.address', 'address')
+			.where('order.orderId = :orderId', { orderId })
+			.getOne();
+
+		if (!order) return null;
+
+		// Get order items with menu item details
+		const orderItems = await this.orderItemRepo
+			.createQueryBuilder('orderItem')
+			.leftJoinAndSelect('orderItem.menuItem', 'menuItem')
+			.leftJoinAndSelect('menuItem.item', 'item')
+			.where('orderItem.orderId = :orderId', { orderId })
+			.getMany();
+
+		// Construct the full order object with items
+		return {
+			...order,
+			orderItems
+		};
+	}
+
 	async updateOrder(orderId: number, data: Partial<Order>): Promise<Order | null> {
 		await this.orderRepo.update(orderId, data);
 		return await this.getOrderById(orderId);
@@ -92,6 +118,10 @@ export class OrderRepository {
 		return await this.orderStatusRepo.findOne({
 			where: { orderStatusId }
 		});
+	}
+
+	async getOrderStatusByName(statusName: string): Promise<OrderStatus | null> {
+		return await this.orderStatusRepo.findOneBy({ statusName });
 	}
 
 	// Helper methods

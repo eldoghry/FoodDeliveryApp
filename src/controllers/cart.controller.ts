@@ -12,4 +12,9 @@ export class CartController {
 		await this.cartService.removeItem(cartItemId);
 		sendResponse(res, StatusCodes.OK, 'Removed Item Successfully');
 	}
+
+	async checkout(req: Request, res: Response) {
+		const body = req.validated?.body;
+		sendResponse(res, StatusCodes.OK, 'Test', body);
+	}
 }
