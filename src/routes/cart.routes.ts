@@ -61,6 +61,8 @@ CartRouter.post(
  *     summary: Retrieve a specific cart by its ID
  *     description: Fetches the details of a cart using the provided cart ID.
  *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - name: cartId
  *         in: path
@@ -173,6 +175,8 @@ CartRouter.get('/:cartId', isAuthenticated, validateRequest({ params: getCartPar
  *     summary: Update the quantity of a cart item
  *     description: Updates the quantity of a specific cart item using the provided cart ID and cart item ID.
  *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - name: cartId
  *         in: path
