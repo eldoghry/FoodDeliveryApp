@@ -3,18 +3,12 @@ import ApplicationError from '../errors/application.error';
 import HttpStatusCodes from 'http-status-codes';
 import { Cart, CartItem } from '../models';
 import { MenuRepository } from '../repositories';
+import { StatusCodes } from 'http-status-codes';
+import logger from '../config/logger';
+import ErrMessages from '../errors/error-messages';
+import { CartResponseDTO, ItemInCartDTO } from '../interfaces/cart.interfaces';
 
-interface ItemDTO {
-	cart_id: number;
-	cart_item_id: number;
-	item_id: number;
-	name: string;
-	image_path: string;
-	quantity: number;
-	total_price_before: string;
-	discount: string;
-	total_price_after: string;
-}
+
 
 interface UpdateQuantityPayload {
 	quantity: number;
@@ -24,12 +18,13 @@ export class CartService {
 	private cartRepo = new CartRepository();
 	private menuRepo = new MenuRepository();
 
+
 	private validateCart(cart: Cart): void {
-		if (!cart) throw new ApplicationError('Cart not found', HttpStatusCodes.NOT_FOUND);
-		if (!cart.isActive) throw new ApplicationError('Cart is not active', HttpStatusCodes.BAD_REQUEST);
+		if (!cart) throw new ApplicationError(ErrMessages.cart.CartNotFound, HttpStatusCodes.NOT_FOUND);
+		if (!cart.isActive) throw new ApplicationError(ErrMessages.cart.CartIsNotActive, HttpStatusCodes.BAD_REQUEST);
 
 		if (!cart.restaurant) {
-			throw new ApplicationError('Restaurant not found', HttpStatusCodes.NOT_FOUND);
+			throw new ApplicationError(ErrMessages.restaurant.RestaurantNotFound, HttpStatusCodes.NOT_FOUND);
 		}
 
 		if (!cart.restaurant.isActive) {
@@ -41,36 +36,30 @@ export class CartService {
 		}
 	}
 
-	private validateCartItem(cartId: number, cartItem: CartItem): void {
-		if (!cartItem) throw new ApplicationError('Cart item not found', HttpStatusCodes.NOT_FOUND);
-		if (cartItem.cartId !== cartId) {
-			throw new ApplicationError('Cart item does not belong to the specified cart', HttpStatusCodes.BAD_REQUEST);
-		}
-	}
 
-	private validateCartItems(cartItems: any[]): void {
+	private validateCartItems(cartItems: ItemInCartDTO[]): void {
 		for (const item of cartItems) {
-			if (!item.is_available) {
-				throw new ApplicationError(`Item ${item.name} is not available`, HttpStatusCodes.BAD_REQUEST);
+			if (!item.isAvailable) {
+				throw new ApplicationError(`${item.name} is not available`, HttpStatusCodes.BAD_REQUEST);
 			}
 		}
 	}
 
-	private formatCartItem(item: ItemDTO): any {
+	private formatCartItem(item: ItemInCartDTO): ItemInCartDTO {
 		return {
-			cartId: item.cart_id,
-			cartItemId: item.cart_item_id,
-			id: item.item_id,
+			cartId: item.cartId,
+			cartItemId: item.cartItemId,
+			id: item.id,
 			name: item.name,
-			imagePath: item.image_path,
+			imagePath: item.imagePath,
 			quantity: item.quantity,
-			totalPriceBefore: item.total_price_before,
+			totalPriceBefore: item.totalPriceBefore,
 			discount: item.discount,
-			totalPriceAfter: item.total_price_after
+			totalPriceAfter: item.totalPriceAfter
 		};
 	}
 
-	private formatCartResponse(cart: Cart, items: ItemDTO[], totalItems: number, totalPrice: string): any {
+	private formatCartResponse(cart: Cart, items: ItemInCartDTO[], totalItems: number, totalPrice: string): CartResponseDTO {
 		return {
 			id: cart.cartId,
 			customerId: cart.customerId,
@@ -87,13 +76,13 @@ export class CartService {
 		};
 	}
 
-	async viewCart(cartId: number): Promise<any> {
+	async viewCart(cartId: number): Promise<CartResponseDTO> {
 		const cart = await this.cartRepo.getCartById(cartId);
 		this.validateCart(cart!);
 
 		const cartItems = await this.cartRepo.getCartItems(cartId);
 		if (cartItems.length === 0) {
-			throw new ApplicationError('Cart is empty', HttpStatusCodes.BAD_REQUEST);
+			throw new ApplicationError(ErrMessages.cart.CartIsEmpty, HttpStatusCodes.BAD_REQUEST);
 		}
 
 		this.validateCartItems(cartItems);
@@ -114,18 +103,18 @@ export class CartService {
 
 		const cartItem = await this.cartRepo.getCartItemById(cartItemId);
 		if (!cartItem) {
-			throw new ApplicationError('Cart item not found', HttpStatusCodes.NOT_FOUND);
+			throw new ApplicationError(ErrMessages.cart.CartItemNotFound, HttpStatusCodes.NOT_FOUND);
 		}
 
 		if (cartItem.cartId !== cartId) {
-			throw new ApplicationError('Cart item does not belong to the specified cart', HttpStatusCodes.BAD_REQUEST);
+			throw new ApplicationError(ErrMessages.cart.CartItemDoesNotBelongToTheSpecifiedCart, HttpStatusCodes.BAD_REQUEST);
 		}
 
 		const menuItemResult = await this.menuRepo.getMenuItemById(cartItem.menuItemId);
 		const item = menuItemResult?.[0]?.item;
 
 		if (!item || !item.price) {
-			throw new ApplicationError('Item price not found', HttpStatusCodes.BAD_REQUEST);
+			throw new ApplicationError(ErrMessages.item.ItemNotFound, HttpStatusCodes.BAD_REQUEST);
 		}
 		const itemPrice = item.price;
 		const cartItemPriceBefore = itemPrice * quantity;
@@ -141,7 +130,7 @@ export class CartService {
 
 		const updatedItem = await this.cartRepo.updateCartItem(cartItemId, data);
 		if (!updatedItem) {
-			throw new ApplicationError('Failed to update cart item', HttpStatusCodes.INTERNAL_SERVER_ERROR);
+			throw new ApplicationError(ErrMessages.cart.FailedToUpdateCartItem, HttpStatusCodes.INTERNAL_SERVER_ERROR);
 		}
 		return updatedItem;
 	}
@@ -149,5 +138,96 @@ export class CartService {
 	// For testing only
 	async getAllCarts(): Promise<any> {
 		return this.cartRepo.getCarts();
+	}
+
+
+	async addItem(payload: { customerId: number; restaurantId: number; itemId: number; quantity: number }) {
+		const { customerId, restaurantId, itemId, quantity } = payload;
+
+		const item = await this.menuRepo.getItemById(itemId);
+
+		if (!item) throw new ApplicationError(ErrMessages.item.ItemNotFound, StatusCodes.NOT_FOUND);
+
+		// 1) get user cart or create new one
+		let cart = await this.getCart(customerId);
+		if (!cart) {
+			logger.info(`Creating a new cart for customer #${customerId}`);
+			cart = await this.createCart(customerId, restaurantId);
+		}
+
+		// 2) validate current cart belong to current restaurant
+		if (cart.restaurantId !== restaurantId) {
+			logger.info(`Clearing cart for customer #${customerId} due to restaurant change`);
+
+			await this.deleteAllCartItems(cart.cartId);
+			cart = (await this.updateCart(cart.cartId, {
+				restaurantId,
+				totalItems: 0
+			})) as Cart;
+		}
+
+		// update total items on cart
+		await this.handleCartItem(cart.cartId, item.itemId, quantity, item.price);
+		cart.totalItems += quantity;
+		cart = (await this.updateCart(cart.cartId, cart)) as Cart;
+
+		return cart;
+	}
+
+	async getCart(customerId: number) {
+		const cart = await this.cartRepo.getCartByCustomerId(customerId);
+		return cart;
+	}
+
+	async createCart(customerId: number, restaurantId: number) {
+		const newCart = new Cart();
+		newCart.customerId = customerId;
+		newCart.restaurantId = restaurantId;
+		return this.cartRepo.createCart(newCart);
+	}
+
+	async getCartItems(cartId: number) {
+		return this.cartRepo.getCartItems(cartId);
+	}
+
+	async addCartItem(cartItem: Partial<CartItem>) {
+		return this.cartRepo.addCartItem(cartItem);
+	}
+
+	async updateCartItem(cartItemId: number, cartItem: Partial<CartItem>) {
+		return this.cartRepo.updateCartItem(cartItemId, cartItem);
+	}
+
+	async updateCart(cartId: number, cart: Partial<Cart>) {
+		return this.cartRepo.updateCart(cartId, cart);
+	}
+
+	async deleteAllCartItems(cartId: number) {
+		return this.cartRepo.deleteAllCartItems(cartId);
+	}
+
+	async handleCartItem(cartId: number, itemId: number, quantity: number, price: number) {
+		const cartItems = await this.getCartItems(cartId);
+		const existingCartItem = cartItems.find((ci) => ci.itemId === itemId);
+
+		if (existingCartItem) {
+			const { price, discount } = existingCartItem!;
+			existingCartItem!.quantity += quantity;
+			existingCartItem!.totalPrice = (price - discount) * existingCartItem!.quantity; // you can make it by database
+			await this.updateCartItem(existingCartItem!.cartItemId, existingCartItem!);
+			logger.info('Updated existing cart item', existingCartItem.cartItemId);
+		} else {
+			// add new cart item
+			const cartItem = new CartItem();
+			cartItem.cartId = cartId;
+			cartItem.itemId = itemId;
+			cartItem.quantity = quantity;
+			cartItem.discount = 0;
+			cartItem.price = price;
+			cartItem.totalPrice = (price - cartItem.discount) * cartItem.quantity;
+
+			await this.addCartItem(cartItem);
+			logger.info(`Added new item #${itemId} to cart# ${cartId}`);
+		}
 	}
 }

@@ -1,4 +1,4 @@
-const ErrMessages = {
+const ErrMessages = { 
 	// Common Errors
 	http: {
 		BadRequest: 'Bad Request',
@@ -53,8 +53,22 @@ const ErrMessages = {
 		CartNotFound: 'Cart Not Found',
 		CartAlreadyExists: 'Cart Already Exists',
 		CartItemNotFound: 'Cart Item Not Found',
-		CartItemAlreadyExists: 'Cart Item Already Exists'
+		CartItemDoesNotBelongToTheSpecifiedCart: 'Cart Item Does Not Belong To The Specified Cart',
+		FailedToUpdateCartItem: 'Failed to update cart item',
+		CartIsEmpty: 'Cart is empty',
+		CartIsNotActive: 'Cart is not active'
+	},
+
+	restaurant: {
+		RestaurantNotFound: 'Restaurant not found',
+		RestaurantNotAvailable:
+			'Sorry restaurant cannot process your order right now, try again later or choose different one'
+	},
+
+	item: {
+		ItemNotFound: 'Item Not Found',
+		ItemPriceNotFound: 'Item price not found'
 	}
-};
+}; 
 
 export default ErrMessages;

@@ -2,6 +2,7 @@ import { AppDataSource } from '../config/data-source';
 import { Cart } from '../models/cart/cart.entity';
 import { CartItem } from '../models/cart/cart-item.entity';
 import { Repository } from 'typeorm';
+import { ItemInCartDTO } from '../interfaces/cart.interfaces';
 
 export class CartRepository {
 	private cartRepo: Repository<Cart>;
@@ -36,7 +37,7 @@ export class CartRepository {
 	}
 
 	async updateCart(cartId: number, data: Partial<Cart>): Promise<Cart | null> {
-		await this.cartRepo.update(cartId, data);
+		await this.cartRepo.update({ cartId }, data);
 		return await this.getCartById(cartId);
 	}
 
@@ -57,20 +58,20 @@ export class CartRepository {
 	// 	});
 
 
-	async getCartItems(cartId: number): Promise<any[]> {
+	async getCartItems(cartId: number): Promise<ItemInCartDTO[]> { 
 		return await this.cartItemRepo
 			.createQueryBuilder('ci')
 			.select([
-				'ci.cartId as cart_id',
-				'ci.cartItemId as cart_item_id',
+				'ci.cartId as cartId',
+				'ci.cartItemId as cartItemId',
 				'ci.quantity as quantity',
-				'ci.price as total_price_before',
+				'ci.price as totalPriceBefore',
 				'ci.discount as discount',
-				'ci.totalPrice as total_price_after',
-				'i.itemId as item_id',
+				'ci.totalPrice as totalPriceAfter',
+				'i.itemId as id',
 				'i.name as name',
-				'i.imagePath as image_path',
-				'i.isAvailable as is_available'
+				'i.imagePath as imagePath',
+				'i.isAvailable as isAvailable'
 			])
 			.innerJoin('ci.menuItem', 'mi')
 			.innerJoin('mi.item', 'i')
