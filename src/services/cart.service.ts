@@ -1,12 +1,11 @@
-import { CartRepository } from '../repositories/cart.repository';
-import ApplicationError from '../errors/application.error';
-import HttpStatusCodes from 'http-status-codes';
-import { Cart, CartItem } from '../models';
-import { MenuRepository } from '../repositories';
-import { StatusCodes } from 'http-status-codes';
+import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
 import logger from '../config/logger';
+import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { CartResponseDTO, ItemInCartDTO } from '../interfaces/cart.interfaces';
+import { Cart, CartItem } from '../models';
+import { MenuRepository } from '../repositories';
+import { CartRepository } from '../repositories/cart.repository';
 
 interface UpdateQuantityPayload {
 	quantity: number;
@@ -51,7 +50,7 @@ export class CartService {
 			quantity: item.quantity,
 			totalPriceBefore: item.totalPriceBefore,
 			discount: item.discount,
-			totalPriceAfter: item.totalPriceAfter
+			totalPrice: item.totalPrice
 		};
 	}
 
@@ -90,7 +89,7 @@ export class CartService {
 
 		const items = cartItems.map((item) => this.formatCartItem(item));
 		const totalItems = items.reduce((total, item) => Number(total) + Number(item.quantity), 0);
-		const totalPrice = items.reduce((total, item) => Number(total) + Number(item.totalPriceAfter), 0);
+		const totalPrice = items.reduce((total, item) => Number(total) + Number(item.totalPrice), 0);
 
 		return this.formatCartResponse(cart!, items, totalItems, totalPrice.toFixed(2));
 	}
@@ -220,19 +219,21 @@ export class CartService {
 
 	async handleCartItem(cartId: number, itemId: number, quantity: number, price: number) {
 		const cartItems = await this.getCartItems(cartId);
-		const existingCartItem = cartItems.find((ci) => ci.itemId === itemId);
+		const existingCartItem = cartItems.find((ci) => ci.cartItemId === itemId);
 
 		if (existingCartItem) {
-			const { price, discount } = existingCartItem!;
+			const { totalPriceBefore, discount } = existingCartItem!;
 			existingCartItem!.quantity += quantity;
-			existingCartItem!.totalPrice = (price - discount) * existingCartItem!.quantity; // you can make it by database
+
+			existingCartItem!.totalPrice = (Number(totalPriceBefore) - discount) * existingCartItem!.quantity; // you can make it by database
+
 			await this.updateCartItem(existingCartItem!.cartItemId, existingCartItem!);
 			logger.info('Updated existing cart item', existingCartItem.cartItemId);
 		} else {
 			// add new cart item
 			const cartItem = new CartItem();
 			cartItem.cartId = cartId;
-			cartItem.itemId = itemId;
+			cartItem.cartItemId = itemId;
 			cartItem.quantity = quantity;
 			cartItem.discount = 0;
 			cartItem.price = price;
