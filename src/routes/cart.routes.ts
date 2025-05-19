@@ -6,6 +6,7 @@ import { validateRequest } from '../middlewares/validate-request.middleware';
 import {
 	addItemToCartBodySchema,
 	clearCartParamsSchema,
+	deleteCartItemParamsSchema,
 	getCartParamsSchema,
 	updateQuantityBodySchema,
 	updateQuantityParamsSchema
@@ -268,11 +269,94 @@ CartRouter.patch(
 	controller.updateQuantity.bind(controller)
 );
 
+/**
+ * @swagger
+ * /api/v1/cart/{cartId}/clearCart:
+ *   delete:
+ *     summary: Clear all items from a cart
+ *     description: Removes all items from the specified cart.
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: cartId
+ *         in: path
+ *         required: true
+ *         description: The ID of the cart to clear.
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Cart cleared successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message
+ *                   example: "Cart cleared successfully"
+ *       400:
+ *         description: Invalid cart ID supplied.
+ *       401:
+ *         description: Unauthorized.
+ *       404:
+ *         description: Cart not found.
+ */
 CartRouter.delete(
-	'/:cartId/clearCart/',
+	'/:cartId/clearCart',
 	isAuthenticated,
 	validateRequest({ params: clearCartParamsSchema }),
 	controller.clearCart.bind(controller)
+);
+
+/**
+ * @swagger
+ * /api/v1/cart/{cartId}/delete/{cartItemId}:
+ *   delete:
+ *     summary: Delete a specific item from the cart
+ *     description: Removes a specific item from the cart using the cart ID and cart item ID.
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: cartId
+ *         in: path
+ *         required: true
+ *         description: The ID of the cart.
+ *         schema:
+ *           type: integer
+ *       - name: cartItemId
+ *         in: path
+ *         required: true
+ *         description: The ID of the cart item to delete.
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Cart item deleted successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message
+ *                   example: "Cart item deleted successfully"
+ *       400:
+ *         description: Invalid cart ID or cart item ID supplied.
+ *       401:
+ *         description: Unauthorized.
+ *       404:
+ *         description: Cart or cart item not found.
+ */
+CartRouter.delete(
+	'/:cartId/delete/:cartItemId',
+	isAuthenticated,
+	validateRequest({ params: deleteCartItemParamsSchema }),
+	controller.deleteCartItem.bind(controller)
 );
 
 export default CartRouter;

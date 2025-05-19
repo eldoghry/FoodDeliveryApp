@@ -27,3 +27,8 @@ export const updateQuantityParamsSchema = Joi.object({
 export const clearCartParamsSchema = Joi.object({
 	cartId: Joi.number().min(1).required(),
 }).required();
+
+export const deleteCartItemParamsSchema = Joi.object({
+	cartId: Joi.number().min(1).required(),
+	cartItemId: Joi.number().min(1).required()
+}).required();

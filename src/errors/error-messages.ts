@@ -1,4 +1,4 @@
-const ErrMessages = { 
+const ErrMessages = {
 	// Common Errors
 	http: {
 		BadRequest: 'Bad Request',
@@ -55,6 +55,7 @@ const ErrMessages = {
 		CartItemNotFound: 'Cart Item Not Found',
 		CartItemDoesNotBelongToTheSpecifiedCart: 'Cart Item Does Not Belong To The Specified Cart',
 		FailedToUpdateCartItem: 'Failed to update cart item',
+		FailedToUpdateCart: 'Failed to update cart',
 		CartIsEmpty: 'Cart is empty',
 		CartIsNotActive: 'Cart is not active'
 	},
@@ -69,6 +70,6 @@ const ErrMessages = {
 		ItemNotFound: 'Item Not Found',
 		ItemPriceNotFound: 'Item price not found'
 	}
-}; 
+};
 
 export default ErrMessages;
