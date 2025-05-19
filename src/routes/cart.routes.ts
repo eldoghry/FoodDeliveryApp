@@ -126,6 +126,93 @@ CartRouter.get('/', controller.getAllCarts.bind(controller));
  */
 CartRouter.get('/:cartId', validateRequest({ params: getCartParamsSchema }), controller.viewCart.bind(controller));
 
+
+/**
+ * @swagger
+ * /api/v1/cart/{cartId}/items/{cartItemId}:
+ *   patch:
+ *     summary: Update the quantity of a cart item
+ *     description: Updates the quantity of a specific cart item using the provided cart ID and cart item ID.
+ *     tags: [Cart]
+ *     parameters:
+ *       - name: cartId
+ *         in: path
+ *         required: true
+ *         description: The ID of the cart.
+ *         schema:
+ *           type: integer
+ *       - name: cartItemId
+ *         in: path
+ *         required: true
+ *         description: The ID of the cart item.
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       description: The quantity of the item to update.
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               quantity:
+ *                 type: integer
+ *                 description: The new quantity of the item.
+ *                 example: 2
+ *     responses:
+ *       200:
+ *         description: Successfully updated cart item quantity.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 cartItemId:
+ *                   type: integer
+ *                   description: The ID of the cart item.
+ *                 quantity:
+ *                   type: integer
+ *                   description: The new quantity of the item.
+ *                 price:
+ *                   type: number
+ *                   format: float
+ *                   description: The price of the item.
+ *                 discount:
+ *                   type: number
+ *                   format: float
+ *                   description: The discount applied to the item.
+ *                 totalPrice:
+ *                   type: number
+ *                   format: float
+ *                   description: The total price of the item.
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                   description: The creation date of the cart item.
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *                   description: The last update date of the cart item.
+ *             example:
+ *               cartItemId: 1
+ *               quantity: 2
+ *               price: 10.00
+ *               discount: 2.00
+ *               totalPrice: 8.00
+ *               createdAt: "2022-01-01T00:00:00.000Z"
+ *               updatedAt: "2022-01-01T00:00:00.000Z"
+ *       400:
+ *         description: Cart item does not belong to the specified cart
+ * 		400:
+ * 			description: Cart ID not found
+ * 		400:
+ * 			description: Item price not found
+ *       401:
+ *         description: Unauthorized.
+ *       404:
+ *         description: Cart or cart item not found.
+ */
+
 CartRouter.patch(
 	'/:cartId/items/:cartItemId',
 	validateRequest({ params: updateQuantityParamsSchema, body: updateQuantityBodySchema }),

@@ -16,11 +16,15 @@ interface ItemDTO {
 	total_price_after: string;
 }
 
+interface UpdateQuantityPayload {
+	quantity: number;
+}
+
 export class CartService {
 	private cartRepo = new CartRepository();
 	private menuRepo = new MenuRepository();
 
-	private validateCart(cart: any): void {
+	private validateCart(cart: Cart): void {
 		if (!cart) throw new ApplicationError('Cart not found', HttpStatusCodes.NOT_FOUND);
 		if (!cart.isActive) throw new ApplicationError('Cart is not active', HttpStatusCodes.BAD_REQUEST);
 
@@ -34,6 +38,13 @@ export class CartService {
 
 		if (cart.restaurant.status !== 'open') {
 			throw new ApplicationError(`${cart.restaurant.name} is not open`, HttpStatusCodes.BAD_REQUEST);
+		}
+	}
+
+	private validateCartItem(cartId: number, cartItem: CartItem): void {
+		if (!cartItem) throw new ApplicationError('Cart item not found', HttpStatusCodes.NOT_FOUND);
+		if (cartItem.cartId !== cartId) {
+			throw new ApplicationError('Cart item does not belong to the specified cart', HttpStatusCodes.BAD_REQUEST);
 		}
 	}
 
@@ -78,7 +89,7 @@ export class CartService {
 
 	async viewCart(cartId: number): Promise<any> {
 		const cart = await this.cartRepo.getCartById(cartId);
-		this.validateCart(cart);
+		this.validateCart(cart!);
 
 		const cartItems = await this.cartRepo.getCartItems(cartId);
 		if (cartItems.length === 0) {
@@ -94,7 +105,13 @@ export class CartService {
 		return this.formatCartResponse(cart!, items, totalItems, totalPrice.toFixed(2));
 	}
 
-	async updateCartItemQuantity(cartId: number, cartItemId: number, { quantity }: { quantity: number }): Promise<CartItem> {
+	async updateCartItemQuantity(cartId: number, cartItemId: number, payload: UpdateQuantityPayload): Promise<CartItem> {
+		const { quantity } = payload;
+
+		const cart = await this.cartRepo.getCartById(cartId);
+
+		this.validateCart(cart!);
+
 		const cartItem = await this.cartRepo.getCartItemById(cartItemId);
 		if (!cartItem) {
 			throw new ApplicationError('Cart item not found', HttpStatusCodes.NOT_FOUND);
