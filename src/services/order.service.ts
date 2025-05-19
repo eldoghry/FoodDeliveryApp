@@ -4,7 +4,7 @@ import ErrMessages from '../errors/error-messages';
 import { Address, Cart, Order, OrderItem } from '../models';
 import { CartRepository, OrderRepository } from '../repositories';
 
-// worked for 4.5 hours
+
 export class OrderService {
 	private orderRepo = new OrderRepository();
 	private cartRepo = new CartRepository();

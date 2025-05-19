@@ -2,14 +2,17 @@ import { AppDataSource } from '../config/data-source';
 import { Customer } from '../models/customer/customer.entity';
 import { Address } from '../models/customer/address.entity';
 import { Repository } from 'typeorm';
+import { CustomerAddress } from '../models';
 
 export class CustomerRepository {
 	private customerRepo: Repository<Customer>;
 	private addressRepo: Repository<Address>;
+	private customerAddressRepo: Repository<CustomerAddress>;
 
 	constructor() {
 		this.customerRepo = AppDataSource.getRepository(Customer);
 		this.addressRepo = AppDataSource.getRepository(Address);
+		this.customerAddressRepo = AppDataSource.getRepository(CustomerAddress);
 	}
 
 	// Customer operations
@@ -20,15 +23,13 @@ export class CustomerRepository {
 
 	async getCustomerById(customerId: number): Promise<Customer | null> {
 		return await this.customerRepo.findOne({
-			where: { customerId },
-			relations: ['user']
+			where: { customerId }
 		});
 	}
 
 	async getCustomerByUserId(userId: number): Promise<Customer | null> {
 		return await this.customerRepo.findOne({
-			where: { userId },
-			relations: ['user']
+			where: { userId }
 		});
 	}
 
@@ -45,16 +46,23 @@ export class CustomerRepository {
 
 	async getAddressById(addressId: number): Promise<Address | null> {
 		return await this.addressRepo.findOne({
-			where: { addressId },
-			relations: ['user']
+			where: { addressId }
 		});
 	}
 
-	async getAddressesByUserId(userId: number): Promise<Address[]> {
-		return await this.addressRepo.find({
-			where: { userId },
-			relations: ['user']
+	async getCustomerAddresses(customerId: number): Promise<CustomerAddress[]> {
+		return await this.customerAddressRepo.find({
+			where: { customerId },
+			select: { addressId: true }
 		});
+	}
+
+	async validateCustomerAddress(customerId: number, addressId: number): Promise<Address | null> {
+		const customerAddress = await this.customerAddressRepo.findOne({ where: { customerId, addressId } });
+
+		if (!customerAddress) return null;
+
+		return await this.getAddressById(customerAddress.addressId);
 	}
 
 	async updateAddress(addressId: number, data: Partial<Address>): Promise<Address | null> {
@@ -70,8 +78,8 @@ export class CustomerRepository {
 	async getCustomerWithAddresses(customerId: number): Promise<Customer | null> {
 		const customer = await this.getCustomerById(customerId);
 		if (customer) {
-			const addresses = await this.getAddressesByUserId(customer.userId);
-			return { ...customer, addresses } as Customer & { addresses: Address[] };
+			const addresses = await this.getCustomerAddresses(customerId);
+			return { ...customer, addresses } as Customer & { addresses: CustomerAddress[] };
 		}
 		return null;
 	}

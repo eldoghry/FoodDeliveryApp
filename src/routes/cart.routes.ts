@@ -2,10 +2,11 @@ import { Router } from 'express';
 import { CartController } from '../controllers';
 import { validateRequest } from '../middlewares/validate-request.middleware';
 import { createCartBodySchema, removeItemSchema, checkoutSchema } from '../validators/cart.validator';
+import { CheckoutController } from '../controllers/checkout.controller';
 
 const CartRouter = Router();
-const controller = new CartController();
-
+const cartController = new CartController();
+const checkoutController = new CheckoutController();
 /**
  * @swagger
  * tags:
@@ -46,8 +47,13 @@ const controller = new CartController();
 CartRouter.delete(
 	'/item/:cartItemId',
 	validateRequest({ params: removeItemSchema }),
-	controller.removeItem.bind(controller)
+	cartController.removeItem.bind(cartController)
 );
 
-CartRouter.post('/checkout', validateRequest({ body: checkoutSchema }), controller.checkout.bind(controller));
+CartRouter.post(
+	'/checkout',
+	validateRequest({ body: checkoutSchema }),
+	checkoutController.checkout.bind(checkoutController)
+);
+
 export default CartRouter;

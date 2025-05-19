@@ -12,6 +12,12 @@ export const removeItemSchema = Joi.object({
 }).required();
 
 export const checkoutSchema = Joi.object({
+	userId: Joi.number().integer().positive().required().messages({
+		'number.base': 'User ID must be a number',
+		'number.integer': 'User ID must be an integer',
+		'number.positive': 'User ID must be positive',
+		'any.required': 'User ID is required'
+	}),
 	addressId: Joi.number().integer().positive().required().messages({
 		'number.base': 'Address ID must be a number',
 		'number.integer': 'Address ID must be an integer',

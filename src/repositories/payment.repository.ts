@@ -26,23 +26,20 @@ export class PaymentRepository {
 
 	async getTransactionById(transactionId: number): Promise<Transaction | null> {
 		return await this.transactionRepo.findOne({
-			where: { transactionId },
-			relations: ['customer', 'paymentMethod', 'order', 'paymentStatus']
+			where: { transactionId }
 		});
 	}
 
 	async getTransactionsByCustomerId(customerId: number): Promise<Transaction[]> {
 		return await this.transactionRepo.find({
 			where: { customerId },
-			relations: ['customer', 'paymentMethod', 'order', 'paymentStatus'],
 			order: { createdAt: 'DESC' }
 		});
 	}
 
 	async getTransactionsByOrderId(orderId: number): Promise<Transaction[]> {
 		return await this.transactionRepo.find({
-			where: { orderId },
-			relations: ['customer', 'paymentMethod', 'order', 'paymentStatus']
+			where: { orderId }
 		});
 	}
 
@@ -96,11 +93,14 @@ export class PaymentRepository {
 		});
 	}
 
+	async getPaymentStatusByName(statusName: string): Promise<PaymentStatus | null> {
+		return await this.paymentStatusRepo.findOne({ where: { statusName } });
+	}
+
 	// Helper methods
 	async getTransactionByCode(transactionCode: string): Promise<Transaction | null> {
 		return await this.transactionRepo.findOne({
-			where: { transactionCode },
-			relations: ['customer', 'paymentMethod', 'order', 'paymentStatus']
+			where: { transactionCode }
 		});
 	}
 }
