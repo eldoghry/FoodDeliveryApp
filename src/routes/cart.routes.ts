@@ -1,21 +1,21 @@
 import { Router } from 'express';
 import { CartController } from '../controllers/cart.controller';
+import { isAuthenticated } from '../middlewares/auth.middleware';
+import { isRestaurantAvailable } from '../middlewares/isRestaurantAvailable.middleware';
 import { validateRequest } from '../middlewares/validate-request.middleware';
 import {
+	addItemToCartBodySchema,
+	clearCartParamsSchema,
 	getCartParamsSchema,
 	updateQuantityBodySchema,
 	updateQuantityParamsSchema
 } from '../validators/cart.validator';
-import { addItemToCartBodySchema } from '../validators/cart.validator';
-import { isAuthenticated } from '../middlewares/auth.middleware';
-import { isRestaurantAvailable } from '../middlewares/isRestaurantAvailable.middleware';
 
 const CartRouter = Router();
 const controller = new CartController();
 
 // for test only
 CartRouter.get('/', controller.getAllCarts.bind(controller));
-
 
 /**
  * @swagger
@@ -166,7 +166,12 @@ CartRouter.post(
  *       404:
  *         description: Cart not found.
  */
-CartRouter.get('/:cartId', isAuthenticated, validateRequest({ params: getCartParamsSchema }), controller.viewCart.bind(controller));
+CartRouter.get(
+	'/:cartId',
+	isAuthenticated,
+	validateRequest({ params: getCartParamsSchema }),
+	controller.viewCart.bind(controller)
+);
 
 /**
  * @swagger
@@ -263,5 +268,11 @@ CartRouter.patch(
 	controller.updateQuantity.bind(controller)
 );
 
-export default CartRouter;
+CartRouter.delete(
+	'/:cartId/clearCart/',
+	isAuthenticated,
+	validateRequest({ params: clearCartParamsSchema }),
+	controller.clearCart.bind(controller)
+);
 
+export default CartRouter;

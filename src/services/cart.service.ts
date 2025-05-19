@@ -8,8 +8,6 @@ import logger from '../config/logger';
 import ErrMessages from '../errors/error-messages';
 import { CartResponseDTO, ItemInCartDTO } from '../interfaces/cart.interfaces';
 
-
-
 interface UpdateQuantityPayload {
 	quantity: number;
 }
@@ -17,7 +15,6 @@ interface UpdateQuantityPayload {
 export class CartService {
 	private cartRepo = new CartRepository();
 	private menuRepo = new MenuRepository();
-
 
 	private validateCart(cart: Cart): void {
 		if (!cart) throw new ApplicationError(ErrMessages.cart.CartNotFound, HttpStatusCodes.NOT_FOUND);
@@ -35,7 +32,6 @@ export class CartService {
 			throw new ApplicationError(`${cart.restaurant.name} is not open`, HttpStatusCodes.BAD_REQUEST);
 		}
 	}
-
 
 	private validateCartItems(cartItems: ItemInCartDTO[]): void {
 		for (const item of cartItems) {
@@ -59,7 +55,12 @@ export class CartService {
 		};
 	}
 
-	private formatCartResponse(cart: Cart, items: ItemInCartDTO[], totalItems: number, totalPrice: string): CartResponseDTO {
+	private formatCartResponse(
+		cart: Cart,
+		items: ItemInCartDTO[],
+		totalItems: number,
+		totalPrice: string
+	): CartResponseDTO {
 		return {
 			id: cart.cartId,
 			customerId: cart.customerId,
@@ -135,11 +136,22 @@ export class CartService {
 		return updatedItem;
 	}
 
+	async clearCart(cartId: number): Promise<Boolean> {
+		const cart = await this.cartRepo.getCartById(cartId);
+
+		this.validateCart(cart!);
+
+		await this.cartRepo.deleteAllCartItems(cartId);
+
+		await this.cartRepo.deleteCart(cartId);
+
+		return true;
+	}
+
 	// For testing only
 	async getAllCarts(): Promise<any> {
 		return this.cartRepo.getCarts();
 	}
-
 
 	async addItem(payload: { customerId: number; restaurantId: number; itemId: number; quantity: number }) {
 		const { customerId, restaurantId, itemId, quantity } = payload;
