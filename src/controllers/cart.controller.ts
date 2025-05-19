@@ -30,7 +30,13 @@ export class CartController {
 
 	async clearCart(req: Request, res: Response) {
 		const { cartId } = req.validated?.params;
-		const cartItem = await this.cartService.clearCart(Number(cartId));
+		const cartItem = await this.cartService.clearCart(cartId);
+		sendResponse(res, HttpStatusCodes.OK, 'Cart Cleared', cartItem);
+	}
+
+	async deleteCartItem(req: Request, res: Response) {
+		const { cartId, cartItemId } = req.validated?.params;
+		const cartItem = await this.cartService.deleteCartItem(cartId, cartItemId);
 		sendResponse(res, HttpStatusCodes.OK, 'Cart Cleared', cartItem);
 	}
 

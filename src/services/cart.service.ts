@@ -147,6 +147,30 @@ export class CartService {
 		return true;
 	}
 
+	async deleteCartItem(cartId: number, cartItemId: number): Promise<Cart> {
+		const cart = await this.cartRepo.getCartById(cartId);
+
+		this.validateCart(cart!);
+
+		const cartItem = await this.cartRepo.getCartItemById(cartItemId);
+
+		if (!cartItem) {
+			throw new ApplicationError(ErrMessages.cart.CartItemNotFound, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+		}
+
+		await this.cartRepo.deleteCartItem(cartItemId);
+
+		const newCart = await this.cartRepo.updateCart(cartId, {
+			totalItems: cart!.totalItems - cartItem.quantity,
+		})
+
+		if(!newCart) {
+			throw new ApplicationError(ErrMessages.cart.FailedToUpdateCart, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+		}
+
+		return newCart;
+	}
+
 	// For testing only
 	async getAllCarts(): Promise<any> {
 		return this.cartRepo.getCarts();
