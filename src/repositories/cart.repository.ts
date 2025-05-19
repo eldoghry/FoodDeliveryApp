@@ -25,6 +25,9 @@ export class CartRepository {
 		});
 	}
 
+	async getCarts(): Promise<Cart[] | null> {
+		return await this.cartRepo.find();
+	}
 	async getCartByCustomerId(customerId: number): Promise<Cart | null> {
 		return await this.cartRepo.findOne({
 			where: { customerId },
@@ -47,24 +50,50 @@ export class CartRepository {
 		return await this.cartItemRepo.save(cartItem);
 	}
 
-	async getCartItems(cartId: number): Promise<CartItem[]> {
-		return await this.cartItemRepo.find({
-			where: { cartId },
-			relations: ['item']
-		});
+	// async getCartItems(cartId: number): Promise<CartItem[]> {
+	// 	return await this.cartItemRepo.find({
+	// 		where: { cartId },
+	// 		relations: ['menuItem.item']
+	// 	});
+
+
+	async getCartItems(cartId: number): Promise<any[]> {
+		return await this.cartItemRepo
+			.createQueryBuilder('ci')
+			.select([
+				'ci.cartId as cart_id',
+				'ci.cartItemId as cart_item_id',
+				'ci.quantity as quantity',
+				'ci.price as total_price_before',
+				'ci.discount as discount',
+				'ci.totalPrice as total_price_after',
+				'i.itemId as item_id',
+				'i.name as name',
+				'i.imagePath as image_path',
+				'i.isAvailable as is_available'
+			])
+			.innerJoin('ci.menuItem', 'mi')
+			.innerJoin('mi.item', 'i')
+			.where('ci.cartId = :cartId', { cartId })
+			.getRawMany();
 	}
+
+   async getCartItemById(cartItemId: number):Promise<CartItem | null>{
+		return await this.cartItemRepo.findOneBy({cartItemId})
+   }
 
 	async getCartItem(cartItemId: number): Promise<CartItem | null> {
 		return await this.cartItemRepo.findOne({
 			where: { cartItemId },
-			relations: ['item']
+			relations: ['menuItem']
 		});
 	}
 
 	async updateCartItem(cartItemId: number, data: Partial<CartItem>): Promise<CartItem | null> {
 		await this.cartItemRepo.update(cartItemId, data);
-		return await this.getCartItem(cartItemId);
+		return await this.getCartItemById(cartItemId);
 	}
+
 
 	async deleteCartItem(cartItemId: number): Promise<void> {
 		await this.cartItemRepo.delete(cartItemId);
@@ -74,15 +103,4 @@ export class CartRepository {
 		await this.cartItemRepo.delete({ cartId });
 	}
 
-	// Helper methods
-	async calculateCartTotal(cartId: number): Promise<number> {
-		const cartItems = await this.getCartItems(cartId);
-		return cartItems.reduce((total, item) => total + item.totalPrice, 0);
-	}
-
-	async updateCartTotalItems(cartId: number): Promise<void> {
-		const cartItems = await this.getCartItems(cartId);
-		const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
-		await this.updateCart(cartId, { totalItems });
-	}
 }

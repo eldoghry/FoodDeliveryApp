@@ -55,6 +55,13 @@ export class MenuRepository {
 		});
 	}
 
+	async getMenuItemById(menuItemId:number):Promise<any>{
+		return await this.menuItemRepo.find({
+			where:{ menuItemId },
+			relations:['item']
+		})
+	}
+
 	async removeMenuItem(menuId: number, itemId: number): Promise<void> {
 		await this.menuItemRepo.delete({ menuId, itemId });
 	}

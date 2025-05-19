@@ -1,21 +1,30 @@
-import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
-import { AbstractEntity } from '../../abstract/base.entity';
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Unique,OneToMany } from 'typeorm';
 import { Menu } from './menu.entity';
 import { Item } from './item.entity';
+import { AbstractEntity } from '../../abstract/base.entity';
+import { CartItem } from '../cart/cart-item.entity';
 
 @Entity()
+@Unique(['menuId', 'itemId'])
 export class MenuItem extends AbstractEntity {
-	@PrimaryColumn()
+	@PrimaryGeneratedColumn()
+	menuItemId!: number;
+
+	@Column()
 	menuId!: number;
 
-	@ManyToOne(() => Menu)
+	@Column()
+	itemId!: number;
+
+	@ManyToOne(() => Menu, (menu) => menu.items)
 	@JoinColumn({ name: 'menu_id' })
 	menu!: Menu;
 
-	@PrimaryColumn()
-	itemId!: number;
-
-	@ManyToOne(() => Item)
+	@ManyToOne(() => Item, (item) => item.menuItems)
 	@JoinColumn({ name: 'item_id' })
 	item!: Item;
+
+	@OneToMany(() => CartItem, (cartItem) => cartItem.menuItem)
+	cartItems!: CartItem[];
 }
+  
