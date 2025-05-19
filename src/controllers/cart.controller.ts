@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { sendResponse } from '../utils/sendResponse';
 import HttpStatusCodes from 'http-status-codes';
 import { CartService } from '../services/cart.service';
+import { sendResponse } from '../utils/sendResponse';
 
 export class CartController {
 	private cartService = new CartService();
@@ -26,6 +26,12 @@ export class CartController {
 			quantity: Number(quantity)
 		});
 		sendResponse(res, HttpStatusCodes.OK, 'Cart Item Updated', cartItem);
+	}
+
+	async clearCart(req: Request, res: Response) {
+		const { cartId } = req.validated?.params;
+		const cartItem = await this.cartService.clearCart(Number(cartId));
+		sendResponse(res, HttpStatusCodes.OK, 'Cart Cleared', cartItem);
 	}
 
 	// for test only

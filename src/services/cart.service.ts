@@ -1,14 +1,11 @@
-import { CartRepository } from '../repositories/cart.repository';
-import ApplicationError from '../errors/application.error';
-import HttpStatusCodes from 'http-status-codes';
-import { Cart, CartItem } from '../models';
-import { MenuRepository } from '../repositories';
-import { StatusCodes } from 'http-status-codes';
+import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
 import logger from '../config/logger';
+import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { CartResponseDTO, ItemInCartDTO } from '../interfaces/cart.interfaces';
-
-
+import { Cart, CartItem } from '../models';
+import { MenuRepository } from '../repositories';
+import { CartRepository } from '../repositories/cart.repository';
 
 interface UpdateQuantityPayload {
 	quantity: number;
@@ -17,7 +14,6 @@ interface UpdateQuantityPayload {
 export class CartService {
 	private cartRepo = new CartRepository();
 	private menuRepo = new MenuRepository();
-
 
 	private validateCart(cart: Cart): void {
 		if (!cart) throw new ApplicationError(ErrMessages.cart.CartNotFound, HttpStatusCodes.NOT_FOUND);
@@ -35,7 +31,6 @@ export class CartService {
 			throw new ApplicationError(`${cart.restaurant.name} is not open`, HttpStatusCodes.BAD_REQUEST);
 		}
 	}
-
 
 	private validateCartItems(cartItems: ItemInCartDTO[]): void {
 		for (const item of cartItems) {
@@ -55,11 +50,16 @@ export class CartService {
 			quantity: item.quantity,
 			totalPriceBefore: item.totalPriceBefore,
 			discount: item.discount,
-			totalPriceAfter: item.totalPriceAfter
+			totalPrice: item.totalPrice
 		};
 	}
 
-	private formatCartResponse(cart: Cart, items: ItemInCartDTO[], totalItems: number, totalPrice: string): CartResponseDTO {
+	private formatCartResponse(
+		cart: Cart,
+		items: ItemInCartDTO[],
+		totalItems: number,
+		totalPrice: string
+	): CartResponseDTO {
 		return {
 			id: cart.cartId,
 			customerId: cart.customerId,
@@ -89,7 +89,7 @@ export class CartService {
 
 		const items = cartItems.map((item) => this.formatCartItem(item));
 		const totalItems = items.reduce((total, item) => Number(total) + Number(item.quantity), 0);
-		const totalPrice = items.reduce((total, item) => Number(total) + Number(item.totalPriceAfter), 0);
+		const totalPrice = items.reduce((total, item) => Number(total) + Number(item.totalPrice), 0);
 
 		return this.formatCartResponse(cart!, items, totalItems, totalPrice.toFixed(2));
 	}
@@ -135,11 +135,22 @@ export class CartService {
 		return updatedItem;
 	}
 
+	async clearCart(cartId: number): Promise<Boolean> {
+		const cart = await this.cartRepo.getCartById(cartId);
+
+		this.validateCart(cart!);
+
+		await this.cartRepo.deleteAllCartItems(cartId);
+
+		await this.cartRepo.deleteCart(cartId);
+
+		return true;
+	}
+
 	// For testing only
 	async getAllCarts(): Promise<any> {
 		return this.cartRepo.getCarts();
 	}
-
 
 	async addItem(payload: { customerId: number; restaurantId: number; itemId: number; quantity: number }) {
 		const { customerId, restaurantId, itemId, quantity } = payload;
@@ -208,19 +219,21 @@ export class CartService {
 
 	async handleCartItem(cartId: number, itemId: number, quantity: number, price: number) {
 		const cartItems = await this.getCartItems(cartId);
-		const existingCartItem = cartItems.find((ci) => ci.itemId === itemId);
+		const existingCartItem = cartItems.find((ci) => ci.cartItemId === itemId);
 
 		if (existingCartItem) {
-			const { price, discount } = existingCartItem!;
+			const { totalPriceBefore, discount } = existingCartItem!;
 			existingCartItem!.quantity += quantity;
-			existingCartItem!.totalPrice = (price - discount) * existingCartItem!.quantity; // you can make it by database
+
+			existingCartItem!.totalPrice = (Number(totalPriceBefore) - discount) * existingCartItem!.quantity; // you can make it by database
+
 			await this.updateCartItem(existingCartItem!.cartItemId, existingCartItem!);
 			logger.info('Updated existing cart item', existingCartItem.cartItemId);
 		} else {
 			// add new cart item
 			const cartItem = new CartItem();
 			cartItem.cartId = cartId;
-			cartItem.itemId = itemId;
+			cartItem.cartItemId = itemId;
 			cartItem.quantity = quantity;
 			cartItem.discount = 0;
 			cartItem.price = price;
