@@ -57,8 +57,7 @@ export class CartRepository {
 	// 		relations: ['menuItem.item']
 	// 	});
 
-
-	async getCartItems(cartId: number): Promise<ItemInCartDTO[]> { 
+	async getCartItems(cartId: number): Promise<ItemInCartDTO[]> {
 		return await this.cartItemRepo
 			.createQueryBuilder('ci')
 			.select([
@@ -79,22 +78,25 @@ export class CartRepository {
 			.getRawMany();
 	}
 
-   async getCartItemById(cartItemId: number):Promise<CartItem | null>{
-		return await this.cartItemRepo.findOneBy({cartItemId})
-   }
+	async getCartItemById(cartItemId: number): Promise<CartItem | null> {
+		return await this.cartItemRepo.findOneBy({ cartItemId });
+	}
 
-	async getCartItem(cartItemId: number): Promise<CartItem | null> {
-		return await this.cartItemRepo.findOne({
-			where: { cartItemId },
-			relations: ['menuItem']
+	async getCartItem(filter: { cartId?: number; itemId?: number; cartItemId?: number }): Promise<CartItem | null> {
+		if (!Object.keys(filter).length) return null;
+
+		const cartItem = await this.cartItemRepo.findOne({
+			where: { ...filter },
+			relations: ['item']
 		});
+
+		return cartItem || null;
 	}
 
 	async updateCartItem(cartItemId: number, data: Partial<CartItem>): Promise<CartItem | null> {
 		await this.cartItemRepo.update(cartItemId, data);
 		return await this.getCartItemById(cartItemId);
 	}
-
 
 	async deleteCartItem(cartItemId: number): Promise<void> {
 		await this.cartItemRepo.delete(cartItemId);
@@ -103,5 +105,4 @@ export class CartRepository {
 	async deleteAllCartItems(cartId: number): Promise<void> {
 		await this.cartItemRepo.delete({ cartId });
 	}
-
 }

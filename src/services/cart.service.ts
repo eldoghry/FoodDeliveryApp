@@ -3,9 +3,11 @@ import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { CartResponseDTO, ItemInCartDTO } from '../interfaces/cart.interfaces';
-import { Cart, CartItem } from '../models';
+import { Cart, CartItem, Item } from '../models';
 import { MenuRepository } from '../repositories';
 import { CartRepository } from '../repositories/cart.repository';
+import { AppDataSource } from '../config/data-source';
+import { CartAddItemDto, FindCartItemFilter } from '../dtos/cart.dto';
 
 interface UpdateQuantityPayload {
 	quantity: number;
@@ -14,10 +16,10 @@ interface UpdateQuantityPayload {
 export class CartService {
 	private cartRepo = new CartRepository();
 	private menuRepo = new MenuRepository();
+	private dataSource = AppDataSource; // to be used for typeorm transactions
 
 	private validateCart(cart: Cart): void {
 		if (!cart) throw new ApplicationError(ErrMessages.cart.CartNotFound, HttpStatusCodes.NOT_FOUND);
-		if (!cart.isActive) throw new ApplicationError(ErrMessages.cart.CartIsNotActive, HttpStatusCodes.BAD_REQUEST);
 
 		if (!cart.restaurant) {
 			throw new ApplicationError(ErrMessages.restaurant.RestaurantNotFound, HttpStatusCodes.NOT_FOUND);
@@ -70,7 +72,6 @@ export class CartService {
 			items,
 			totalItems,
 			totalPrice,
-			isActive: cart.isActive,
 			createdAt: cart.createdAt,
 			updatedAt: cart.updatedAt
 		};
@@ -94,45 +95,53 @@ export class CartService {
 		return this.formatCartResponse(cart!, items, totalItems, totalPrice.toFixed(2));
 	}
 
-	async updateCartItemQuantity(cartId: number, cartItemId: number, payload: UpdateQuantityPayload): Promise<CartItem> {
+	async updateCartItemQuantity(cartId: number, itemId: number, payload: UpdateQuantityPayload): Promise<CartItem> {
 		const { quantity } = payload;
 
 		const cart = await this.cartRepo.getCartById(cartId);
 
 		this.validateCart(cart!);
 
-		const cartItem = await this.cartRepo.getCartItemById(cartItemId);
-		if (!cartItem) {
-			throw new ApplicationError(ErrMessages.cart.CartItemNotFound, HttpStatusCodes.NOT_FOUND);
-		}
+		// const cartItem = await this.cartRepo.getCartItemById(cartItemId);
+		// if (!cartItem) {
+		// 	throw new ApplicationError(ErrMessages.cart.CartItemNotFound, HttpStatusCodes.NOT_FOUND);
+		// }
 
-		if (cartItem.cartId !== cartId) {
-			throw new ApplicationError(ErrMessages.cart.CartItemDoesNotBelongToTheSpecifiedCart, HttpStatusCodes.BAD_REQUEST);
-		}
+		// if (cartItem.cartId !== cartId) {
+		// 	throw new ApplicationError(ErrMessages.cart.CartItemDoesNotBelongToTheSpecifiedCart, HttpStatusCodes.BAD_REQUEST);
+		// }
 
-		const menuItemResult = await this.menuRepo.getMenuItemById(cartItem.menuItemId);
-		const item = menuItemResult?.[0]?.item;
+		// const menuItemResult = await this.menuRepo.getMenuItemById(cartItem.menuItemId);
+		// const item = menuItemResult?.[0]?.item;
 
-		if (!item || !item.price) {
-			throw new ApplicationError(ErrMessages.item.ItemNotFound, HttpStatusCodes.BAD_REQUEST);
-		}
-		const itemPrice = item.price;
-		const cartItemPriceBefore = itemPrice * quantity;
-		const cartItemDiscount = cartItem.discount;
-		const cartItemPriceAfter = cartItemPriceBefore - cartItemDiscount;
+		// if (!item || !item.price) {
+		// throw new ApplicationError(ErrMessages.item.ItemNotFound, HttpStatusCodes.BAD_REQUEST);
+		// }
 
-		const data = {
-			quantity,
-			price: cartItemPriceBefore,
-			discount: cartItemDiscount,
-			totalPrice: cartItemPriceAfter
-		};
+		const item = await this.getItemByIdOrFail(itemId);
 
-		const updatedItem = await this.cartRepo.updateCartItem(cartItemId, data);
-		if (!updatedItem) {
-			throw new ApplicationError(ErrMessages.cart.FailedToUpdateCartItem, HttpStatusCodes.INTERNAL_SERVER_ERROR);
-		}
-		return updatedItem;
+		const cartItem = await this.getCartItemOrFail({
+			cartId,
+			itemId
+		});
+
+		cartItem.updateQuantity(quantity);
+
+		// const itemPrice = item.price;
+		// const cartItemPriceBefore = itemPrice * quantity;
+		// const cartItemDiscount = cartItem.discount;
+		// const cartItemPriceAfter = cartItemPriceBefore - cartItemDiscount;
+
+		// const data = {
+		// 	quantity,
+		// 	price: cartItemPriceBefore,
+		// 	discount: cartItemDiscount,
+		// 	totalPrice: cartItemPriceAfter
+		// };
+
+		await this.cartRepo.updateCartItem(cartItem.cartItemId, cartItem);
+
+		return cartItem;
 	}
 
 	async clearCart(cartId: number): Promise<Boolean> {
@@ -148,7 +157,7 @@ export class CartService {
 	}
 
 	async deleteCartItem(cartId: number, cartItemId: number): Promise<Cart> {
-		const cart = await this.cartRepo.getCartById(cartId);
+		const cart = (await this.getCart(cartId)) as Cart;
 
 		this.validateCart(cart!);
 
@@ -160,15 +169,17 @@ export class CartService {
 
 		await this.cartRepo.deleteCartItem(cartItemId);
 
-		const newCart = await this.cartRepo.updateCart(cartId, {
-			totalItems: cart!.totalItems - cartItem.quantity,
-		})
+		// const newCart = await this.cartRepo.updateCart(cartId, {
+		// 	totalItems: cart!.totalItems - cartItem.quantity
+		// });
 
-		if(!newCart) {
-			throw new ApplicationError(ErrMessages.cart.FailedToUpdateCart, HttpStatusCodes.INTERNAL_SERVER_ERROR);
-		}
+		// if (!newCart) {
+		// 	throw new ApplicationError(ErrMessages.cart.FailedToUpdateCart, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+		// }
 
-		return newCart;
+		// return newCart;
+
+		return cart;
 	}
 
 	// For testing only
@@ -176,15 +187,14 @@ export class CartService {
 		return this.cartRepo.getCarts();
 	}
 
-	async addItem(payload: { customerId: number; restaurantId: number; itemId: number; quantity: number }) {
+	async addItem(payload: CartAddItemDto) {
 		const { customerId, restaurantId, itemId, quantity } = payload;
 
-		const item = await this.menuRepo.getItemById(itemId);
-
-		if (!item) throw new ApplicationError(ErrMessages.item.ItemNotFound, StatusCodes.NOT_FOUND);
+		const item = await this.getItemByIdOrFail(itemId);
 
 		// 1) get user cart or create new one
 		let cart = await this.getCart(customerId);
+
 		if (!cart) {
 			logger.info(`Creating a new cart for customer #${customerId}`);
 			cart = await this.createCart(customerId, restaurantId);
@@ -192,21 +202,31 @@ export class CartService {
 
 		// 2) validate current cart belong to current restaurant
 		if (cart.restaurantId !== restaurantId) {
-			logger.info(`Clearing cart for customer #${customerId} due to restaurant change`);
+			logger.info(`Clearing cart for customer# ${customerId} due to restaurant change to ${restaurantId}`);
 
 			await this.deleteAllCartItems(cart.cartId);
-			cart = (await this.updateCart(cart.cartId, {
-				restaurantId,
-				totalItems: 0
-			})) as Cart;
+			cart.restaurantId = restaurantId;
+			cart = (await this.updateCart(cart.cartId, { restaurantId })) as Cart;
 		}
 
-		// update total items on cart
-		await this.handleCartItem(cart.cartId, item.itemId, quantity, item.price);
-		cart.totalItems += quantity;
-		cart = (await this.updateCart(cart.cartId, cart)) as Cart;
+		// validate item not exist before
+		const isItemExistOnCart = await this.isItemExistOnCart(cart.cartId, itemId);
 
-		return cart;
+		if (isItemExistOnCart) throw new ApplicationError(ErrMessages.cart.CartItemAlreadyExist, StatusCodes.BAD_REQUEST);
+
+		// create cart item and save it
+		const cartItem = new CartItem().buildCartItem({
+			cartId: cart.cartId,
+			itemId,
+			quantity,
+			price: item.price
+		});
+
+		await this.addCartItem(cartItem);
+
+		logger.info(`Added new item #${itemId} to cart# ${cart?.cartId}`);
+
+		return;
 	}
 
 	async getCart(customerId: number) {
@@ -241,30 +261,29 @@ export class CartService {
 		return this.cartRepo.deleteAllCartItems(cartId);
 	}
 
-	async handleCartItem(cartId: number, itemId: number, quantity: number, price: number) {
-		const cartItems = await this.getCartItems(cartId);
-		const existingCartItem = cartItems.find((ci) => ci.cartItemId === itemId);
+	/**
+	 * Get Item by id or through not found error
+	 * @param itemId
+	 * @returns
+	 */
+	async getItemByIdOrFail(itemId: number): Promise<Item> {
+		const item = await this.menuRepo.getItemById(itemId);
 
-		if (existingCartItem) {
-			const { totalPriceBefore, discount } = existingCartItem!;
-			existingCartItem!.quantity += quantity;
+		if (!item) throw new ApplicationError(ErrMessages.item.ItemNotFound, StatusCodes.NOT_FOUND);
 
-			existingCartItem!.totalPrice = (Number(totalPriceBefore) - discount) * existingCartItem!.quantity; // you can make it by database
+		return item;
+	}
 
-			await this.updateCartItem(existingCartItem!.cartItemId, existingCartItem!);
-			logger.info('Updated existing cart item', existingCartItem.cartItemId);
-		} else {
-			// add new cart item
-			const cartItem = new CartItem();
-			cartItem.cartId = cartId;
-			cartItem.cartItemId = itemId;
-			cartItem.quantity = quantity;
-			cartItem.discount = 0;
-			cartItem.price = price;
-			cartItem.totalPrice = (price - cartItem.discount) * cartItem.quantity;
+	async getCartItemOrFail(filter: FindCartItemFilter) {
+		const cartItem = await this.cartRepo.getCartItem(filter);
 
-			await this.addCartItem(cartItem);
-			logger.info(`Added new item #${itemId} to cart# ${cartId}`);
-		}
+		if (!cartItem) throw new ApplicationError(ErrMessages.cart.CartItemNotFound, StatusCodes.NOT_FOUND);
+
+		return cartItem;
+	}
+
+	async isItemExistOnCart(cartId: number, itemId: number) {
+		const isItemExistOnCart = await this.cartRepo.getCartItem({ cartId, itemId });
+		return isItemExistOnCart !== null;
 	}
 }
