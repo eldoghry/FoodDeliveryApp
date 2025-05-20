@@ -10,10 +10,10 @@ import {
 } from 'typeorm';
 import { AbstractEntity } from '../../abstract/base.entity';
 import { Cart } from './cart.entity';
-import { MenuItem } from '../menu/menu-item.entity';
+import { Item } from '../menu/item.entity';
 
 @Entity()
-@Unique(['cartId', 'menuItemId'])
+@Unique(['cartId', 'itemId'])
 export class CartItem extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	cartItemId!: number;
@@ -22,7 +22,7 @@ export class CartItem extends AbstractEntity {
 	cartId!: number;
 
 	@Column()
-	menuItemId!: number;
+	itemId!: number;
 
 	@Column()
 	quantity!: number;
@@ -43,11 +43,64 @@ export class CartItem extends AbstractEntity {
 	updatedAt!: Date;
 
 	@ManyToOne(() => Cart, (cart) => cart.items)
-	@JoinColumn({ name: 'cart_id'})
+	@JoinColumn({ name: 'cart_id' })
 	cart!: Cart;
 
-	@ManyToOne(() => MenuItem,(menuItem)=>menuItem.cartItems)
-	@JoinColumn({ name: 'menu_item_id'})
-	menuItem!: MenuItem;
+	@ManyToOne(() => Item, (item) => item.cartItems)
+	@JoinColumn({ name: 'item_id' })
+	item!: Item;
+
+	/**
+	 * builder method to create a CartItem instance with calculated values
+	 *
+	 * @param cartId - ID of the cart
+	 * @param itemId - Item ID
+	 * @param quantity - Quantity of the menu item
+	 * @param discount - Optional discount amount (defaults to 0)
+	 * @returns A new CartItem instance
+	 */
+	buildCartItem(dto: { cartId: number; itemId: number; quantity: number; price: number; discount?: number }) {
+		this.cartId = dto.cartId;
+		this.price = dto.price;
+		this.quantity = dto.quantity;
+		this.discount = dto.discount ?? 0;
+		this.totalPrice = (this.price - this.discount) * this.quantity;
+		this.itemId = dto.itemId;
+
+		this.calculateTotalPrice();
+
+		return this;
+	}
+
+	/**
+	 * Recalculates the total price based on current quantity, price, and discount
+	 */
+	calculateTotalPrice() {
+		this.totalPrice = Number((this.quantity * this.price - this.discount).toFixed(2));
+		return this.totalPrice;
+	}
+
+	/**
+	 * Updates the discount amount and recalculates the total price
+	 *
+	 * @param discount - New discount amount
+	 * @returns The updated CartItem instance
+	 */
+	updateDiscount(discount: number): CartItem {
+		this.discount = discount;
+		this.calculateTotalPrice();
+		return this;
+	}
+
+	/**
+	 * Updates the quantity of the cart item and recalculates the total price
+	 *
+	 * @param quantity - New quantity
+	 * @returns The updated CartItem instance
+	 */
+	updateQuantity(quantity: number): CartItem {
+		this.quantity = quantity;
+		this.calculateTotalPrice();
+		return this;
+	}
 }
- 

@@ -21,7 +21,6 @@ export interface CartResponseDTO {
 	items: ItemInCartDTO[];
 	totalItems: number;
 	totalPrice: string;
-	isActive: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 }

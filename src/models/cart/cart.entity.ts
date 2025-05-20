@@ -32,12 +32,6 @@ export class Cart extends AbstractEntity {
 	@JoinColumn({ name: 'restaurant_id' })
 	restaurant!: Restaurant;
 
-	@Column({ default: 0 })
-	totalItems!: number;
-
-	@Column({ default: true })
-	isActive!: boolean;
-
 	@CreateDateColumn()
 	createdAt!: Date;
 
@@ -46,4 +40,9 @@ export class Cart extends AbstractEntity {
 
 	@OneToMany(() => CartItem, (cartItem) => cartItem.cart)
 	items!: CartItem[];
+
+	buildCart(customerId: number, restaurantId: number) {
+		this.customerId = customerId;
+		this.restaurantId = restaurantId;
+	}
 }
