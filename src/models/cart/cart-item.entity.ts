@@ -31,9 +31,6 @@ export class CartItem extends AbstractEntity {
 	price!: number;
 
 	@Column({ type: 'decimal', precision: 10, scale: 2 })
-	discount!: number;
-
-	@Column({ type: 'decimal', precision: 10, scale: 2 })
 	totalPrice!: number;
 
 	@CreateDateColumn()
@@ -56,15 +53,13 @@ export class CartItem extends AbstractEntity {
 	 * @param cartId - ID of the cart
 	 * @param itemId - Item ID
 	 * @param quantity - Quantity of the menu item
-	 * @param discount - Optional discount amount (defaults to 0)
 	 * @returns A new CartItem instance
 	 */
 	buildCartItem(dto: { cartId: number; itemId: number; quantity: number; price: number; discount?: number }) {
 		this.cartId = dto.cartId;
 		this.price = dto.price;
 		this.quantity = dto.quantity;
-		this.discount = dto.discount ?? 0;
-		this.totalPrice = (this.price - this.discount) * this.quantity;
+		this.totalPrice = this.price * this.quantity;
 		this.itemId = dto.itemId;
 
 		this.calculateTotalPrice();
@@ -76,20 +71,8 @@ export class CartItem extends AbstractEntity {
 	 * Recalculates the total price based on current quantity, price, and discount
 	 */
 	calculateTotalPrice() {
-		this.totalPrice = Number((this.quantity * this.price - this.discount).toFixed(2));
+		this.totalPrice = Number((this.quantity * this.price).toFixed(2));
 		return this.totalPrice;
-	}
-
-	/**
-	 * Updates the discount amount and recalculates the total price
-	 *
-	 * @param discount - New discount amount
-	 * @returns The updated CartItem instance
-	 */
-	updateDiscount(discount: number): CartItem {
-		this.discount = discount;
-		this.calculateTotalPrice();
-		return this;
 	}
 
 	/**
