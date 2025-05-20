@@ -174,6 +174,7 @@ Stores individual items within a cart along with pricing and quantity.
 
 - `cart_item_id` (PK)
 - `cart_id` – Foreign key to `cart`
+- `restaurant_id` – Foreign key to `restaurant`
 - `item_id` – Foreign key to `item`
 - `quantity`, `price`, `total_price`
 - `created_at`, `updated_at`
