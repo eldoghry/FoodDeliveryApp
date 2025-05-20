@@ -53,6 +53,7 @@ const ErrMessages = {
 		CartNotFound: 'Cart Not Found',
 		CartAlreadyExists: 'Cart Already Exists',
 		CartItemNotFound: 'Cart Item Not Found',
+		CartItemAlreadyExist: 'Cart Item already exist',
 		CartItemDoesNotBelongToTheSpecifiedCart: 'Cart Item Does Not Belong To The Specified Cart',
 		FailedToUpdateCartItem: 'Failed to update cart item',
 		FailedToUpdateCart: 'Failed to update cart',
