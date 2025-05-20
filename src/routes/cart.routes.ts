@@ -57,7 +57,7 @@ CartRouter.post(
 
 /**
  * @swagger
- * /api/v1/cart/{cartId}:
+ * /cart/{cartId}:
  *   get:
  *     summary: Retrieve a specific cart by its ID
  *     description: Fetches the details of a cart using the provided cart ID.
@@ -176,7 +176,7 @@ CartRouter.get(
 
 /**
  * @swagger
- * /api/v1/cart/{cartId}/items/{cartItemId}:
+ * /cart/{cartId}/items/{cartItemId}:
  *   patch:
  *     summary: Update the quantity of a cart item
  *     description: Updates the quantity of a specific cart item using the provided cart ID and cart item ID.
@@ -251,11 +251,11 @@ CartRouter.get(
  *               createdAt: "2022-01-01T00:00:00.000Z"
  *               updatedAt: "2022-01-01T00:00:00.000Z"
  *       400:
- *         description: Cart item does not belong to the specified cart
- * 		400:
- * 			description: Cart ID not found
- * 		400:
- * 			description: Item price not found
+ *         description: |
+ *          One of the following errors occurred:
+ *           - Cart item does not belong to the specified cart
+ *           - Cart ID not found
+ *           - Item price not found
  *       401:
  *         description: Unauthorized.
  *       404:
