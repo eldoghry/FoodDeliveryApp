@@ -72,19 +72,19 @@ The customer can add, update, and remove items in their shopping cart before pla
 
 ## Flowchart Diagram
 
-![Manage Cart Flowchart](./diagrams/manage-cart-flowchart.png)
+![Manage Cart Flowchart](../diagrams/manage-cart/flowchart.png)
 
 ---
 
 ## Sequence Diagram
 
-![Manage Cart Sequence Diagram](./diagrams/manage-cart-sequence-diagram.png)
+![Manage Cart Sequence Diagram](../diagrams/manage-cart/sequence-diagram.png)
 
 ---
 
 ## Entity Relationship Diagram (ERD)
 
-![ERD Diagram](./diagrams/manage-cart-erd.png)
+![ERD Diagram](../diagrams/manage-cart/erd-diagram.png)
 
 ---
 
