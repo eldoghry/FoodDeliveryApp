@@ -43,38 +43,38 @@ export class CustomerRepository {
 		return await this.addressRepo.save(address);
 	}
 
-	async getAddressById(addressId: number): Promise<Address | null> {
-		return await this.addressRepo.findOne({
-			where: { addressId },
-			relations: ['user']
-		});
-	}
+	// async getAddressById(addressId: number): Promise<Address | null> {
+	// 	return await this.addressRepo.findOne({
+	// 		where: { addressId },
+	// 		relations: ['user']
+	// 	});
+	// }
 
-	async getAddressesByUserId(userId: number): Promise<Address[]> {
-		return await this.addressRepo.find({
-			where: { userId },
-			relations: ['user']
-		});
-	}
+	// async getAddressesByUserId(userId: number): Promise<Address[]> {
+	// 	return await this.addressRepo.find({
+	// 		where: { userId },
+	// 		relations: ['user']
+	// 	});
+	// }
 
-	async updateAddress(addressId: number, data: Partial<Address>): Promise<Address | null> {
-		await this.addressRepo.update(addressId, data);
-		return await this.getAddressById(addressId);
-	}
+	// async updateAddress(addressId: number, data: Partial<Address>): Promise<Address | null> {
+	// 	await this.addressRepo.update(addressId, data);
+	// 	return await this.getAddressById(addressId);
+	// }
 
 	async deleteAddress(addressId: number): Promise<void> {
 		await this.addressRepo.delete(addressId);
 	}
 
 	// Helper methods
-	async getCustomerWithAddresses(customerId: number): Promise<Customer | null> {
-		const customer = await this.getCustomerById(customerId);
-		if (customer) {
-			const addresses = await this.getAddressesByUserId(customer.userId);
-			return { ...customer, addresses } as Customer & { addresses: Address[] };
-		}
-		return null;
-	}
+	// async getCustomerWithAddresses(customerId: number): Promise<Customer | null> {
+	// 	const customer = await this.getCustomerById(customerId);
+	// 	if (customer) {
+	// 		const addresses = await this.getAddressesByUserId(customer.userId);
+	// 		return { ...customer, addresses } as Customer & { addresses: Address[] };
+	// 	}
+	// 	return null;
+	// }
 
 	async searchCustomers(query: string): Promise<Customer[]> {
 		return await this.customerRepo
