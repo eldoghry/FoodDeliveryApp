@@ -72,6 +72,11 @@ const ErrMessages = {
 	item: {
 		ItemNotFound: 'Item Not Found',
 		ItemPriceNotFound: 'Item price not found'
+	},
+
+	menu: {
+		NoActiveMenuFound: 'Sorry there is no active menu for current restaurant',
+		ItemNotBelongToActiveMenu: 'Item does not belong to an active menu of this restaurant'
 	}
 };
 

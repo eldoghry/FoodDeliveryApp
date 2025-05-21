@@ -55,11 +55,11 @@ export class MenuRepository {
 		});
 	}
 
-	async getMenuItemById(menuItemId:number):Promise<any>{
+	async getMenuItemById(menuItemId: number): Promise<any> {
 		return await this.menuItemRepo.find({
-			where:{ menuItemId },
-			relations:['item']
-		})
+			where: { menuItemId },
+			relations: ['item']
+		});
 	}
 
 	async removeMenuItem(menuId: number, itemId: number): Promise<void> {
@@ -108,5 +108,15 @@ export class MenuRepository {
 			relations: ['item']
 		});
 		return menuItems.map((mi) => mi.item);
+	}
+
+	async getActiveMenuWithItems(restaurantId: number): Promise<Menu | null> {
+		return this.menuRepo.findOne({
+			where: {
+				restaurantId,
+				isActive: true
+			},
+			relations: ['menuItems', 'menuItems.item']
+		});
 	}
 }
