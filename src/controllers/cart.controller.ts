@@ -10,7 +10,7 @@ export class CartController {
 		const payload = req.validated?.body;
 
 		const result = await this.cartService.addItem({ ...payload, customerId: req.user?.userId });
-		sendResponse(res, HttpStatusCodes.OK, 'Item added to cart', result);
+		sendResponse(res, HttpStatusCodes.CREATED, 'Item added to cart', result);
 	}
 
 	async viewCart(req: Request, res: Response) {
@@ -31,13 +31,13 @@ export class CartController {
 	async clearCart(req: Request, res: Response) {
 		const { cartId } = req.validated?.params;
 		const cartItem = await this.cartService.clearCart(cartId);
-		sendResponse(res, HttpStatusCodes.OK, 'Cart Cleared', cartItem);
+		sendResponse(res, HttpStatusCodes.NO_CONTENT, 'Cart Cleared', cartItem);
 	}
 
 	async deleteCartItem(req: Request, res: Response) {
 		const { cartId, cartItemId } = req.validated?.params;
 		const cartItem = await this.cartService.deleteCartItem(cartId, cartItemId);
-		sendResponse(res, HttpStatusCodes.OK, 'Cart Cleared', cartItem);
+		sendResponse(res, HttpStatusCodes.NO_CONTENT, 'Cart Cleared', cartItem);
 	}
 
 	// for test only
