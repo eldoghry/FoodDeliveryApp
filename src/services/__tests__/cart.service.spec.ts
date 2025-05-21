@@ -1,22 +1,40 @@
-import logger from '../../config/logger';
-import { CartAddItemDto } from '../../dtos/cart.dto';
+import { StatusCodes } from 'http-status-codes';
+import ApplicationError from '../../errors/application.error';
+import ErrMessages from '../../errors/error-messages';
 import { CartRepository, MenuRepository } from '../../repositories';
 import { CartService } from '../cart.service';
+import { Cart, CartItem, Item } from '../../models';
 
-// Mock dependencies
+jest.mock('../../repositories');
+jest.mock('../../config/data-source', () => {
+	return {
+		AppDataSource: {
+			getRepository: jest.fn().mockReturnValue({
+				findOne: jest.fn(),
+				createQueryBuilder: jest.fn(() => {
+					return {
+						innerJoin: jest.fn().mockReturnThis(),
+						where: jest.fn().mockReturnThis(),
+						andWhere: jest.fn().mockReturnThis(),
+						getOne: jest.fn()
+					};
+				})
+			})
+		}
+	};
+});
+
 const mockCartRepo = {
 	getCartByCustomerId: jest.fn(),
 	createCart: jest.fn(),
 	getCartById: jest.fn(),
 	getCartItems: jest.fn(),
 	getCartItem: jest.fn(),
-	addCartItem: jest.fn(),
-	updateCart: jest.fn(),
-	deleteAllCartItems: jest.fn(),
-	updateCartItem: jest.fn(),
-	deleteCart: jest.fn(),
 	getCartItemById: jest.fn(),
+	addCartItem: jest.fn(),
+	updateCartItem: jest.fn(),
 	deleteCartItem: jest.fn(),
+	deleteAllCartItems: jest.fn(),
 	getCarts: jest.fn()
 };
 
@@ -24,63 +42,129 @@ const mockMenuRepo = {
 	getItemById: jest.fn()
 };
 
-jest.mock('../../repositories/cart.repository.ts', () => {
-	return { CartRepository: jest.fn(() => mockCartRepo) };
-});
-
-jest.mock('../../repositories/menu.repository.ts', () => {
-	return { MenuRepository: jest.fn(() => mockMenuRepo) };
-});
-
-jest.mock('../../config/logger.ts', () => ({
-	info: jest.fn()
-}));
-
-// Sample data
-const sampleCart = {
+const mockCart = { cartId: 1, customerId: 1, createdAt: new Date(), updatedAt: new Date() };
+const mockItem = { itemId: 1, price: 10 };
+const mockCartItem = {
 	cartId: 1,
-	customerId: 1,
-	restaurantId: 1,
-	restaurant: { restaurantId: 1, name: 'restaurant', isActive: true, status: 'open' },
-	createdAt: new Date(),
-	updatedAt: new Date()
-};
-const sampleItem = { id: 1, price: 10, name: 'Pizza', isAvailable: true };
-const sampleCartItem = {
 	cartItemId: 1,
-	cartId: 1,
 	itemId: 1,
+	restaurantId: 1,
 	quantity: 1,
 	price: 10,
-	discount: 0,
 	totalPrice: 10,
-	updateQuantity: jest.fn()
+	isAvailable: true,
+	itemName: 'Pizza',
+	imagePath: 'pizza.jpg',
+	updateQuantity: jest.fn(),
+	buildCartItem: jest.fn()
 };
 
-describe('CartService ', () => {
-	let service: CartService;
+const addItemToCartPayload = {
+	customerId: 1,
+	restaurantId: 1,
+	itemId: 1,
+	quantity: 1
+};
+
+describe('CartService', () => {
+	let cartService: CartService;
 
 	beforeEach(() => {
+		(CartRepository as jest.Mock).mockImplementation(() => mockCartRepo);
+		(MenuRepository as jest.Mock).mockImplementation(() => mockMenuRepo);
+		cartService = new CartService();
 		jest.clearAllMocks();
-		service = new CartService();
 	});
 
-	describe('AddItem', () => {
-		it('should create a new cart if none exists', async () => {
-			mockCartRepo.getCartByCustomerId.mockResolvedValueOnce(null);
-			mockMenuRepo.getItemById.mockResolvedValueOnce(sampleItem);
-			mockCartRepo.createCart.mockResolvedValueOnce(sampleCart);
+	describe('addItemToCart', () => {
+		it('should add item to new cart', async () => {
+			mockMenuRepo.getItemById.mockResolvedValueOnce(mockItem);
+			mockCartRepo.getCartByCustomerId.mockResolvedValueOnce(mockCart);
+			jest.spyOn(cartService, 'getCurrentRestaurantOfCart').mockResolvedValueOnce(1); // return restaurant id
+			jest.spyOn(cartService, 'isItemInActiveMenuOfRestaurant').mockResolvedValueOnce(true); // return restaurant id
+			mockCartRepo.getCartItem.mockResolvedValueOnce(null); // item not exist on cart
 			mockCartRepo.addCartItem.mockResolvedValueOnce({});
-			mockCartRepo.getCartItem.mockResolvedValueOnce(null);
 
-			const payload: CartAddItemDto = { customerId: 1, itemId: 1, quantity: 1, restaurantId: 1 };
+			// spy
+			const getItemByIdOrFailSpy = jest.spyOn(cartService, 'getItemByIdOrFail');
+			const result = await cartService.addItemToCart(addItemToCartPayload);
 
-			await expect(service.addItem(payload)).resolves.toBeUndefined();
-			expect(mockCartRepo.createCart).toHaveBeenCalled();
-			expect(mockCartRepo.addCartItem).toHaveBeenCalled();
+			expect(getItemByIdOrFailSpy).toHaveBeenCalledWith(mockItem.itemId);
+			expect(result).toBeUndefined();
 		});
-		it('should clear cart if restaurant changes', async () => {});
-		it('should throw if item already exists', async () => {});
-		it('should add item successfully', async () => {});
+
+		it('should throw 404 item not exist ', async () => {
+			mockMenuRepo.getItemById.mockResolvedValueOnce(null);
+			await expect(cartService.addItemToCart(addItemToCartPayload)).rejects.toThrow(
+				new ApplicationError(ErrMessages.item.ItemNotFound, StatusCodes.NOT_FOUND)
+			);
+		});
+
+		it('should create new card if it not exist', async () => {
+			mockMenuRepo.getItemById.mockResolvedValueOnce(mockItem);
+			mockCartRepo.createCart.mockResolvedValueOnce(mockCart);
+			mockCartRepo.getCartByCustomerId.mockResolvedValueOnce(null);
+			jest.spyOn(cartService, 'getCurrentRestaurantOfCart').mockResolvedValueOnce(1); // return restaurant id
+			jest.spyOn(cartService, 'isItemInActiveMenuOfRestaurant').mockResolvedValueOnce(true); // return restaurant id
+			jest.spyOn(cartService, 'isItemInActiveMenuOfRestaurant').mockResolvedValueOnce(true); // return restaurant id
+			mockCartRepo.getCartItem.mockResolvedValueOnce(null); // item not exist on cart
+			mockCartRepo.addCartItem.mockResolvedValueOnce({});
+
+			// Spy on createCart to allow Jest to track its calls
+			const createCartSpy = jest.spyOn(cartService, 'createCart');
+			const getCurrentRestaurantOfCartSpy = jest.spyOn(cartService, 'getCurrentRestaurantOfCart');
+
+			const result = await cartService.addItemToCart(addItemToCartPayload);
+
+			expect(createCartSpy).toHaveBeenCalledWith(addItemToCartPayload.customerId);
+			expect(getCurrentRestaurantOfCartSpy).not.toHaveBeenCalled();
+			expect(result).toBeUndefined();
+		});
+
+		it('should throw if item not belong to active menu of restaurant', async () => {
+			mockMenuRepo.getItemById.mockResolvedValueOnce(mockItem);
+			mockCartRepo.getCartByCustomerId.mockResolvedValueOnce(mockCart);
+			jest.spyOn(cartService, 'getCurrentRestaurantOfCart').mockResolvedValueOnce(1); // return restaurant id
+			jest.spyOn(cartService, 'isItemInActiveMenuOfRestaurant').mockResolvedValueOnce(false); // return restaurant id
+
+			await expect(cartService.addItemToCart(addItemToCartPayload)).rejects.toThrow(
+				new ApplicationError(ErrMessages.menu.ItemNotBelongToActiveMenu, StatusCodes.BAD_REQUEST)
+			);
+		});
+
+		it('should clear cart if restaurant Id changed', async () => {
+			const differentRestaurantId = 2;
+
+			jest.spyOn(cartService, 'getItemByIdOrFail').mockResolvedValueOnce(mockItem as Item);
+			jest.spyOn(cartService, 'getCart').mockResolvedValueOnce(mockCart as Cart);
+			jest.spyOn(cartService, 'getCurrentRestaurantOfCart').mockResolvedValueOnce(1);
+			jest.spyOn(cartService, 'isItemInActiveMenuOfRestaurant').mockResolvedValueOnce(true); // return restaurant id
+			mockCartRepo.deleteAllCartItems.mockResolvedValueOnce(true);
+
+			const deleteAllCartItemsSpy = jest.spyOn(cartService, 'deleteAllCartItems');
+			mockCartRepo.getCartItem.mockResolvedValueOnce(null); // item not exist on cart
+			mockCartRepo.addCartItem.mockResolvedValueOnce({});
+
+			// spy
+			const getItemByIdOrFailSpy = jest.spyOn(cartService, 'getItemByIdOrFail');
+
+			const result = await cartService.addItemToCart({ ...addItemToCartPayload, restaurantId: differentRestaurantId });
+
+			expect(deleteAllCartItemsSpy).toHaveBeenCalledWith(mockCart.cartId);
+			expect(getItemByIdOrFailSpy).toHaveBeenCalledWith(mockItem.itemId);
+			expect(result).toBeUndefined();
+		});
+
+		it('should throw if item already exist on current cart', async () => {
+			mockMenuRepo.getItemById.mockResolvedValueOnce(mockItem);
+			mockCartRepo.getCartByCustomerId.mockResolvedValueOnce(mockCart);
+			jest.spyOn(cartService, 'getCurrentRestaurantOfCart').mockResolvedValueOnce(1); // return restaurant id
+			jest.spyOn(cartService, 'isItemInActiveMenuOfRestaurant').mockResolvedValueOnce(true); // return restaurant id
+			jest.spyOn(cartService, 'isItemExistOnCart').mockResolvedValueOnce(true);
+
+			await expect(cartService.addItemToCart(addItemToCartPayload)).rejects.toThrow(
+				new ApplicationError(ErrMessages.cart.CartItemAlreadyExistOnCart, StatusCodes.BAD_REQUEST)
+			);
+		});
 	});
 });
