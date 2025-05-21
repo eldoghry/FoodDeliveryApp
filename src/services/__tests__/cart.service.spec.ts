@@ -79,7 +79,7 @@ describe('CartService', () => {
 	describe('addItemToCart', () => {
 		it('should add item to new cart', async () => {
 			mockMenuRepo.getItemById.mockResolvedValueOnce(mockItem);
-			mockCartRepo.getCartByCustomerId.mockResolvedValueOnce(mockCart);
+			mockCartRepo.getCartByCustomerId.mockResolvedValueOnce(mockCart as Cart);
 			jest.spyOn(cartService, 'getCurrentRestaurantOfCart').mockResolvedValueOnce(1); // return restaurant id
 			jest.spyOn(cartService, 'isItemInActiveMenuOfRestaurant').mockResolvedValueOnce(true); // return restaurant id
 			mockCartRepo.getCartItem.mockResolvedValueOnce(null); // item not exist on cart
