@@ -31,7 +31,7 @@ export class Cart extends AbstractEntity {
 	updatedAt!: Date;
 
 	@OneToMany(() => CartItem, (cartItem) => cartItem.cart)
-	items!: CartItem[];
+	cartItems!: CartItem[];
 
 	buildCart(customerId: number) {
 		this.customerId = customerId;

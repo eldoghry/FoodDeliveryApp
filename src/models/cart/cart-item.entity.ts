@@ -43,7 +43,7 @@ export class CartItem extends AbstractEntity {
 	@UpdateDateColumn()
 	updatedAt!: Date;
 
-	@ManyToOne(() => Cart, (cart) => cart.items)
+	@ManyToOne(() => Cart, (cart) => cart.cartItems)
 	@JoinColumn({ name: 'cart_id' })
 	cart!: Cart;
 

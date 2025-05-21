@@ -10,11 +10,15 @@ import {
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { MenuItem } from './menu-item.entity';
+import { Restaurant } from '../restaurant/restaurant.entity';
 
 @Entity()
 export class Menu extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	menuId!: number;
+
+	@Column()
+	restaurantId!: number;
 
 	@Column({ type: 'varchar', length: 100 })
 	menuTitle!: string;
@@ -29,5 +33,9 @@ export class Menu extends AbstractEntity {
 	updatedAt!: Date;
 
 	@OneToMany(() => MenuItem, (menuItem) => menuItem.menu)
-	items!: MenuItem[];
+	menuItems!: MenuItem[];
+
+	@ManyToOne(() => Restaurant, (restaurant) => restaurant.menus)
+	@JoinColumn({ name: 'restaurant_id' })
+	restaurant!: Restaurant;
 }

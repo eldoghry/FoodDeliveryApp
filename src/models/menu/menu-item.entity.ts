@@ -16,7 +16,7 @@ export class MenuItem extends AbstractEntity {
 	@Column()
 	itemId!: number;
 
-	@ManyToOne(() => Menu, (menu) => menu.items)
+	@ManyToOne(() => Menu, (menu) => menu.menuItems)
 	@JoinColumn({ name: 'menu_id' })
 	menu!: Menu;
 
