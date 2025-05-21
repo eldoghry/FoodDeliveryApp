@@ -215,7 +215,7 @@ export class CartService {
 		if (isItemExistOnCart) throw new ApplicationError(ErrMessages.cart.CartItemAlreadyExist, StatusCodes.BAD_REQUEST);
 
 		// create cart item and save it
-		const cartItem = new CartItem().buildCartItem({
+		const cartItem = CartItem.buildCartItem({
 			cartId: cart.cartId,
 			itemId,
 			quantity,
