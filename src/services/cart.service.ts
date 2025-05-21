@@ -2,8 +2,7 @@ import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
-import { CartResponseDTO, ItemInCartDTO } from '../interfaces/cart.interfaces';
-import { Cart, CartItem, Item, Transaction } from '../models';
+import { Cart, CartItem, Item, MenuItem } from '../models';
 import { MenuRepository } from '../repositories';
 import { CartRepository } from '../repositories/cart.repository';
 import { AppDataSource } from '../config/data-source';
@@ -84,12 +83,16 @@ export class CartService {
 		return isItemExistOnCart !== null;
 	}
 
-
-
 	async addItem(payload: CartAddItemDto) {
 		const { customerId, restaurantId, itemId, quantity } = payload;
 
 		const item = await this.getItemByIdOrFail(itemId);
+
+		// check if item belong to restaurant
+		const isItemInActiveMenuOfRestaurant = await this.isItemInActiveMenuOfRestaurant(restaurantId, itemId);
+
+		if (isItemInActiveMenuOfRestaurant)
+			throw new ApplicationError(ErrMessages.menu.ItemNotBelongToActiveMenu, StatusCodes.BAD_REQUEST);
 
 		// 1) get user cart or create new one
 		let cart = await this.getCart(customerId);
@@ -114,7 +117,6 @@ export class CartService {
 		// if (isItemExistOnCart) throw new ApplicationError(ErrMessages.cart.CartItemAlreadyExist, StatusCodes.BAD_REQUEST);
 
 		// create cart item and save it
-
 		const cartItem = CartItem.buildCartItem({
 			cartId: cart.cartId,
 			restaurantId,
@@ -130,7 +132,6 @@ export class CartService {
 		return;
 	}
 
-
 	private cartItemReturn(item: CartItemResponse) {
 		return {
 			cartId: item.cartId,
@@ -145,10 +146,7 @@ export class CartService {
 		};
 	}
 
-	private cartResponse(
-		cart: Cart,
-		items: CartItemResponse[],
-	): CartResponse {
+	private cartResponse(cart: Cart, items: CartItemResponse[]): CartResponse {
 		const restaurant = { id: items[0].restaurantId!, name: items[0].restaurantName! };
 		const totalItems = items.reduce((total, item) => Number(total) + Number(item.quantity), 0);
 		const totalPrice = items.reduce((total, item) => Number(total) + Number(item.totalPrice), 0);
@@ -190,7 +188,6 @@ export class CartService {
 		return cartItem;
 	}
 
-
 	async deleteCartItem(cartId: number, cartItemId: number): Promise<boolean> {
 		await this.validateCart(cartId);
 
@@ -220,4 +217,16 @@ export class CartService {
 		return this.cartRepo.getCarts();
 	}
 
+	async isItemInActiveMenuOfRestaurant(restaurantId: number, itemId: number) {
+		return await this.dataSource
+			.getRepository(MenuItem)
+			.createQueryBuilder('menuItem')
+			.innerJoin('menuItem.menu', 'menu', 'menuItem.menuId = menu.menuId')
+			.innerJoin('menu.restaurant', 'restaurant', 'menu.restaurantId = restaurant.restaurantId')
+			.where('menuItem.itemId = :itemId', { itemId })
+			.andWhere('menu.isActive = true')
+			.andWhere('restaurant.restaurantId  = :restaurantId', { restaurantId })
+			.andWhere('restaurant.isActive = true')
+			.getExists();
+	}
 }
