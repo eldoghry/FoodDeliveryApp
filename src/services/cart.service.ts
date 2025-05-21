@@ -3,8 +3,7 @@ import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { Cart, CartItem, Item, MenuItem } from '../models';
-import { MenuRepository } from '../repositories';
-import { CartRepository } from '../repositories/cart.repository';
+import { MenuRepository, CartRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
 import { CartAddItemDto, CartItemResponse, CartResponse, FindCartItemFilter } from '../dtos/cart.dto';
 
@@ -93,7 +92,7 @@ export class CartService {
 		let cart = (await this.getCart(customerId)) as Cart;
 		let isNewCart = !cart;
 
-		if (!isNewCart) {
+		if (isNewCart) {
 			logger.info(`Creating a new cart for customer# ${customerId}`);
 			cart = await this.createCart(customerId);
 		}
