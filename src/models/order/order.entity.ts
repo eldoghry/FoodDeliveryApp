@@ -8,7 +8,7 @@ import {
 	JoinColumn,
 	OneToMany
 } from 'typeorm';
-import { AbstractEntity } from '../../abstract/base.entity';
+import { AbstractEntity } from '../base.entity';
 import { OrderStatus } from './order-status.entity';
 import { Branch } from '../restaurant/branch.entity';
 import { Cart } from '../cart/cart.entity';

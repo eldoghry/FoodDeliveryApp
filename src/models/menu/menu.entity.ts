@@ -1,5 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { AbstractEntity } from '../../abstract/base.entity';
+import {
+	Entity,
+	PrimaryGeneratedColumn,
+	Column,
+	CreateDateColumn,
+	UpdateDateColumn,
+	OneToMany,
+	ManyToOne,
+	JoinColumn
+} from 'typeorm';
+import { AbstractEntity } from '../base.entity';
 import { MenuItem } from './menu-item.entity';
 
 @Entity()
