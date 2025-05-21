@@ -10,7 +10,6 @@ import {
 } from 'typeorm';
 import { AbstractEntity } from '../../abstract/base.entity';
 import { Customer } from '../customer/customer.entity';
-import { Restaurant } from '../restaurant/restaurant.entity';
 import { CartItem } from './cart-item.entity';
 
 @Entity()
@@ -25,13 +24,6 @@ export class Cart extends AbstractEntity {
 	@JoinColumn({ name: 'customer_id' })
 	customer!: Customer;
 
-	@Column()
-	restaurantId!: number;
-
-	@ManyToOne(() => Restaurant)
-	@JoinColumn({ name: 'restaurant_id' })
-	restaurant!: Restaurant;
-
 	@CreateDateColumn()
 	createdAt!: Date;
 
@@ -41,8 +33,7 @@ export class Cart extends AbstractEntity {
 	@OneToMany(() => CartItem, (cartItem) => cartItem.cart)
 	items!: CartItem[];
 
-	buildCart(customerId: number, restaurantId: number) {
+	buildCart(customerId: number) {
 		this.customerId = customerId;
-		this.restaurantId = restaurantId;
 	}
 }

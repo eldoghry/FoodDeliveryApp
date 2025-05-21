@@ -58,7 +58,9 @@ const ErrMessages = {
 		FailedToUpdateCartItem: 'Failed to update cart item',
 		FailedToUpdateCart: 'Failed to update cart',
 		CartIsEmpty: 'Cart is empty',
-		CartIsNotActive: 'Cart is not active'
+		CartIsNotActive: 'Cart is not active',
+		FailedToClearCart: 'Failed to clear cart',
+		FailedToDeleteCartItem: 'Failed to delete cart item',
 	},
 
 	restaurant: {

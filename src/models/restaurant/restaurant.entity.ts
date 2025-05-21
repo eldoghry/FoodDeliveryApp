@@ -11,7 +11,7 @@ import {
 import { User } from '../user/user.entity';
 import { AbstractEntity } from '../../abstract/base.entity';
 import { RestaurantMenu } from './restaurant-menu.entity';
-import { Branch } from './branch.entity';
+import { CartItem } from '../cart/cart-item.entity';
 
 // Restaurant entity
 @Entity()
@@ -59,6 +59,6 @@ export class Restaurant extends AbstractEntity {
 	@OneToMany(() => RestaurantMenu, (restaurantMenu) => restaurantMenu.restaurant)
 	menus!: RestaurantMenu[];
 
-	@OneToMany(() => Branch, (branch) => branch.restaurant)
-	branches!: Branch[];
+	@OneToMany(() => CartItem, (cartItem) => cartItem.restaurant)
+	cartItems!: CartItem[];
 }
