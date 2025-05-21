@@ -72,19 +72,19 @@ The customer can add, update, and remove items in their shopping cart before pla
 
 ## Flowchart Diagram
 
-![Manage Cart Flowchart](./diagrams/manage-cart-flowchart.png)
+![Manage Cart Flowchart](../diagrams/manage-cart/flowchart.png)
 
 ---
 
 ## Sequence Diagram
 
-![Manage Cart Sequence Diagram](./diagrams/manage-cart-sequence-diagram.png)
+![Manage Cart Sequence Diagram](../diagrams/manage-cart/sequence-diagram.png)
 
 ---
 
 ## Entity Relationship Diagram (ERD)
 
-![ERD Diagram](./diagrams/manage-cart-erd.png)
+![ERD Diagram](../diagrams/manage-cart/erd-diagram.png)
 
 ---
 
@@ -174,6 +174,7 @@ Stores individual items within a cart along with pricing and quantity.
 
 - `cart_item_id` (PK)
 - `cart_id` – Foreign key to `cart`
+- `restaurant_id` – Foreign key to `restaurant`
 - `item_id` – Foreign key to `item`
 - `quantity`, `price`, `total_price`
 - `created_at`, `updated_at`
@@ -294,6 +295,7 @@ CREATE TABLE cart (
 CREATE TABLE cart_item (
     cart_item_id SERIAL PRIMARY KEY,
     cart_id INT NOT NULL REFERENCES cart(cart_id),
+    restaurant_id INT NOT NULL REFERENCES restaurant(restaurant_id),
     item_id INT NOT NULL REFERENCES item(item_id),
     price DECIMAL(10,2) NOT NULL CHECK (price >= 0.00),
     quantity INT NOT NULL CHECK (quantity > 0),
