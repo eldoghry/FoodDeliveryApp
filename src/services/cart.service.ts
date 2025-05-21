@@ -83,45 +83,46 @@ export class CartService {
 		return isItemExistOnCart !== null;
 	}
 
-	async addItem(payload: CartAddItemDto) {
+	async addItemToCart(payload: CartAddItemDto) {
 		const { customerId, restaurantId, itemId, quantity } = payload;
 
+		// Step 1: Validate the item exists
 		const item = await this.getItemByIdOrFail(itemId);
 
-		// 1) get user cart or create new one
-		let cart = await this.getCart(customerId);
-		let isNewCart = false;
+		// Step 2: Get or create the cart
+		let cart = (await this.getCart(customerId)) as Cart;
+		let isNewCart = !cart;
 
-		if (!cart) {
+		if (!isNewCart) {
 			logger.info(`Creating a new cart for customer# ${customerId}`);
 			cart = await this.createCart(customerId);
-			isNewCart = true;
 		}
 
+		// Step 3: Determine the current restaurant associated with the cart
 		let cartRestaurantId = isNewCart ? restaurantId : await this.getCurrentRestaurantOfCart(cart.cartId);
 		if (!cartRestaurantId) cartRestaurantId = restaurantId;
 
 		logger.info(`Cart current restaurant id# ${cartRestaurantId}`);
 
-		// check if item belong to restaurant
-		const isItemInActiveMenuOfRestaurant = await this.isItemInActiveMenuOfRestaurant(restaurantId, itemId);
+		// Step 4: Validate that the item belongs to an active menu for the given restaurant
+		const itemBelongsToRestaurant = await this.isItemInActiveMenuOfRestaurant(restaurantId, itemId);
 
-		if (!isItemInActiveMenuOfRestaurant)
+		if (!itemBelongsToRestaurant)
 			throw new ApplicationError(ErrMessages.menu.ItemNotBelongToActiveMenu, StatusCodes.BAD_REQUEST);
 
-		// 2) validate current cart belong to current restaurant
+		// Step 5: If switching restaurants, clear the cart
 		if (!isNewCart && cartRestaurantId !== restaurantId) {
 			logger.info(`Clearing cart for customer# ${customerId} due to restaurant change to ${restaurantId}`);
 			await this.deleteAllCartItems(cart.cartId);
 		}
 
-		// validate item not exist before
-		const isItemExistOnCart = await this.isItemExistOnCart(cart.cartId, itemId);
+		// Step 6: Prevent duplicate item in cart
+		const itemAlreadyInCart = await this.isItemExistOnCart(cart.cartId, itemId);
 
-		if (isItemExistOnCart)
+		if (itemAlreadyInCart)
 			throw new ApplicationError(ErrMessages.cart.CartItemAlreadyExistOnCart, StatusCodes.BAD_REQUEST);
 
-		// create cart item and save it
+		// Step 7: Create and add the new item to cart
 		const cartItem = CartItem.buildCartItem({
 			cartId: cart.cartId,
 			restaurantId,
@@ -131,7 +132,6 @@ export class CartService {
 		});
 
 		await this.cartRepo.addCartItem(cartItem);
-
 		logger.info(`Added new item #${itemId} to cart# ${cart?.cartId}`);
 
 		return;

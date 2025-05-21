@@ -9,7 +9,7 @@ export class CartController {
 	async addItem(req: Request, res: Response) {
 		const payload = req.validated?.body;
 
-		const result = await this.cartService.addItem({ ...payload, customerId: req.user?.userId });
+		const result = await this.cartService.addItemToCart({ ...payload, customerId: req.user?.userId });
 		sendResponse(res, HttpStatusCodes.CREATED, 'Item added to cart', result);
 	}
 
