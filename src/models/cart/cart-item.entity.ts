@@ -11,6 +11,7 @@ import {
 import { AbstractEntity } from '../../abstract/base.entity';
 import { Cart } from './cart.entity';
 import { Item } from '../menu/item.entity';
+import { Restaurant } from '../restaurant/restaurant.entity';
 
 @Entity()
 @Unique(['cartId', 'itemId'])
@@ -20,6 +21,9 @@ export class CartItem extends AbstractEntity {
 
 	@Column()
 	cartId!: number;
+
+	@Column()
+	restaurantId!: number;
 
 	@Column()
 	itemId!: number;
@@ -43,6 +47,10 @@ export class CartItem extends AbstractEntity {
 	@JoinColumn({ name: 'cart_id' })
 	cart!: Cart;
 
+	@ManyToOne(() => Restaurant, (restaurant) => restaurant.cartItems)
+	@JoinColumn({ name: 'restaurant_id' })
+	restaurant!: Restaurant;
+
 	@ManyToOne(() => Item, (item) => item.cartItems)
 	@JoinColumn({ name: 'item_id' })
 	item!: Item;
@@ -55,12 +63,13 @@ export class CartItem extends AbstractEntity {
 	 * @param quantity - Quantity of the menu item
 	 * @returns A new CartItem instance
 	 */
-	static buildCartItem(dto: { cartId: number; itemId: number; quantity: number; price: number; discount?: number }) {
+	static buildCartItem(dto: { cartId: number; restaurantId: number; itemId: number; quantity: number; price: number; }) {
 		const cartItem = new CartItem();
 		cartItem.cartId = dto.cartId;
+		cartItem.restaurantId = dto.restaurantId;
+		cartItem.itemId = dto.itemId;
 		cartItem.price = dto.price;
 		cartItem.quantity = dto.quantity;
-		cartItem.itemId = dto.itemId;
 
 		cartItem.calculateTotalPrice();
 

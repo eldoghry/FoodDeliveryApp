@@ -2,7 +2,7 @@ import { AppDataSource } from '../config/data-source';
 import { Cart } from '../models/cart/cart.entity';
 import { CartItem } from '../models/cart/cart-item.entity';
 import { Repository } from 'typeorm';
-import { ItemInCartDTO } from '../interfaces/cart.interfaces';
+import { CartItemResponse } from '../dtos/cart.dto';
 
 export class CartRepository {
 	private cartRepo: Repository<Cart>;
@@ -57,25 +57,26 @@ export class CartRepository {
 	// 		relations: ['menuItem.item']
 	// 	});
 
-	async getCartItems(cartId: number): Promise<ItemInCartDTO[]> {
+	async getCartItems(cartId: number): Promise<any[]> {
 		return await this.cartItemRepo
 			.createQueryBuilder('ci')
 			.select([
-				'ci.cartId as cartId',
-				'ci.cartItemId as cartItemId',
-				'ci.quantity as quantity',
-				'ci.price as totalPriceBefore',
-				'ci.discount as discount',
-				'ci.totalPrice as totalPriceAfter',
-				'i.itemId as id',
-				'i.name as name',
-				'i.imagePath as imagePath',
-				'i.isAvailable as isAvailable'
+				'ci.cartId',
+				'ci.cartItemId',
+				'ci.quantity',
+				'ci.price',
+				'ci.totalPrice',
+				'r.restaurantId',
+				'r.name as restaurantName',
+				'i.itemId',
+				'i.name as itemName',
+				'i.imagePath',
+				'i.isAvailable'
 			])
-			.innerJoin('ci.menuItem', 'mi')
-			.innerJoin('mi.item', 'i')
+			.innerJoin('ci.item', 'i')
+			.innerJoin('ci.restaurant', 'r')
 			.where('ci.cartId = :cartId', { cartId })
-			.getRawMany();
+			.getMany();
 	}
 
 	async getCartItemById(cartItemId: number): Promise<CartItem | null> {
@@ -98,11 +99,13 @@ export class CartRepository {
 		return await this.getCartItemById(cartItemId);
 	}
 
-	async deleteCartItem(cartItemId: number): Promise<void> {
-		await this.cartItemRepo.delete(cartItemId);
+	async deleteCartItem(cartItemId: number): Promise<boolean> {
+		const result = await this.cartItemRepo.delete(cartItemId);
+		return result.affected ? true : false;
 	}
 
-	async deleteAllCartItems(cartId: number): Promise<void> {
-		await this.cartItemRepo.delete({ cartId });
+	async deleteAllCartItems(cartId: number): Promise<boolean> {
+		const result = await this.cartItemRepo.delete({ cartId });
+		return result.affected ? true : false;
 	}
 }
