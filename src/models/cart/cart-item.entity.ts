@@ -55,16 +55,16 @@ export class CartItem extends AbstractEntity {
 	 * @param quantity - Quantity of the menu item
 	 * @returns A new CartItem instance
 	 */
-	buildCartItem(dto: { cartId: number; itemId: number; quantity: number; price: number; discount?: number }) {
-		this.cartId = dto.cartId;
-		this.price = dto.price;
-		this.quantity = dto.quantity;
-		this.totalPrice = this.price * this.quantity;
-		this.itemId = dto.itemId;
+	static buildCartItem(dto: { cartId: number; itemId: number; quantity: number; price: number; discount?: number }) {
+		const cartItem = new CartItem();
+		cartItem.cartId = dto.cartId;
+		cartItem.price = dto.price;
+		cartItem.quantity = dto.quantity;
+		cartItem.itemId = dto.itemId;
 
-		this.calculateTotalPrice();
+		cartItem.calculateTotalPrice();
 
-		return this;
+		return cartItem;
 	}
 
 	/**
