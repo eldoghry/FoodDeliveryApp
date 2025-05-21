@@ -88,33 +88,38 @@ export class CartService {
 
 		const item = await this.getItemByIdOrFail(itemId);
 
+		// 1) get user cart or create new one
+		let cart = await this.getCart(customerId);
+		let isNewCart = false;
+
+		if (!cart) {
+			logger.info(`Creating a new cart for customer# ${customerId}`);
+			cart = await this.createCart(customerId);
+			isNewCart = true;
+		}
+
+		let cartRestaurantId = isNewCart ? restaurantId : await this.getCurrentRestaurantOfCart(cart.cartId);
+		if (!cartRestaurantId) cartRestaurantId = restaurantId;
+
+		logger.info(`Cart current restaurant id# ${cartRestaurantId}`);
+
 		// check if item belong to restaurant
 		const isItemInActiveMenuOfRestaurant = await this.isItemInActiveMenuOfRestaurant(restaurantId, itemId);
 
-		if (isItemInActiveMenuOfRestaurant)
+		if (!isItemInActiveMenuOfRestaurant)
 			throw new ApplicationError(ErrMessages.menu.ItemNotBelongToActiveMenu, StatusCodes.BAD_REQUEST);
 
-		// 1) get user cart or create new one
-		let cart = await this.getCart(customerId);
-
-		if (!cart) {
-			logger.info(`Creating a new cart for customer #${customerId}`);
-			cart = await this.createCart(customerId);
+		// 2) validate current cart belong to current restaurant
+		if (!isNewCart && cartRestaurantId !== restaurantId) {
+			logger.info(`Clearing cart for customer# ${customerId} due to restaurant change to ${restaurantId}`);
+			await this.deleteAllCartItems(cart.cartId);
 		}
 
-		// 2) validate current cart belong to current restaurant
-		// if (cart.restaurantId !== restaurantId) {
-		// 	logger.info(`Clearing cart for customer# ${customerId} due to restaurant change to ${restaurantId}`);
-
-		// 	await this.deleteAllCartItems(cart.cartId);
-		// 	cart.restaurantId = restaurantId;
-		// 	cart = (await this.updateCart(cart.cartId, { restaurantId })) as Cart;
-		// }
-
 		// validate item not exist before
-		// const isItemExistOnCart = await this.isItemExistOnCart(cart.cartId, itemId);
+		const isItemExistOnCart = await this.isItemExistOnCart(cart.cartId, itemId);
 
-		// if (isItemExistOnCart) throw new ApplicationError(ErrMessages.cart.CartItemAlreadyExist, StatusCodes.BAD_REQUEST);
+		if (isItemExistOnCart)
+			throw new ApplicationError(ErrMessages.cart.CartItemAlreadyExistOnCart, StatusCodes.BAD_REQUEST);
 
 		// create cart item and save it
 		const cartItem = CartItem.buildCartItem({
@@ -218,7 +223,7 @@ export class CartService {
 	}
 
 	async isItemInActiveMenuOfRestaurant(restaurantId: number, itemId: number) {
-		return await this.dataSource
+		const item = await this.dataSource
 			.getRepository(MenuItem)
 			.createQueryBuilder('menuItem')
 			.innerJoin('menuItem.menu', 'menu', 'menuItem.menuId = menu.menuId')
@@ -226,7 +231,22 @@ export class CartService {
 			.where('menuItem.itemId = :itemId', { itemId })
 			.andWhere('menu.isActive = true')
 			.andWhere('restaurant.restaurantId  = :restaurantId', { restaurantId })
-			.andWhere('restaurant.isActive = true')
-			.getExists();
+			// .andWhere('restaurant.isActive = true')
+			.getOne();
+
+		return item != null;
+	}
+
+	async getCurrentRestaurantOfCart(cartId: number) {
+		const cartItems = await this.dataSource.getRepository(CartItem).findOne({
+			where: { cartId },
+			order: {
+				cartItemId: 'ASC'
+			}
+		});
+
+		if (cartItems) return cartItems.restaurantId;
+
+		return null;
 	}
 }
