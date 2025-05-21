@@ -1,7 +1,6 @@
 // import { AbstractEntity } from '../../abstract/base.entity';
 import {
 	Address,
-	Branch,
 	Customer,
 	Item,
 	Menu,
@@ -10,7 +9,6 @@ import {
 	PaymentMethodConfig,
 	PaymentStatus,
 	Restaurant,
-	RestaurantMenu,
 	Role,
 	User,
 	UserRole,
@@ -18,6 +16,13 @@ import {
 } from '../../models';
 import { SeedData } from '.';
 import { faker } from '@faker-js/faker';
+
+//
+const ITEMS_COUNT = 100;
+const RESTAURANTS_COUNT = 100;
+const MENUS_COUNT = 10;
+const USERS_COUNT = 100;
+const ADDRESSES_COUNT = 10;
 
 // * Users
 const userTypesData: SeedData<UserType> = {
@@ -87,18 +92,19 @@ const customerSeedData: SeedData<Customer> = {
 
 const menuSeedData: SeedData<Menu> = {
 	entity: Menu,
-	data: Array.from({ length: 10 }).map(() => ({
+	data: Array.from({ length: 10 }).map((_, index) => ({
 		menuTitle: faker.commerce.department(),
-		isActive: true
+		isActive: true,
+		restaurantId: index + 1
 	}))
 };
 
 const itemSeedData: SeedData<Item> = {
 	entity: Item,
-	data: Array.from({ length: 20 }).map(() => ({
+	data: Array.from({ length: ITEMS_COUNT }).map(() => ({
 		imagePath: faker.image.url(),
-		name: faker.commerce.productName(),
-		description: faker.commerce.productDescription(),
+		name: faker.food.dish(),
+		description: faker.food.description(),
 		price: parseFloat(faker.commerce.price({ min: 5, max: 50 })),
 		energyValCal: parseFloat(faker.number.float({ min: 50, max: 500 }).toFixed(2)),
 		notes: faker.lorem.sentence(),
@@ -110,7 +116,7 @@ const itemSeedData: SeedData<Item> = {
 
 const restaurantSeedData: SeedData<Restaurant> = {
 	entity: Restaurant,
-	data: Array.from({ length: 10 }).map((_, index) => ({
+	data: Array.from({ length: RESTAURANTS_COUNT }).map((_, index) => ({
 		userId: index + 1,
 		name: faker.company.name(),
 		logoUrl: faker.image.url(),
@@ -126,33 +132,10 @@ const restaurantSeedData: SeedData<Restaurant> = {
 	}))
 };
 
-const restaurantMenuSeedData: SeedData<RestaurantMenu> = {
-	entity: RestaurantMenu,
-	data: Array.from({ length: 10 }).map((_, i) => ({
-		restaurantId: i + 1,
-		menuId: (i % 10) + 1,
-		displayOrder: faker.number.int({ min: 0, max: 5 })
-	}))
-};
-
-const branchSeedData: SeedData<Branch> = {
-	entity: Branch,
-	data: Array.from({ length: 10 }).map((_, i) => ({
-		restaurantId: i + 1,
-		name: `${faker.location.city()} Branch`,
-		address: faker.location.streetAddress(),
-		location: {
-			type: 'Point',
-			coordinates: [parseFloat(faker.location.longitude().toString()), parseFloat(faker.location.latitude().toString())]
-		},
-		isActive: faker.datatype.boolean()
-	}))
-};
-
 const menuItemSeedData: SeedData<MenuItem> = {
 	entity: MenuItem,
-	data: Array.from({ length: 20 }).map((_, index) => ({
-		menuId: 1,
+	data: Array.from({ length: 10 }).map((_, index) => ({
+		menuId: faker.number.int({ min: 1, max: 9 }), // assuming menuId 1-10 exists
 		itemId: index + 1
 	}))
 };
@@ -189,14 +172,10 @@ const seedData = [
 	addressSeedData,
 	userRoleSeedData,
 
-	// menu
+	// restaurant & menu
+	restaurantSeedData,
 	menuSeedData,
 	itemSeedData,
-
-	// restaurant
-	restaurantSeedData,
-	branchSeedData,
-	restaurantMenuSeedData,
 	menuItemSeedData,
 
 	// payment methods

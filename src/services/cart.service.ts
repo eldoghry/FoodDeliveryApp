@@ -2,8 +2,7 @@ import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
-import { CartResponseDTO, ItemInCartDTO } from '../interfaces/cart.interfaces';
-import { Cart, CartItem, Item, Transaction } from '../models';
+import { Cart, CartItem, Item, MenuItem } from '../models';
 import { MenuRepository } from '../repositories';
 import { CartRepository } from '../repositories/cart.repository';
 import { AppDataSource } from '../config/data-source';
@@ -84,37 +83,46 @@ export class CartService {
 		return isItemExistOnCart !== null;
 	}
 
-
-
-	async addItem(payload: CartAddItemDto) {
+	async addItemToCart(payload: CartAddItemDto) {
 		const { customerId, restaurantId, itemId, quantity } = payload;
 
+		// Step 1: Validate the item exists
 		const item = await this.getItemByIdOrFail(itemId);
 
-		// 1) get user cart or create new one
-		let cart = await this.getCart(customerId);
+		// Step 2: Get or create the cart
+		let cart = (await this.getCart(customerId)) as Cart;
+		let isNewCart = !cart;
 
-		if (!cart) {
-			logger.info(`Creating a new cart for customer #${customerId}`);
+		if (!isNewCart) {
+			logger.info(`Creating a new cart for customer# ${customerId}`);
 			cart = await this.createCart(customerId);
 		}
 
-		// 2) validate current cart belong to current restaurant
-		// if (cart.restaurantId !== restaurantId) {
-		// 	logger.info(`Clearing cart for customer# ${customerId} due to restaurant change to ${restaurantId}`);
+		// Step 3: Determine the current restaurant associated with the cart
+		let cartRestaurantId = isNewCart ? restaurantId : await this.getCurrentRestaurantOfCart(cart.cartId);
+		if (!cartRestaurantId) cartRestaurantId = restaurantId;
 
-		// 	await this.deleteAllCartItems(cart.cartId);
-		// 	cart.restaurantId = restaurantId;
-		// 	cart = (await this.updateCart(cart.cartId, { restaurantId })) as Cart;
-		// }
+		logger.info(`Cart current restaurant id# ${cartRestaurantId}`);
 
-		// validate item not exist before
-		// const isItemExistOnCart = await this.isItemExistOnCart(cart.cartId, itemId);
+		// Step 4: Validate that the item belongs to an active menu for the given restaurant
+		const itemBelongsToRestaurant = await this.isItemInActiveMenuOfRestaurant(restaurantId, itemId);
 
-		// if (isItemExistOnCart) throw new ApplicationError(ErrMessages.cart.CartItemAlreadyExist, StatusCodes.BAD_REQUEST);
+		if (!itemBelongsToRestaurant)
+			throw new ApplicationError(ErrMessages.menu.ItemNotBelongToActiveMenu, StatusCodes.BAD_REQUEST);
 
-		// create cart item and save it
+		// Step 5: If switching restaurants, clear the cart
+		if (!isNewCart && cartRestaurantId !== restaurantId) {
+			logger.info(`Clearing cart for customer# ${customerId} due to restaurant change to ${restaurantId}`);
+			await this.deleteAllCartItems(cart.cartId);
+		}
 
+		// Step 6: Prevent duplicate item in cart
+		const itemAlreadyInCart = await this.isItemExistOnCart(cart.cartId, itemId);
+
+		if (itemAlreadyInCart)
+			throw new ApplicationError(ErrMessages.cart.CartItemAlreadyExistOnCart, StatusCodes.BAD_REQUEST);
+
+		// Step 7: Create and add the new item to cart
 		const cartItem = CartItem.buildCartItem({
 			cartId: cart.cartId,
 			restaurantId,
@@ -124,12 +132,10 @@ export class CartService {
 		});
 
 		await this.cartRepo.addCartItem(cartItem);
-
 		logger.info(`Added new item #${itemId} to cart# ${cart?.cartId}`);
 
 		return;
 	}
-
 
 	private cartItemReturn(item: CartItemResponse) {
 		return {
@@ -145,10 +151,7 @@ export class CartService {
 		};
 	}
 
-	private cartResponse(
-		cart: Cart,
-		items: CartItemResponse[],
-	): CartResponse {
+	private cartResponse(cart: Cart, items: CartItemResponse[]): CartResponse {
 		const restaurant = { id: items[0].restaurantId!, name: items[0].restaurantName! };
 		const totalItems = items.reduce((total, item) => Number(total) + Number(item.quantity), 0);
 		const totalPrice = items.reduce((total, item) => Number(total) + Number(item.totalPrice), 0);
@@ -190,7 +193,6 @@ export class CartService {
 		return cartItem;
 	}
 
-
 	async deleteCartItem(cartId: number, cartItemId: number): Promise<boolean> {
 		await this.validateCart(cartId);
 
@@ -220,4 +222,31 @@ export class CartService {
 		return this.cartRepo.getCarts();
 	}
 
+	async isItemInActiveMenuOfRestaurant(restaurantId: number, itemId: number) {
+		const item = await this.dataSource
+			.getRepository(MenuItem)
+			.createQueryBuilder('menuItem')
+			.innerJoin('menuItem.menu', 'menu', 'menuItem.menuId = menu.menuId')
+			.innerJoin('menu.restaurant', 'restaurant', 'menu.restaurantId = restaurant.restaurantId')
+			.where('menuItem.itemId = :itemId', { itemId })
+			.andWhere('menu.isActive = true')
+			.andWhere('restaurant.restaurantId  = :restaurantId', { restaurantId })
+			// .andWhere('restaurant.isActive = true')
+			.getOne();
+
+		return item != null;
+	}
+
+	async getCurrentRestaurantOfCart(cartId: number) {
+		const cartItems = await this.dataSource.getRepository(CartItem).findOne({
+			where: { cartId },
+			order: {
+				cartItemId: 'ASC'
+			}
+		});
+
+		if (cartItems) return cartItems.restaurantId;
+
+		return null;
+	}
 }

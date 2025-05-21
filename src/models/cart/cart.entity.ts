@@ -8,7 +8,7 @@ import {
 	JoinColumn,
 	OneToMany
 } from 'typeorm';
-import { AbstractEntity } from '../../abstract/base.entity';
+import { AbstractEntity } from '../base.entity';
 import { Customer } from '../customer/customer.entity';
 import { CartItem } from './cart-item.entity';
 
@@ -31,7 +31,7 @@ export class Cart extends AbstractEntity {
 	updatedAt!: Date;
 
 	@OneToMany(() => CartItem, (cartItem) => cartItem.cart)
-	items!: CartItem[];
+	cartItems!: CartItem[];
 
 	buildCart(customerId: number) {
 		this.customerId = customerId;

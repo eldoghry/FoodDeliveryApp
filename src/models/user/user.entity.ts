@@ -9,7 +9,7 @@ import {
 	OneToMany,
 	OneToOne
 } from 'typeorm';
-import { AbstractEntity } from '../../abstract/base.entity';
+import { AbstractEntity } from '../base.entity';
 import { UserType } from './user-type.entity';
 import { UserRole } from './user-role.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';

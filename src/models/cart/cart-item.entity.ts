@@ -8,7 +8,7 @@ import {
 	JoinColumn,
 	Unique
 } from 'typeorm';
-import { AbstractEntity } from '../../abstract/base.entity';
+import { AbstractEntity } from '../base.entity';
 import { Cart } from './cart.entity';
 import { Item } from '../menu/item.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
@@ -43,7 +43,7 @@ export class CartItem extends AbstractEntity {
 	@UpdateDateColumn()
 	updatedAt!: Date;
 
-	@ManyToOne(() => Cart, (cart) => cart.items)
+	@ManyToOne(() => Cart, (cart) => cart.cartItems)
 	@JoinColumn({ name: 'cart_id' })
 	cart!: Cart;
 

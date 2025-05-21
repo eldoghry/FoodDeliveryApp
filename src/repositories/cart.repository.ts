@@ -32,7 +32,7 @@ export class CartRepository {
 	async getCartByCustomerId(customerId: number): Promise<Cart | null> {
 		return await this.cartRepo.findOne({
 			where: { customerId },
-			relations: ['customer', 'restaurant']
+			relations: ['customer']
 		});
 	}
 

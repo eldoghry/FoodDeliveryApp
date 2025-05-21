@@ -53,14 +53,14 @@ const ErrMessages = {
 		CartNotFound: 'Cart Not Found',
 		CartAlreadyExists: 'Cart Already Exists',
 		CartItemNotFound: 'Cart Item Not Found',
-		CartItemAlreadyExist: 'Cart Item already exist',
+		CartItemAlreadyExistOnCart: 'Item already exist on cart',
 		CartItemDoesNotBelongToTheSpecifiedCart: 'Cart Item Does Not Belong To The Specified Cart',
 		FailedToUpdateCartItem: 'Failed to update cart item',
 		FailedToUpdateCart: 'Failed to update cart',
 		CartIsEmpty: 'Cart is empty',
 		CartIsNotActive: 'Cart is not active',
 		FailedToClearCart: 'Failed to clear cart',
-		FailedToDeleteCartItem: 'Failed to delete cart item',
+		FailedToDeleteCartItem: 'Failed to delete cart item'
 	},
 
 	restaurant: {
@@ -72,6 +72,11 @@ const ErrMessages = {
 	item: {
 		ItemNotFound: 'Item Not Found',
 		ItemPriceNotFound: 'Item price not found'
+	},
+
+	menu: {
+		NoActiveMenuFound: 'Sorry there is no active menu for current restaurant',
+		ItemNotBelongToActiveMenu: 'Item does not belong to an active menu of this restaurant'
 	}
 };
 
