@@ -18,7 +18,7 @@ Sends order confirmation and updates to customers via email/SMS.
 
 ## Flow Chart
 
-![order_notification.flowchart](https://www.mermaidchart.com/raw/7df71a32-8e5e-4042-862d-f4571860f53e?theme=light&version=v0.1&format=svg)
+![order_notification.flowchart](https://drive.google.com/file/d/17zKw_PehyvCJnvO1LQsiKwoo2ptrHiqq)
 
 ## Errors
 

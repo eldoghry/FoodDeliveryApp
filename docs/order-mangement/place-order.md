@@ -30,7 +30,7 @@ Allows customers to place food orders from a restaurant. The system validates th
 
 ## Flow Chart
 
-![place_order.flowchart](https://www.mermaidchart.com/raw/792d35e3-25e7-4255-a8de-2f4683c5cdca?theme=light&version=v0.1&format=svg)
+![place_order.flowchart](https://drive.google.com/file/d/1fojf2IHsmeRb7Y_g3arCyOgatxe3TSbj)
 
 ## Errors
 

@@ -21,7 +21,7 @@ Allows the restaurant to update the order status (e.g., "placed," "preparing," "
 
 ## Flow Chart
 
-![place_status_update.flowchart]()
+![order_status_update.flowchart](https://drive.google.com/file/d/1U6-ABTb89WESde8-fXK_w2lB0Oga-VOd)
 
 ## Errors
 
