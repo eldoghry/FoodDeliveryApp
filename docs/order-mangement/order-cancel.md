@@ -21,10 +21,6 @@ Allows customers or restaurants to cancel an order before it is prepared.
 -
 - Only orders in "pending" status can be canceled.
 
-## Flow Chart
-
-![place_cancel.flowchart]()
-
 ## Errors
 
 - Order already in progress.
