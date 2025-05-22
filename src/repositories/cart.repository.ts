@@ -1,18 +1,24 @@
 import { AppDataSource } from '../config/data-source';
 import { Cart } from '../models/cart/cart.entity';
 import { CartItem } from '../models/cart/cart-item.entity';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { CartItemResponse } from '../dtos/cart.dto';
 
 export class CartRepository {
 	private cartRepo: Repository<Cart>;
 	private cartItemRepo: Repository<CartItem>;
+	
 
 	constructor() {
 		this.cartRepo = AppDataSource.getRepository(Cart);
 		this.cartItemRepo = AppDataSource.getRepository(CartItem);
 	}
 
+	private getCartItemRepo(manager?: EntityManager): Repository<CartItem> {
+		return manager ? manager.getRepository(CartItem) : this.cartItemRepo;
+	}
+	
+	
 	// Cart operations
 	async createCart(data: Partial<Cart>): Promise<Cart> {
 		const cart = this.cartRepo.create(data);
@@ -94,18 +100,32 @@ export class CartRepository {
 		return cartItem || null;
 	}
 
-	async updateCartItem(cartItemId: number, data: Partial<CartItem>): Promise<CartItem | null> {
-		await this.cartItemRepo.update(cartItemId, data);
-		return await this.getCartItemById(cartItemId);
-	}
+	// async updateCartItem(cartItemId: number, data: Partial<CartItem>): Promise<CartItem | null> {
+	// 	await this.cartItemRepo.update(cartItemId, data);
+	// 	return await this.getCartItemById(cartItemId);
+	// }
 
-	async deleteCartItem(cartItemId: number): Promise<boolean> {
-		const result = await this.cartItemRepo.delete(cartItemId);
+	async updateCartItem(
+		cartItemId: number,
+		data: Partial<CartItem>,
+		manager?: EntityManager
+	  ): Promise<CartItem | null> {
+		const repo = this.getCartItemRepo(manager);
+	  
+		await repo.update(cartItemId, data);
+		return await repo.findOneBy({ cartItemId });
+	  }
+	  
+
+	async deleteCartItem(cartItemId: number,manager?: EntityManager): Promise<boolean> {
+		const repo = this.getCartItemRepo(manager); 
+		const result = await repo.delete(cartItemId);
 		return result.affected ? true : false;
 	}
 
-	async deleteAllCartItems(cartId: number): Promise<boolean> {
-		const result = await this.cartItemRepo.delete({ cartId });
-		return result.affected ? true : false;
+	async deleteAllCartItems(cartId: number,manager?: EntityManager): Promise<boolean> {
+		const repo = this.getCartItemRepo(manager); 
+		const result = await repo.delete({ cartId });
+		return result.affected ? true : false; 
 	}
 }

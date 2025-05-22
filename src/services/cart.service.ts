@@ -6,6 +6,7 @@ import { Cart, CartItem, Item, MenuItem } from '../models';
 import { MenuRepository, CartRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
 import { CartAddItemDto, CartItemResponse, CartResponse, FindCartItemFilter, RestaurantCart } from '../dtos/cart.dto';
+import { EntityManager } from 'typeorm';
 
 interface UpdateQuantityPayload {
 	quantity: number;
@@ -41,8 +42,8 @@ export class CartService {
 	// }
 
 
-	async deleteAllCartItems(cartId: number) {
-		const deleted = await this.cartRepo.deleteAllCartItems(cartId);
+	async deleteAllCartItems(cartId: number, manager?: EntityManager) {
+		const deleted = await this.cartRepo.deleteAllCartItems(cartId, manager);
 		if (!deleted) {
 			throw new ApplicationError(ErrMessages.cart.FailedToClearCart, HttpStatusCodes.INTERNAL_SERVER_ERROR);
 		}
@@ -139,7 +140,7 @@ export class CartService {
 			quantity: item.quantity,
 			price: item.price,
 			totalPrice: item.totalPrice,
-			isAvailable: item.isAvailable 
+			isAvailable: item.isAvailable
 		};
 	}
 
@@ -171,45 +172,52 @@ export class CartService {
 
 	async updateCartItemQuantity(cartId: number, cartItemId: number, payload: UpdateQuantityPayload): Promise<CartItem> {
 		const { quantity } = payload;
+		return await this.dataSource.transaction(async (manager) => {
 
-		await this.validateCart(cartId);
+			await this.validateCart(cartId);
 
-		const cartItem = await this.getCartItemOrFail({
-			cartItemId
+			const cartItem = await this.getCartItemOrFail({
+				cartItemId
+			});
+
+			cartItem.updateQuantity(quantity);
+
+			const updatedCartItem = await this.cartRepo.updateCartItem(cartItemId, cartItem, manager);
+			if (!updatedCartItem) {
+				throw new ApplicationError(ErrMessages.cart.FailedToUpdateCartItem, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+			}
+			return updatedCartItem;
+
 		});
-
-		cartItem.updateQuantity(quantity);
-
-		const updatedCartItem = await this.cartRepo.updateCartItem(cartItemId, cartItem);
-		if (!updatedCartItem) {
-			throw new ApplicationError(ErrMessages.cart.FailedToUpdateCartItem, HttpStatusCodes.INTERNAL_SERVER_ERROR);
-		}
-		return updatedCartItem;
 
 	}
 
 	async deleteCartItem(cartId: number, cartItemId: number): Promise<boolean> {
-		await this.validateCart(cartId);
+		return await this.dataSource.transaction(async (manager) => {
+			await this.validateCart(cartId);
 
-		const cartItem = await this.cartRepo.getCartItemById(cartItemId);
+			const cartItem = await this.cartRepo.getCartItemById(cartItemId);
 
-		if (!cartItem) {
-			throw new ApplicationError(ErrMessages.cart.CartItemNotFound, HttpStatusCodes.INTERNAL_SERVER_ERROR);
-		}
+			if (!cartItem) {
+				throw new ApplicationError(ErrMessages.cart.CartItemNotFound, HttpStatusCodes.NOT_FOUND);
+			}
 
-		const deleted = await this.cartRepo.deleteCartItem(cartItemId);
-		if (!deleted) {
-			throw new ApplicationError(ErrMessages.cart.FailedToDeleteCartItem, HttpStatusCodes.INTERNAL_SERVER_ERROR);
-		}
+			const deleted = await this.cartRepo.deleteCartItem(cartItemId, manager);
+			if (!deleted) {
+				throw new ApplicationError(ErrMessages.cart.FailedToDeleteCartItem, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+			}
 
-		return deleted;
+			return deleted;
+		})
 	}
 
 	async clearCart(cartId: number): Promise<boolean> {
-		await this.validateCart(cartId);
+		return await this.dataSource.transaction(async (manager) => {
+			await this.validateCart(cartId);
 
-		const deleted = await this.deleteAllCartItems(cartId);
-		return deleted;
+			const deleted = await this.deleteAllCartItems(cartId, manager);
+			return deleted;
+		})
 	}
 
 	// For testing only
