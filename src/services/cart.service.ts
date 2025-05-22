@@ -5,7 +5,7 @@ import ErrMessages from '../errors/error-messages';
 import { Cart, CartItem, Item, MenuItem } from '../models';
 import { MenuRepository, CartRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
-import { CartAddItemDto, CartItemResponse, CartResponse, FindCartItemFilter } from '../dtos/cart.dto';
+import { CartAddItemDto, CartItemResponse, CartResponse, FindCartItemFilter, RestaurantCart } from '../dtos/cart.dto';
 
 interface UpdateQuantityPayload {
 	quantity: number;
@@ -40,13 +40,6 @@ export class CartService {
 	// 	return this.cartRepo.addCartItem(cartItem);
 	// }
 
-	// async updateCartItem(cartItemId: number, cartItem: Partial<CartItem>) {
-	// 	return this.cartRepo.updateCartItem(cartItemId, cartItem);
-	// }
-
-	// async updateCart(cartId: number, cart: Partial<Cart>) {
-	// 	return this.cartRepo.updateCart(cartId, cart);
-	// }
 
 	async deleteAllCartItems(cartId: number) {
 		const deleted = await this.cartRepo.deleteAllCartItems(cartId);
@@ -146,12 +139,11 @@ export class CartService {
 			quantity: item.quantity,
 			price: item.price,
 			totalPrice: item.totalPrice,
-			isAvailable: item.isAvailable
+			isAvailable: item.isAvailable 
 		};
 	}
 
-	private cartResponse(cart: Cart, items: CartItemResponse[]): CartResponse {
-		const restaurant = { id: items[0].restaurantId!, name: items[0].restaurantName! };
+	private cartResponse(cart: Cart, restaurant: RestaurantCart | null, items: CartItemResponse[]): CartResponse {
 		const totalItems = items.reduce((total, item) => Number(total) + Number(item.quantity), 0);
 		const totalPrice = items.reduce((total, item) => Number(total) + Number(item.totalPrice), 0);
 		return {
@@ -168,12 +160,13 @@ export class CartService {
 
 	async viewCart(cartId: number): Promise<CartResponse> {
 		await this.validateCart(cartId);
-
 		const cart = await this.cartRepo.getCartById(cartId);
 		const cartItems = await this.cartRepo.getCartItems(cartId);
 
+		const restaurant = cartItems.length > 0 ? { id: cartItems[0].restaurantId!, name: cartItems[0].restaurantName! } : null;
 		const items = cartItems.map((item) => this.cartItemReturn(item));
-		return this.cartResponse(cart!, items);
+
+		return this.cartResponse(cart!, restaurant, items);
 	}
 
 	async updateCartItemQuantity(cartId: number, cartItemId: number, payload: UpdateQuantityPayload): Promise<CartItem> {
@@ -187,9 +180,12 @@ export class CartService {
 
 		cartItem.updateQuantity(quantity);
 
-		await this.cartRepo.updateCartItem(cartItem.cartItemId, cartItem);
+		const updatedCartItem = await this.cartRepo.updateCartItem(cartItemId, cartItem);
+		if (!updatedCartItem) {
+			throw new ApplicationError(ErrMessages.cart.FailedToUpdateCartItem, HttpStatusCodes.INTERNAL_SERVER_ERROR);
+		}
+		return updatedCartItem;
 
-		return cartItem;
 	}
 
 	async deleteCartItem(cartId: number, cartItemId: number): Promise<boolean> {

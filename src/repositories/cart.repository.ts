@@ -22,7 +22,7 @@ export class CartRepository {
 	async getCartById(cartId: number): Promise<Cart | null> {
 		return await this.cartRepo.findOne({
 			where: { cartId },
-			relations: ['customer', 'restaurant']
+			relations: ['customer']
 		});
 	}
 
@@ -57,26 +57,26 @@ export class CartRepository {
 	// 		relations: ['menuItem.item']
 	// 	});
 
-	async getCartItems(cartId: number): Promise<any[]> {
+	async getCartItems(cartId: number): Promise<CartItemResponse[]> {
 		return await this.cartItemRepo
 			.createQueryBuilder('ci')
 			.select([
-				'ci.cartId',
-				'ci.cartItemId',
-				'ci.quantity',
-				'ci.price',
-				'ci.totalPrice',
-				'r.restaurantId',
-				'r.name as restaurantName',
-				'i.itemId',
-				'i.name as itemName',
-				'i.imagePath',
-				'i.isAvailable'
-			])
-			.innerJoin('ci.item', 'i')
+				'ci.cart_id AS "cartId"',
+				'ci.cart_item_id AS "cartItemId"',
+				'ci.quantity AS "quantity"',
+				'ci.price AS "price"',
+				'ci.total_price AS "totalPrice"',
+				'r.restaurant_id AS "restaurantId"',
+				'r.name AS "restaurantName"',
+				'i.item_id AS "itemId"',
+				'i.name AS "itemName"',
+				'i.image_path AS "imagePath"',
+				'i.is_available AS "isAvailable"'
+			  ])
 			.innerJoin('ci.restaurant', 'r')
-			.where('ci.cartId = :cartId', { cartId })
-			.getMany();
+			.innerJoin('ci.item', 'i')
+			.where('ci.cart_id = :cartId', { cartId })
+			.getRawMany();
 	}
 
 	async getCartItemById(cartItemId: number): Promise<CartItem | null> {
@@ -88,7 +88,7 @@ export class CartRepository {
 
 		const cartItem = await this.cartItemRepo.findOne({
 			where: { ...filter },
-			relations: ['item']
+			// relations: ['item']
 		});
 
 		return cartItem || null;
