@@ -31,13 +31,15 @@ export class CartItemResponse {
 	isAvailable!: boolean;
 }
 
+export class RestaurantCart {
+	id!: number;
+	name!: string;
+}
+
 export class CartResponse {
 	id!: number;
 	customerId!: number;
-	restaurant!: {
-		id: number;
-		name: string;
-	};
+	restaurant!: RestaurantCart | null;
 	items!: CartItemResponse[];
 	totalItems!: number;
 	totalPrice!: string;
