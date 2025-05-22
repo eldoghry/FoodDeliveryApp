@@ -18,7 +18,7 @@ Sends order confirmation and updates to customers via email/SMS.
 
 ## Flow Chart
 
-![order_notification.flowchart](https://drive.google.com/file/d/17zKw_PehyvCJnvO1LQsiKwoo2ptrHiqq)
+![order_notification.flowchart](https://drive.google.com/uc?export=view&id=17zKw_PehyvCJnvO1LQsiKwoo2ptrHiqq)
 
 ## Errors
 

@@ -30,7 +30,7 @@ Allows customers to place food orders from a restaurant. The system validates th
 
 ## Flow Chart
 
-![place_order.flowchart](https://drive.google.com/file/d/1fojf2IHsmeRb7Y_g3arCyOgatxe3TSbj)
+![place_order.flowchart](https://drive.google.com/uc?export=view&id=1fojf2IHsmeRb7Y_g3arCyOgatxe3TSbj)
 
 ## Errors
 
