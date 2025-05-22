@@ -20,7 +20,7 @@ export const updateQuantityBodySchema = Joi.object({
 }).required();
 
 export const updateQuantityParamsSchema = Joi.object({
-	cartId: Joi.number().min(1).required(),
+	// cartId: Joi.number().min(1).required(),
 	cartItemId: Joi.number().min(1).required()
 }).required();
 
@@ -30,6 +30,6 @@ export const clearCartParamsSchema = Joi.object({
 }).required();
 
 export const deleteCartItemParamsSchema = Joi.object({
-	cartId: Joi.number().min(1).required(),
+	// cartId: Joi.number().min(1).required(),
 	cartItemId: Joi.number().min(1).required()
 }).required();
