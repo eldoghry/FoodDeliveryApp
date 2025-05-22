@@ -2,8 +2,8 @@ import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
-import { Cart, CartItem, Item, MenuItem } from '../models';
-import { MenuRepository, CartRepository } from '../repositories';
+import { Cart, CartItem, Customer, Item, MenuItem } from '../models';
+import { MenuRepository, CartRepository, CustomerRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
 import { CartAddItemDto, CartItemResponse, CartResponse, FindCartItemFilter, RestaurantCart } from '../dtos/cart.dto';
 import { EntityManager } from 'typeorm';
@@ -15,11 +15,19 @@ interface UpdateQuantityPayload {
 export class CartService {
 	private cartRepo = new CartRepository();
 	private menuRepo = new MenuRepository();
+	private customerRepo = new CustomerRepository();
 	private dataSource = AppDataSource; // to be used for typeorm transactions
 
-	private async validateCart(cartId: number): Promise<void> {
-		const cart = await this.cartRepo.getCartById(cartId);
+	private async validateCustomer(userId: number): Promise<Customer | null> {
+		const customer = await this.customerRepo.getCustomerByUserId(userId);
+		if (!customer) throw new ApplicationError(ErrMessages.customer.CustomerNotFound, StatusCodes.NOT_FOUND);
+		return customer;
+	}
+
+	private async validateCart(customerId: number): Promise<Cart> {
+		const cart = await this.cartRepo.getCartByCustomerId(customerId);
 		if (!cart) throw new ApplicationError(ErrMessages.cart.CartNotFound, HttpStatusCodes.NOT_FOUND);
+		return cart;
 	}
 
 	async getCart(customerId: number) {
@@ -159,22 +167,22 @@ export class CartService {
 		};
 	}
 
-	async viewCart(cartId: number): Promise<CartResponse> {
-		await this.validateCart(cartId);
-		const cart = await this.cartRepo.getCartById(cartId);
-		const cartItems = await this.cartRepo.getCartItems(cartId);
 
+	async viewCart(userId: number): Promise<CartResponse> {
+		const customer = await this.validateCustomer(userId);
+		const cart = await this.validateCart(customer!.customerId);
+		const cartItems = await this.cartRepo.getCartItems(cart.cartId);
 		const restaurant = cartItems.length > 0 ? { id: cartItems[0].restaurantId!, name: cartItems[0].restaurantName! } : null;
 		const items = cartItems.map((item) => this.cartItemReturn(item));
 
-		return this.cartResponse(cart!, restaurant, items);
+		return this.cartResponse(cart, restaurant, items);
 	}
 
-	async updateCartItemQuantity(cartId: number, cartItemId: number, payload: UpdateQuantityPayload): Promise<CartItem> {
+	async updateCartItemQuantity(userId: number, cartItemId: number, payload: UpdateQuantityPayload): Promise<CartItem> {
 		const { quantity } = payload;
 		return await this.dataSource.transaction(async (manager) => {
-
-			await this.validateCart(cartId);
+			const customer = await this.validateCustomer(userId);
+			await this.validateCart(customer!.customerId);
 
 			const cartItem = await this.getCartItemOrFail({
 				cartItemId
@@ -192,12 +200,12 @@ export class CartService {
 
 	}
 
-	async deleteCartItem(cartId: number, cartItemId: number): Promise<boolean> {
+	async deleteCartItem(userId: number, cartItemId: number): Promise<boolean> {
 		return await this.dataSource.transaction(async (manager) => {
-			await this.validateCart(cartId);
+			const customer = await this.validateCustomer(userId);
+			await this.validateCart(customer!.customerId);
 
 			const cartItem = await this.cartRepo.getCartItemById(cartItemId);
-
 			if (!cartItem) {
 				throw new ApplicationError(ErrMessages.cart.CartItemNotFound, HttpStatusCodes.NOT_FOUND);
 			}
@@ -211,19 +219,16 @@ export class CartService {
 		})
 	}
 
-	async clearCart(cartId: number): Promise<boolean> {
+	async clearCart(userId: number): Promise<boolean> {
 		return await this.dataSource.transaction(async (manager) => {
-			await this.validateCart(cartId);
+			const customer = await this.validateCustomer(userId);
+			const cart = await this.validateCart(customer!.customerId);
 
-			const deleted = await this.deleteAllCartItems(cartId, manager);
+			const deleted = await this.deleteAllCartItems(cart.cartId, manager);
 			return deleted;
 		})
 	}
 
-	// For testing only
-	async getAllCarts(): Promise<any> {
-		return this.cartRepo.getCarts();
-	}
 
 	async isItemInActiveMenuOfRestaurant(restaurantId: number, itemId: number) {
 		const item = await this.dataSource

@@ -121,7 +121,7 @@ export class CartRepository {
 		const repo = this.getCartItemRepo(manager); 
 		const result = await repo.delete(cartItemId);
 		return result.affected ? true : false;
-	}
+	} 
 
 	async deleteAllCartItems(cartId: number,manager?: EntityManager): Promise<boolean> {
 		const repo = this.getCartItemRepo(manager); 
