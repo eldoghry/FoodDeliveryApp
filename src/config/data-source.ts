@@ -24,7 +24,7 @@ export const AppDataSource = new DataSource({
 	namingStrategy: new SnakeNamingStrategy()
 });
 
-export const startDataSource = async () => {
+export const initiateDataSource = async () => {
 	// start database connection
 	try {
 		await AppDataSource.initialize();
