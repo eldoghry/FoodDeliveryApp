@@ -10,7 +10,7 @@ Allows the restaurant to update the order status (e.g., "placed," "preparing," "
 
 ## Actors
 
-- Admin
+- System
 - Restaurant
 
 ## Constraints

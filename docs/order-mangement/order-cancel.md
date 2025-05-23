@@ -17,23 +17,32 @@ Allows customers or restaurants to cancel an order before it is prepared.
 
 ## Constraints
 
-- Cancellation is only allowed within a specific time window (e.g., 5 minutes after placing).
--
-- Only orders in "pending" status can be canceled.
+- Cancellation is only allowed within a specific time window (e.g., 5 minutes after placing) for customers.
+- Restaurant can cancel any pending order at any time.
+- Only valid orders in "pending" status can be canceled.
 
 ## Errors
 
 - Order already in progress.
-
-- Refund processing failure.
+- Invalid order id.
+- Order status is payment failed
 
 ## API Design
 
-#### POST /orders/{order_id}/cancel
+#### POST /orders/cancel
 
 - Description: Cancel pending order.
 
 - Request Body:
+
+  ```json
+  {
+  	"orderId": "orr-1",
+  	"reason": "out of stock"
+  }
+  ```
+
+- Response Body:
   ```json
   {
   	"orderId": "orr-1",
