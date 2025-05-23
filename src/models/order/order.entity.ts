@@ -72,9 +72,6 @@ export class Order extends AbstractEntity {
 	serviceFees!: number;
 
 	@Column({ type: 'decimal', precision: 10, scale: 2 })
-	discount!: number;
-
-	@Column({ type: 'decimal', precision: 10, scale: 2 })
 	totalAmount!: number;
 
 	@Column({ type: 'timestamp' })
@@ -84,7 +81,7 @@ export class Order extends AbstractEntity {
 	deliveredAt!: Date;
 
 	@Column({ type: 'jsonb' })
-	cancellationInfo!: Record<string, any>;
+	cancellationInfo!: Record<string, any>; // {canceledBy: user-1, cancelReason: "wrong order"}
 
 	@CreateDateColumn()
 	createdAt!: Date;
@@ -93,5 +90,5 @@ export class Order extends AbstractEntity {
 	updatedAt!: Date;
 
 	@OneToMany(() => OrderItem, (orderItem) => orderItem.order)
-	items!: OrderItem[];
+	orderItems!: OrderItem[];
 }

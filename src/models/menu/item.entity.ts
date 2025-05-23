@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { AbstractEntity } from '../base.entity';
 import { MenuItem } from './menu-item.entity';
 import { CartItem } from '../cart/cart-item.entity';
+import { OrderItem } from '../order/order-item.entity';
 
 @Entity()
 export class Item extends AbstractEntity {
@@ -40,4 +41,7 @@ export class Item extends AbstractEntity {
 
 	@OneToMany(() => CartItem, (cartItem) => cartItem.item)
 	cartItems!: CartItem[];
+
+	@OneToMany(() => OrderItem, (orderItem) => orderItem.item)
+	ordersItem!: OrderItem[];
 }
