@@ -1,6 +1,7 @@
 
 CREATE TABLE item (
     item_id SERIAL PRIMARY KEY,
+    category_id INT NOT NULL REFERENCES category(category_id),
     image_path VARCHAR(512) NOT NULL DEFAULT '',
     name VARCHAR(100) NOT NULL CHECK (CHAR_LENGTH(item_name) BETWEEN 2 AND 100),
     description TEXT DEFAULT '',
