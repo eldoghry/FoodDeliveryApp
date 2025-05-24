@@ -62,6 +62,9 @@ const ErrMessages = {
 		FailedToClearCart: 'Failed to clear cart',
 		FailedToDeleteCartItem: 'Failed to delete cart item'
 	},
+	customer: {
+		CustomerNotFound: 'Customer not found'
+	},
 
 	restaurant: {
 		RestaurantNotFound: 'Restaurant not found',

@@ -141,19 +141,29 @@ Stores restaurant registration and profile details.
 - `is_active`, `created_at`, `updated_at`
   
 
-### `menu` and `resturant_menu`
+### `menu`
 Defines menus for restaurants. Each restaurant can have multiple menus.
 
-- `menu_id` (PK), `menu_title`, `is_active`
+- `menu_id` (PK)
+- `restaurant_id` – Foreign key to `restaurant`
+- `menu_title`
+- `is_active`
 - `created_at`, `updated_at`
 
-- `resturant_menu`: Composite table linking `restaurant_id` with `menu_id`
+### `category` and `menu_category`
+Defines categories for menus. Each menu can have multiple categories.
+
+- `category_id` (PK), `title`, `is_active`
+- `created_at`, `updated_at`
+
+- `menu_category`: Composite table linking `menu_id` with `category_id`
 
 
-### `item` and `menu_item`
-Represents individual menu items with pricing and availability.
+### `item`
+Defines items with pricing and availability.
 
 - `item_id` (PK)
+- `category_id` – Foreign key to `category`
 - `image_path`, `name`, `description`, `price`, `energy_val_cal`, `notes`
 - `is_available`, `created_at`, `updated_at`
 
@@ -161,7 +171,7 @@ Represents individual menu items with pricing and availability.
 
 
 ### `cart`
-Represents a customer’s cart, associated with one restaurant.
+Represents a customer’s cart.
 
 - `cart_id` (PK)
 - `customer_id` – Foreign key to `customer`
@@ -249,24 +259,30 @@ CREATE TABLE restaurant (
 
 CREATE TABLE menu (
     menu_id SERIAL PRIMARY KEY,
+    restaurant_id INT NOT NULL UNIQUE REFERENCES restaurant(restaurant_id),
     menu_title VARCHAR(100) NOT NULL CHECK (CHAR_LENGTH(menu_title) BETWEEN 2 AND 100),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE restaurant_menu (
-    restaurant_menu_id SERIAL PRIMARY KEY,
-    restaurant_id INT NOT NULL REFERENCES restaurant(restaurant_id),
-    menu_id INT NOT NULL REFERENCES menu(menu_id),
-    display_order INT NOT NULL DEFAULT 0,
+CREATE TABLE category (
+    category_id SERIAL PRIMARY KEY,
+    title VARCHAR(100) NOT NULL CHECK (CHAR_LENGTH(title) BETWEEN 2 AND 100),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(restaurant_id, menu_id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE menu_category (
+    menu_category_id SERIAL PRIMARY KEY,
+    menu_id INT NOT NULL REFERENCES menu(menu_id),
+    category_id INT NOT NULL REFERENCES category(category_id)
 );
 
 CREATE TABLE item (
     item_id SERIAL PRIMARY KEY,
+    category_id INT NOT NULL REFERENCES category(category_id),
     image_path VARCHAR(512) NOT NULL DEFAULT '',
     name VARCHAR(100) NOT NULL CHECK (CHAR_LENGTH(name) BETWEEN 2 AND 100),
     description TEXT DEFAULT '',
@@ -278,16 +294,9 @@ CREATE TABLE item (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE menu_item (
-    menu_item_id SERIAL PRIMARY KEY,
-    menu_id INT NOT NULL REFERENCES menu(menu_id),
-    item_id INT NOT NULL REFERENCES item(item_id)
-);
-
 CREATE TABLE cart (
     cart_id SERIAL PRIMARY KEY,
     customer_id INT NOT NULL REFERENCES customer(customer_id),
-    total_items INT NOT NULL DEFAULT 0 CHECK (total_items >=0),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
