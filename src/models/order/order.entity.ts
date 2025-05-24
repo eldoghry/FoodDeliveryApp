@@ -8,13 +8,13 @@ import {
 	JoinColumn,
 	OneToMany
 } from 'typeorm';
-import { AbstractEntity } from '../../abstract/base.entity';
-import { OrderStatus } from './order-status.entity';
-import { Branch } from '../restaurant/branch.entity';
+import { AbstractEntity } from '../base.entity';
+import { OrderStatus, OrderStatusEnum } from './order-status.entity';
 import { Cart } from '../cart/cart.entity';
 import { Customer } from '../customer/customer.entity';
 import { Address } from '../customer/address.entity';
 import { OrderItem } from './order-item.entity';
+import { Restaurant } from '../restaurant/restaurant.entity';
 
 @Entity()
 export class Order extends AbstractEntity {
@@ -29,18 +29,11 @@ export class Order extends AbstractEntity {
 	orderStatus!: OrderStatus;
 
 	@Column()
-	branchId!: number;
+	restaurantId!: number;
 
-	@ManyToOne(() => Branch)
-	@JoinColumn({ name: 'branch_id' })
-	branch!: Branch;
-
-	@Column()
-	cartId!: number;
-
-	@ManyToOne(() => Cart)
-	@JoinColumn({ name: 'cart_id' })
-	cart!: Cart;
+	@ManyToOne(() => Restaurant, (restaurant) => restaurant.orders)
+	@JoinColumn({ name: 'restaurant_id' })
+	restaurant!: Restaurant;
 
 	@Column()
 	customerId!: number;
@@ -55,6 +48,9 @@ export class Order extends AbstractEntity {
 	@ManyToOne(() => Address)
 	@JoinColumn({ name: 'delivery_address_id' })
 	deliveryAddress!: Address;
+
+	@Column({ enum: OrderStatusEnum, default: OrderStatusEnum.initiated })
+	status!: OrderStatusEnum;
 
 	@Column({ type: 'text', default: '' })
 	customerInstructions!: string;
@@ -72,9 +68,6 @@ export class Order extends AbstractEntity {
 	serviceFees!: number;
 
 	@Column({ type: 'decimal', precision: 10, scale: 2 })
-	discount!: number;
-
-	@Column({ type: 'decimal', precision: 10, scale: 2 })
 	totalAmount!: number;
 
 	@Column({ type: 'timestamp' })
@@ -84,7 +77,7 @@ export class Order extends AbstractEntity {
 	deliveredAt!: Date;
 
 	@Column({ type: 'jsonb' })
-	cancellationInfo!: Record<string, any>;
+	cancellationInfo!: Record<string, any>; // {canceledBy: user-1, cancelReason: "wrong order"}
 
 	@CreateDateColumn()
 	createdAt!: Date;
@@ -93,5 +86,5 @@ export class Order extends AbstractEntity {
 	updatedAt!: Date;
 
 	@OneToMany(() => OrderItem, (orderItem) => orderItem.order)
-	items!: OrderItem[];
+	orderItems!: OrderItem[];
 }

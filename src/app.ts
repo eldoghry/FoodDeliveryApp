@@ -26,6 +26,11 @@ export const createApp = (): Application => {
 	// swagger
 	app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerJsDocSpecs));
 
+	// health check
+	app.get('/', (req, res) => {
+		res.json({ message: 'OK' });
+	});
+
 	// error handler
 	app.use(NotFoundHandler);
 	app.use(ErrorHandler);
