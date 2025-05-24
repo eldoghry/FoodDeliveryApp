@@ -9,7 +9,7 @@ import {
 	OneToMany
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
-import { OrderStatus } from './order-status.entity';
+import { OrderStatus, OrderStatusEnum } from './order-status.entity';
 import { Cart } from '../cart/cart.entity';
 import { Customer } from '../customer/customer.entity';
 import { Address } from '../customer/address.entity';
@@ -36,13 +36,6 @@ export class Order extends AbstractEntity {
 	restaurant!: Restaurant;
 
 	@Column()
-	cartId!: number;
-
-	@ManyToOne(() => Cart)
-	@JoinColumn({ name: 'cart_id' })
-	cart!: Cart;
-
-	@Column()
 	customerId!: number;
 
 	@ManyToOne(() => Customer)
@@ -55,6 +48,9 @@ export class Order extends AbstractEntity {
 	@ManyToOne(() => Address)
 	@JoinColumn({ name: 'delivery_address_id' })
 	deliveryAddress!: Address;
+
+	@Column({ enum: OrderStatusEnum, default: OrderStatusEnum.initiated })
+	status!: OrderStatusEnum;
 
 	@Column({ type: 'text', default: '' })
 	customerInstructions!: string;

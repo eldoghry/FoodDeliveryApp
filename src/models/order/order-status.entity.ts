@@ -17,8 +17,8 @@ export class OrderStatus extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	orderStatusId!: number;
 
-	@Column({ type: 'varchar', length: 100 })
-	status!: string; //todo: convert it to enum
+	@Column({ type: 'enum' })
+	status!: OrderStatusEnum;
 
 	@CreateDateColumn()
 	createdAt!: Date;
