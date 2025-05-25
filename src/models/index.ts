@@ -24,7 +24,6 @@ export * from './cart/cart-item.entity';
 // Customer related entities
 export * from './customer/customer.entity';
 export * from './customer/address.entity';
-export * from './customer/customer-address.entity';
 
 // Payment related entities
 export * from './payment/payment-method.entity';

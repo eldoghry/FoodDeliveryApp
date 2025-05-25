@@ -1,5 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+	Entity,
+	PrimaryGeneratedColumn,
+	Column,
+	CreateDateColumn,
+	UpdateDateColumn,
+	ManyToOne,
+	JoinColumn
+} from 'typeorm';
 import { AbstractEntity } from '../base.entity';
+import { Customer } from './customer.entity';
 
 // Address entity
 @Entity()
@@ -15,6 +24,16 @@ export class Address extends AbstractEntity {
 
 	@Column({ type: 'varchar', length: 255 })
 	city!: string;
+
+	@Column()
+	customerId!: number;
+
+	@Column({ default: false })
+	isDefault!: boolean;
+
+	@ManyToOne(() => Customer, (customer) => customer.addresses)
+	@JoinColumn({ name: 'customer_id' })
+	customer!: Customer;
 
 	@CreateDateColumn()
 	createdAt!: Date;

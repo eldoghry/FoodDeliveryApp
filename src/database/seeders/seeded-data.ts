@@ -71,11 +71,12 @@ const userRoleSeedData: SeedData<UserRole> = {
 
 const addressSeedData: SeedData<Address> = {
 	entity: Address,
-	data: Array.from({ length: 10 }).map(() => ({
-		userId: faker.number.int({ min: 1, max: 100 }), // assuming userId 1-100 exists
+	data: Array.from({ length: 10 }).map((_, index) => ({
+		customerId: index + 1, // assuming customerId 1-100 exists
 		addressLine1: faker.location.streetAddress(),
 		addressLine2: faker.location.secondaryAddress(),
-		city: faker.location.city()
+		city: faker.location.city(),
+		isDefault: true
 	}))
 };
 

@@ -17,7 +17,7 @@ export class OrderStatus extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	orderStatusId!: number;
 
-	@Column({ type: 'enum' })
+	@Column({ type: 'enum', enum: OrderStatusEnum })
 	status!: OrderStatusEnum;
 
 	@CreateDateColumn()

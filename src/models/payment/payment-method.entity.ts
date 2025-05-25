@@ -3,6 +3,11 @@ import { AbstractEntity } from '../base.entity';
 import { Transaction } from './transaction.entity';
 import { PaymentMethodConfig } from './payment-method-config.entity';
 
+export enum PaymentMethodEnum {
+	CARD = 'CARD',
+	COD = 'COD'
+}
+
 @Entity()
 export class PaymentMethod extends AbstractEntity {
 	@PrimaryGeneratedColumn()
