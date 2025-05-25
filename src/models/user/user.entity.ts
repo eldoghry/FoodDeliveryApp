@@ -29,7 +29,7 @@ export class User extends AbstractEntity {
 	@Column({ type: 'varchar', length: 30, nullable: true, unique: true })
 	phone!: string;
 
-	@Column({ type: 'varchar', length: 250 })
+	@Column({ type: 'varchar', length: 250, select: false })
 	password!: string;
 
 	@Column({ type: 'boolean', default: true })
@@ -57,4 +57,3 @@ export class User extends AbstractEntity {
 	@OneToOne(() => Customer, (customer) => customer.user)
 	customer!: Customer;
 }
- 
