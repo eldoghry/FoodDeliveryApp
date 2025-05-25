@@ -1,3 +1,5 @@
+import { forbidden } from 'joi';
+
 const ErrMessages = {
 	// Common Errors
 	http: {
@@ -18,7 +20,8 @@ const ErrMessages = {
 		InvalidCredentials: 'Invalid Credentials',
 		TokenExpired: 'Token Expired',
 		TokenInvalid: 'Token Invalid',
-		AccessDenied: 'Access Denied'
+		AccessDenied: 'Access Denied',
+		forbidden: 'You do not have permission to access this resource.'
 	},
 
 	database: {
@@ -63,7 +66,8 @@ const ErrMessages = {
 		FailedToDeleteCartItem: 'Failed to delete cart item'
 	},
 	customer: {
-		CustomerNotFound: 'Customer not found'
+		CustomerNotFound: 'Customer not found',
+		AddressNotFound: 'Customer Address not found'
 	},
 
 	restaurant: {
