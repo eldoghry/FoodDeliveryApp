@@ -1,5 +1,5 @@
 import { AppDataSource } from '../config/data-source';
-import { Customer } from '../models/customer/customer.entity';
+import { Customer, CustomerRelations } from '../models/customer/customer.entity';
 import { Address } from '../models/customer/address.entity';
 import { Repository } from 'typeorm';
 
@@ -18,10 +18,10 @@ export class CustomerRepository {
 		return await this.customerRepo.save(customer);
 	}
 
-	async getCustomerById(customerId: number): Promise<Customer | null> {
+	async getCustomerById(filter: { customerId: number; relations?: CustomerRelations[] }): Promise<Customer | null> {
 		return await this.customerRepo.findOne({
-			where: { customerId },
-			relations: ['user']
+			where: { customerId: filter.customerId },
+			relations: filter?.relations
 		});
 	}
 
@@ -34,7 +34,7 @@ export class CustomerRepository {
 
 	async updateCustomer(customerId: number, data: Partial<Customer>): Promise<Customer | null> {
 		await this.customerRepo.update(customerId, data);
-		return await this.getCustomerById(customerId);
+		return await this.getCustomerById({ customerId });
 	}
 
 	// Address operations

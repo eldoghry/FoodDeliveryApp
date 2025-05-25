@@ -2,7 +2,7 @@ import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
-import { Cart, CartItem, Customer, Item, MenuItem } from '../models';
+import { Cart, CartItem, CartRelations, Customer, Item, MenuItem } from '../models';
 import { MenuRepository, CartRepository, CustomerRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
 import { CartAddItemDto, CartItemResponse, CartResponse, FindCartItemFilter, RestaurantCart } from '../dtos/cart.dto';
@@ -48,7 +48,6 @@ export class CartService {
 	// async addCartItem(cartItem: Partial<CartItem>) {
 	// 	return this.cartRepo.addCartItem(cartItem);
 	// }
-
 
 	async deleteAllCartItems(cartId: number, manager?: EntityManager) {
 		const deleted = await this.cartRepo.deleteAllCartItems(cartId, manager);
@@ -167,12 +166,12 @@ export class CartService {
 		};
 	}
 
-
 	async viewCart(userId: number): Promise<CartResponse> {
 		const customer = await this.validateCustomer(userId);
 		const cart = await this.validateCart(customer!.customerId);
 		const cartItems = await this.cartRepo.getCartItems(cart.cartId);
-		const restaurant = cartItems.length > 0 ? { id: cartItems[0].restaurantId!, name: cartItems[0].restaurantName! } : null;
+		const restaurant =
+			cartItems.length > 0 ? { id: cartItems[0].restaurantId!, name: cartItems[0].restaurantName! } : null;
 		const items = cartItems.map((item) => this.cartItemReturn(item));
 
 		return this.cartResponse(cart, restaurant, items);
@@ -195,9 +194,7 @@ export class CartService {
 				throw new ApplicationError(ErrMessages.cart.FailedToUpdateCartItem, HttpStatusCodes.INTERNAL_SERVER_ERROR);
 			}
 			return updatedCartItem;
-
 		});
-
 	}
 
 	async deleteCartItem(userId: number, cartItemId: number): Promise<boolean> {
@@ -216,7 +213,7 @@ export class CartService {
 			}
 
 			return deleted;
-		})
+		});
 	}
 
 	async clearCart(userId: number): Promise<boolean> {
@@ -226,9 +223,8 @@ export class CartService {
 
 			const deleted = await this.deleteAllCartItems(cart.cartId, manager);
 			return deleted;
-		})
+		});
 	}
-
 
 	async isItemInActiveMenuOfRestaurant(restaurantId: number, itemId: number) {
 		const item = await this.dataSource
@@ -256,5 +252,13 @@ export class CartService {
 		if (cartItems) return cartItems.restaurantId;
 
 		return null;
+	}
+
+	async getCartWithItems(filter: { cartId?: number; customerId?: number; relations?: CartRelations[] }): Promise<Cart> {
+		const cart = await this.cartRepo.getCartWithItems(filter);
+
+		if (!cart) throw new ApplicationError(ErrMessages.cart.CartNotFound, HttpStatusCodes.NOT_FOUND);
+
+		return cart;
 	}
 }
