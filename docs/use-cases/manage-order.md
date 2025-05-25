@@ -10,10 +10,9 @@ This repository contains comprehensive documentation for the **Place Order** use
 2. [Manage order Use Case Flows](#manage-order-use-case-flows) 
 3. [Flowchart Diagram](#flowchart-diagram)
 4. [Sequence Diagram](#sequence-diagram)
-5. [Pseudocode](#pseudocode)
-6. [Entity Relationship Diagram (ERD)](#entity-relationship-diagram-erd)
-7. [Data Model Description](#data-model-description)
-8. [SQL Scripts](#sql-scripts)
+5. [Entity Relationship Diagram (ERD)](#entity-relationship-diagram-erd)
+6. [Data Model Description](#data-model-description)
+7. [Database Schema (PostgreSQL Compatible)](#database-schema-postgresql-compatible)
 
 ---
 
@@ -206,7 +205,6 @@ Stores individual items within a cart along with pricing and quantity.
 Stores order details.
 
 - `order_id` (PK)
-- `order_status_id` – Foreign key to `order_status`
 - `customer_id` – Foreign key to `customer`
 - `restaurant_id` – Foreign key to `restaurant`
 - `delivery_address_id` – Foreign key to `address`
@@ -215,7 +213,7 @@ Stores order details.
 - `customer_instructions`
 - `total_amount`
 - `placed_at`, `delivered_at`
-- `cancellation_info`
+- `cancellation_info` (contains cancelled_by, cancellation_reason, cancelled_at)
 - `created_at`, `updated_at`
 
 
@@ -305,7 +303,10 @@ Stores auditing details.
 
 
 These entities together provide the full backend data structure for managing a customer's order, supporting features such as placing orders, tracking order status, payment processing, and auditing.
+
 ---
+
+## Database Schema (PostgreSQL Compatible)
 
 ```sql
 CREATE TABLE user_type (
@@ -419,16 +420,17 @@ CREATE TABLE cart_item (
 
 CREATE TABLE "order" (
     order_id SERIAL PRIMARY KEY,
-    order_status_id INT NOT NULL REFERENCES order_status(order_status_id),
     customer_id INT NOT NULL REFERENCES customer(customer_id),
     delivery_address_id INT NOT NULL REFERENCES address(address_id),
+    restaurant_id INT NOT NULL REFERENCES restaurant(restaurant_id),
+    status VARCHAR(6) NOT NULL CHECK (status IN ('initiated', 'pending', 'confirmed', 'onTheWay', 'delivered', 'canceled', 'failed')),
     customer_instructions TEXT DEFAULT '',
     delivery_fees DECIMAL(5,2) NOT NULL CHECK (delivery_fees >= 0.00),
     service_fees DECIMAL(5,2) NOT NULL CHECK (service_fees >= 0.00),
     total_amount DECIMAL(10,2) NOT NULL CHECK (total_amount >= 0.00),
     placed_at TIMESTAMP NOT NULL,
     delivered_at TIMESTAMP NOT NULL,
-    cancellation_info JSONB, -- {cancelled_by: 'customer', cancellation_reason: 'reason', cancelled_at: 'timestamp'}
+    cancellation_info JSONB,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
