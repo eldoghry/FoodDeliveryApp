@@ -43,13 +43,13 @@ The customer can add, update, and remove items in their shopping cart before pla
 
 **Precondition**:
 
-- The customer is authenticated in the application using their phone number.  
+- The customer is authenticated in the application using their user account.  
 - The restaurant is subscribed to the app, and its menu is available.
 
 **Flow Steps**:
 
 1. The customer opens the application, and the system assigns a delivery address either automatically (via location detection) or manually (via map).
-2. If not authenticated, the customer is directed to register/login using their phone number and verifies it via OTP.
+2. If not authenticated, the customer is directed to register/login using their user account and verifies it via OTP.
 3. Once authenticated or browsing as a guest, the customer views a list of restaurants based on their selected location.
 4. The customer selects a restaurant and browses its menu.
 5. The customer selects items and customizes them (e.g., size, toppings, notes).
@@ -94,7 +94,7 @@ The data model for the **Manage Cart** use case includes core entities such as u
 
 
 ### `user_type`
-Defines the roles of users in the system, such as customers, drivers, partner employees, or internal employees.
+Defines the roles of users in the system.
 
 - `user_type_id` (PK)
 - `name` – Unique role name (e.g., "customer")
@@ -166,8 +166,6 @@ Defines items with pricing and availability.
 - `category_id` – Foreign key to `category`
 - `image_path`, `name`, `description`, `price`, `energy_val_cal`, `notes`
 - `is_available`, `created_at`, `updated_at`
-
-- `menu_item`: Composite table linking `menu_id` with `item_id`
 
 
 ### `cart`
