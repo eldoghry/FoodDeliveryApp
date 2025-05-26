@@ -15,13 +15,13 @@ export class PaymentMethodConfig extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	paymentMethodConfigId!: number;
 
-	@Column()
+	@Column({ nullable: false })
 	paymentMethodId!: number;
 
-	@Column({ type: 'jsonb' })
+	@Column({ type: 'jsonb', nullable: false })
 	gatewayConfig!: Record<string, any>;
 
-	@Column({ default: true })
+	@Column({ type: 'boolean', default: true, nullable: false })
 	isActive!: boolean;
 
 	@CreateDateColumn()

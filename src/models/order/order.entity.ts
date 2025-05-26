@@ -6,74 +6,64 @@ import {
 	UpdateDateColumn,
 	ManyToOne,
 	JoinColumn,
-	OneToMany
+	OneToMany,
+	Check
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
-import { OrderStatus, OrderStatusEnum } from './order-status.entity';
-import { Cart } from '../cart/cart.entity';
+import { OrderStatusEnum, OrderStatusLog } from './order-status_log.entity';
 import { Customer } from '../customer/customer.entity';
 import { Address } from '../customer/address.entity';
 import { OrderItem } from './order-item.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
 
+@Check(`"delivery_fees" >= 0.00`)
+@Check(`"service_fees" >= 0.00`)
+@Check(`"total_amount" >= 0.00`)
 @Entity()
 export class Order extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	orderId!: number;
 
-	@Column()
-	orderStatusId!: number;
-
-	@ManyToOne(() => OrderStatus)
-	@JoinColumn({ name: 'order_status_id' })
-	orderStatus!: OrderStatus;
-
-	@Column()
+	@Column({ nullable: false })
 	restaurantId!: number;
 
 	@ManyToOne(() => Restaurant, (restaurant) => restaurant.orders)
 	@JoinColumn({ name: 'restaurant_id' })
 	restaurant!: Restaurant;
 
-	@Column()
+	@Column({ nullable: false })
 	customerId!: number;
 
-	@ManyToOne(() => Customer)
+	@ManyToOne(() => Customer, (customer) => customer.orders)
 	@JoinColumn({ name: 'customer_id' })
 	customer!: Customer;
 
-	@Column()
+	@Column({ nullable: false })
 	deliveryAddressId!: number;
 
-	@ManyToOne(() => Address)
+	@ManyToOne(() => Address, (address) => address.orders)
 	@JoinColumn({ name: 'delivery_address_id' })
 	deliveryAddress!: Address;
 
-	@Column({ enum: OrderStatusEnum, default: OrderStatusEnum.initiated })
+	@Column({ type: 'enum', enum: OrderStatusEnum, nullable: false, default: OrderStatusEnum.initiated })
 	status!: OrderStatusEnum;
 
 	@Column({ type: 'text', default: '' })
 	customerInstructions!: string;
 
-	@Column()
-	totalItems!: number;
-
-	@Column({ type: 'decimal', precision: 10, scale: 2 })
-	totalItemsAmount!: number;
-
-	@Column({ type: 'decimal', precision: 5, scale: 2 })
+	@Column({ type: 'decimal', precision: 5, scale: 2, nullable: false })
 	deliveryFees!: number;
 
-	@Column({ type: 'decimal', precision: 5, scale: 2 })
+	@Column({ type: 'decimal', precision: 5, scale: 2, nullable: false })
 	serviceFees!: number;
 
-	@Column({ type: 'decimal', precision: 10, scale: 2 })
+	@Column({ type: 'decimal', precision: 10, scale: 2, nullable: false })
 	totalAmount!: number;
 
-	@Column({ type: 'timestamp' })
+	@Column({ type: 'timestamp', nullable: false })
 	placedAt!: Date;
 
-	@Column({ type: 'timestamp' })
+	@Column({ type: 'timestamp', nullable: false })
 	deliveredAt!: Date;
 
 	@Column({ type: 'jsonb' })
@@ -87,4 +77,7 @@ export class Order extends AbstractEntity {
 
 	@OneToMany(() => OrderItem, (orderItem) => orderItem.order)
 	orderItems!: OrderItem[];
+
+	@OneToMany(() => OrderStatusLog, (orderStatusLog) => orderStatusLog.order)
+	orderStatusLogs!: OrderStatusLog[];
 }

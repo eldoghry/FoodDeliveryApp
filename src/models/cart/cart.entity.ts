@@ -17,7 +17,7 @@ export class Cart extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	cartId!: number;
 
-	@Column()
+	@Column({ nullable: false })
 	customerId!: number;
 
 	@ManyToOne(() => Customer)

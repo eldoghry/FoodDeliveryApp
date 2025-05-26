@@ -7,17 +7,17 @@ export class TransactionDetail extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	transactionDetailId!: number;
 
-	@Column()
+	@Column({ nullable: false })
 	transactionId!: number;
 
 	@ManyToOne(() => Transaction)
 	@JoinColumn({ name: 'transaction_id' })
 	transaction!: Transaction;
 
-	@Column({ type: 'jsonb' })
+	@Column({ type: 'jsonb', nullable: false })
 	detailKey!: Record<string, any>;
 
-	@Column({ type: 'jsonb' })
+	@Column({ type: 'jsonb', nullable: false })
 	detailValue!: Record<string, any>;
 
 	@CreateDateColumn()

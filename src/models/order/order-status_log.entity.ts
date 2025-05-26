@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Order } from './order.entity';
 import { AbstractEntity } from '../base.entity';
 
@@ -12,20 +12,30 @@ export enum OrderStatusEnum {
 	failed = 'failed' //[terminal state] order failed for any reason like payment failed
 }
 
-@Entity()
-export class OrderStatus extends AbstractEntity {
-	@PrimaryGeneratedColumn()
-	orderStatusId!: number;
+export enum OrderStatusChangeBy {
+	system = 'system',
+	restaurant = 'restaurant',
+	payment = 'payment'
+}
 
-	@Column({ type: 'enum' })
+@Entity()
+export class OrderStatusLog extends AbstractEntity {
+	@PrimaryGeneratedColumn()
+	orderStatusLogId!: number;
+
+	@Column({ nullable: false })
+	orderId!: number;
+
+	@ManyToOne(() => Order, (order) => order.orderStatusLogs)
+	@JoinColumn({ name: 'order_id' })
+	order!: Order;
+
+	@Column({ type: 'enum' , enum: OrderStatusEnum,default: OrderStatusEnum.initiated, nullable: false })
 	status!: OrderStatusEnum;
+
+	@Column({ type: 'enum' , enum: OrderStatusChangeBy,default: OrderStatusChangeBy.system, nullable: false })
+	changeBy!: OrderStatusChangeBy;
 
 	@CreateDateColumn()
 	createdAt!: Date;
-
-	@UpdateDateColumn()
-	updatedAt!: Date;
-
-	@OneToMany(() => Order, (order) => order.orderStatus)
-	orders!: Order[];
 }
