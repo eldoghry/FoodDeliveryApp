@@ -309,7 +309,7 @@ These entities together provide the full backend data structure for managing a c
 ```sql
 CREATE TABLE user_type (
     user_type_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
+    "name" VARCHAR(100) NOT NULL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -349,11 +349,11 @@ CREATE TABLE customer (
 CREATE TABLE restaurant (
     restaurant_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL UNIQUE REFERENCES "user"(user_id),
-    name VARCHAR(255) NOT NULL,
+    "name" VARCHAR(255) NOT NULL,
     logo_url VARCHAR(512) DEFAULT '',
     banner_url VARCHAR(512) NOT NULL DEFAULT '',
-    location JSONB,
-    status VARCHAR(6) NOT NULL CHECK (status IN ('open', 'busy', 'pause', 'closed')),
+    "location" JSONB,
+    "status" VARCHAR(6) NOT NULL CHECK (status IN ('open', 'busy', 'pause', 'closed')),
     commercial_registration_number VARCHAR(20) UNIQUE NOT NULL,
     vat_number VARCHAR(15) UNIQUE NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -364,7 +364,7 @@ CREATE TABLE restaurant (
 CREATE TABLE menu (
     menu_id SERIAL PRIMARY KEY,
     restaurant_id INT NOT NULL UNIQUE REFERENCES restaurant(restaurant_id),
-    menu_title VARCHAR(100) NOT NULL CHECK (CHAR_LENGTH(menu_title) BETWEEN 2 AND 100),
+    menu_title VARCHAR(100) NOT NULL UNIQUE CHECK (CHAR_LENGTH(menu_title) BETWEEN 2 AND 100),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -372,7 +372,7 @@ CREATE TABLE menu (
 
 CREATE TABLE category (
     category_id SERIAL PRIMARY KEY,
-    title VARCHAR(100) NOT NULL CHECK (CHAR_LENGTH(title) BETWEEN 2 AND 100),
+    title VARCHAR(100) NOT NULL UNIQUE CHECK (CHAR_LENGTH(title) BETWEEN 2 AND 100),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -388,8 +388,8 @@ CREATE TABLE item (
     item_id SERIAL PRIMARY KEY,
     category_id INT NOT NULL REFERENCES category(category_id),
     image_path VARCHAR(512) NOT NULL DEFAULT '',
-    name VARCHAR(100) NOT NULL CHECK (CHAR_LENGTH(name) BETWEEN 2 AND 100),
-    description TEXT DEFAULT '',
+    "name" VARCHAR(100) NOT NULL UNIQUE CHECK (CHAR_LENGTH("name") BETWEEN 2 AND 100),
+    "description" TEXT DEFAULT '',
     price DECIMAL(10,2) NOT NULL CHECK (price >= 0.00),
     energy_val_cal DECIMAL(10,2) NOT NULL DEFAULT 0.0 CHECK (energy_val_cal >= 0.00),
     notes TEXT DEFAULT '',
@@ -420,9 +420,9 @@ CREATE TABLE cart_item (
 CREATE TABLE "order" (
     order_id SERIAL PRIMARY KEY,
     customer_id INT NOT NULL REFERENCES customer(customer_id),
-    delivery_address_id INT NOT NULL REFERENCES address(address_id),
+    delivery_address_id INT REFERENCES address(address_id),
     restaurant_id INT NOT NULL REFERENCES restaurant(restaurant_id),
-    status VARCHAR(6) NOT NULL CHECK (status IN ('initiated', 'pending', 'confirmed', 'onTheWay', 'delivered', 'canceled', 'failed')),
+    "status" VARCHAR(30) NOT NULL CHECK ("status" IN ('initiated', 'pending', 'confirmed', 'onTheWay', 'delivered', 'canceled', 'failed')),
     customer_instructions TEXT DEFAULT '',
     delivery_fees DECIMAL(5,2) NOT NULL CHECK (delivery_fees >= 0.00),
     service_fees DECIMAL(5,2) NOT NULL CHECK (service_fees >= 0.00),
@@ -447,8 +447,8 @@ CREATE TABLE order_item (
 CREATE TABLE order_status_log (
     order_status_log_id SERIAL PRIMARY KEY,
     order_id INT NOT NULL REFERENCES "order"(order_id),
-    status VARCHAR(6) NOT NULL CHECK (status IN ('initiated', 'pending', 'confirmed', 'onTheWay', 'delivered', 'canceled', 'failed')),
-    change_by VARCHAR(6) NOT NULL CHECK (change_by IN ('system', 'restaurant', 'payment')),
+    "status" VARCHAR(30) NOT NULL CHECK ("status" IN ('initiated', 'pending', 'confirmed', 'onTheWay', 'delivered', 'canceled', 'failed')),
+    change_by VARCHAR(30) NOT NULL CHECK (change_by IN ('system', 'restaurant', 'payment')),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
