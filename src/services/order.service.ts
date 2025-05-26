@@ -7,12 +7,14 @@ import ErrMessages from '../errors/error-messages';
 import { OrderRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
 import { CustomerService } from './customer.service';
+import { Paypal } from './payment/paypal/paypal';
 
 export class OrderService {
 	private orderRepo = new OrderRepository();
 	private cartService = new CartService();
 	private customerService = new CustomerService();
 	private dataSource = AppDataSource; // to be used for typeorm transactions
+	private readonly paypalService = new Paypal(); // later use payment method
 
 	async placeOrder(payload: {
 		customerId: number;
@@ -21,6 +23,11 @@ export class OrderService {
 		addressId: number;
 		paymentMethod: PaymentMethodEnum;
 	}) {
+		const res = await this.paypalService.createOrder();
+		console.log(res);
+
+		return res;
+
 		// get restaurant from restaurant service
 		// get customer with address from customer service
 		const customer = await this.customerService.getCustomerByIdOrFail({

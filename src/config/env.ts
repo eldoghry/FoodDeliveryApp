@@ -24,7 +24,10 @@ const envSchema = Joi.object({
 	REDIS_DEFAULT_TTL: Joi.number().default(3600),
 	JWT_SECRET: Joi.string().required(),
 	JWT_ACCESS_EXPIRE_IN: Joi.string().required(),
-	JWT_REFRESH_EXPIRE_IN: Joi.string().required()
+	JWT_REFRESH_EXPIRE_IN: Joi.string().required(),
+	PAYPAL_BASE_URL: Joi.string().required(),
+	PAYPAL_CLIENT_ID: Joi.string().required(),
+	PAYPAL_SECRET_KEY: Joi.string().required()
 	// TODO: add more env variable here
 }).unknown(true);
 
@@ -62,5 +65,12 @@ export const config = {
 		secret: envVars.JWT_SECRET,
 		accessTTL: envVars.JWT_ACCESS_EXPIRE_IN, // '1y'
 		refreshTTL: envVars.JWT_REFRESH_EXPIRE_IN
+	},
+	payment: {
+		paypal: {
+			baseUrl: envVars.PAYPAL_BASE_URL,
+			clientId: envVars.PAYPAL_CLIENT_ID,
+			secretKey: envVars.PAYPAL_SECRET_KEY
+		}
 	}
 };

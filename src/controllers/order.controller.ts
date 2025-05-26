@@ -16,6 +16,7 @@ export class OrderController {
 			restaurantId: payload?.restaurantId
 			// cartId: payload?.cartId
 		});
-		sendResponse(res, StatusCodes.CREATED, 'Order created successfully', data);
+		console.log('data', data);
+		sendResponse(res, StatusCodes.CREATED, 'Order created successfully', {});
 	}
 }
