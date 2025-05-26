@@ -332,6 +332,7 @@ CREATE TABLE address (
     address_line1 TEXT NOT NULL,
     address_line2 TEXT NOT NULL,
     city VARCHAR(255) NOT NULL,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -440,7 +441,7 @@ CREATE TABLE order_item (
     quantity INT NOT NULL CHECK (quantity > 0),
     price DECIMAL(10,2) NOT NULL CHECK (price >= 0.00),
     total_price DECIMAL(10,2) NOT NULL CHECK (total_price >= 0.00),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE order_status_log (
@@ -448,7 +449,7 @@ CREATE TABLE order_status_log (
     order_id INT NOT NULL REFERENCES "order"(order_id),
     status VARCHAR(6) NOT NULL CHECK (status IN ('initiated', 'pending', 'confirmed', 'onTheWay', 'delivered', 'canceled', 'failed')),
     change_by VARCHAR(6) NOT NULL CHECK (change_by IN ('system', 'restaurant', 'payment')),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE payment_method (
@@ -505,5 +506,5 @@ CREATE TABLE auditing (
     audit_event JSONB NOT NULL,
     audit_data JSONB NOT NULL,
     audit_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
