@@ -1,5 +1,6 @@
 CREATE TABLE address (
     address_id SERIAL PRIMARY KEY,
+    customer_id INT NOT NULL REFERENCES customer(customer_id),
     address_line1 TEXT NOT NULL,
     address_line2 TEXT NOT NULL,
     city VARCHAR(255) NOT NULL,
