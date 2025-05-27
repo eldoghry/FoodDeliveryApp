@@ -12,6 +12,8 @@ import { AbstractEntity } from '../base.entity';
 import { Customer } from '../customer/customer.entity';
 import { CartItem } from './cart-item.entity';
 
+export type CartRelations = 'customer' | 'cartItems';
+
 @Entity()
 export class Cart extends AbstractEntity {
 	@PrimaryGeneratedColumn()

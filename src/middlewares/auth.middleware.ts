@@ -7,6 +7,9 @@ import { config } from '../config/env';
 
 export interface AuthorizedUser {
 	userId: number;
+	roles: string[];
+	actorType: string; // e.g., 'customer', 'restaurant_user'
+	actorId: number; // ID of the actor (e.g., customer or restaurant user)
 }
 
 declare module 'express-serve-static-core' {
@@ -24,6 +27,7 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
 	try {
 		const decoded = jwt.verify(token as string, config.jwt.secret) as JwtPayload;
 		req.user = decoded as AuthorizedUser;
+		console.log('user', decoded);
 		next();
 	} catch (err) {
 		throw new ApplicationError('Invalid or expired token', StatusCodes.FORBIDDEN);

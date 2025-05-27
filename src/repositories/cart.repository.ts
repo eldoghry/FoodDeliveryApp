@@ -1,5 +1,5 @@
 import { AppDataSource } from '../config/data-source';
-import { Cart } from '../models/cart/cart.entity';
+import { Cart, CartRelations } from '../models/cart/cart.entity';
 import { CartItem } from '../models/cart/cart-item.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { CartItemResponse } from '../dtos/cart.dto';
@@ -7,7 +7,6 @@ import { CartItemResponse } from '../dtos/cart.dto';
 export class CartRepository {
 	private cartRepo: Repository<Cart>;
 	private cartItemRepo: Repository<CartItem>;
-	
 
 	constructor() {
 		this.cartRepo = AppDataSource.getRepository(Cart);
@@ -17,8 +16,7 @@ export class CartRepository {
 	private getCartItemRepo(manager?: EntityManager): Repository<CartItem> {
 		return manager ? manager.getRepository(CartItem) : this.cartItemRepo;
 	}
-	
-	
+
 	// Cart operations
 	async createCart(data: Partial<Cart>): Promise<Cart> {
 		const cart = this.cartRepo.create(data);
@@ -78,7 +76,7 @@ export class CartRepository {
 				'i.name AS "itemName"',
 				'i.image_path AS "imagePath"',
 				'i.is_available AS "isAvailable"'
-			  ])
+			])
 			.innerJoin('ci.restaurant', 'r')
 			.innerJoin('ci.item', 'i')
 			.where('ci.cart_id = :cartId', { cartId })
@@ -93,7 +91,7 @@ export class CartRepository {
 		if (!Object.keys(filter).length) return null;
 
 		const cartItem = await this.cartItemRepo.findOne({
-			where: { ...filter },
+			where: { ...filter }
 			// relations: ['item']
 		});
 
@@ -105,27 +103,39 @@ export class CartRepository {
 	// 	return await this.getCartItemById(cartItemId);
 	// }
 
-	async updateCartItem(
-		cartItemId: number,
-		data: Partial<CartItem>,
-		manager?: EntityManager
-	  ): Promise<CartItem | null> {
+	async updateCartItem(cartItemId: number, data: Partial<CartItem>, manager?: EntityManager): Promise<CartItem | null> {
 		const repo = this.getCartItemRepo(manager);
-	  
+
 		await repo.update(cartItemId, data);
 		return await repo.findOneBy({ cartItemId });
-	  }
-	  
+	}
 
-	async deleteCartItem(cartItemId: number,manager?: EntityManager): Promise<boolean> {
-		const repo = this.getCartItemRepo(manager); 
+	async deleteCartItem(cartItemId: number, manager?: EntityManager): Promise<boolean> {
+		const repo = this.getCartItemRepo(manager);
 		const result = await repo.delete(cartItemId);
 		return result.affected ? true : false;
-	} 
+	}
 
-	async deleteAllCartItems(cartId: number,manager?: EntityManager): Promise<boolean> {
-		const repo = this.getCartItemRepo(manager); 
+	async deleteAllCartItems(cartId: number, manager?: EntityManager): Promise<boolean> {
+		const repo = this.getCartItemRepo(manager);
 		const result = await repo.delete({ cartId });
-		return result.affected ? true : false; 
+		return result.affected ? true : false;
+	}
+
+	async getCartWithItems(filter: {
+		cartId?: number;
+		customerId?: number;
+		relations?: CartRelations[];
+	}): Promise<Cart | null> {
+		if (Object.keys(filter).length === 0) return null;
+		const { cartId, customerId } = filter;
+		const whereCondition: any = {};
+		if (cartId) whereCondition.cartId = cartId;
+		if (customerId) whereCondition.customerId = customerId;
+
+		return await this.cartRepo.findOne({
+			where: whereCondition,
+			relations: filter?.relations
+		});
 	}
 }

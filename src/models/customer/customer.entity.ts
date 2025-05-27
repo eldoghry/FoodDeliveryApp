@@ -20,7 +20,11 @@ enum Gender {
 	female = 'female'
 }
 
+export type CustomerRelations = 'addresses' | 'user';
+
+
 @Check(`"birth_date" <= CURRENT_DATE`)
+
 @Entity()
 export class Customer extends AbstractEntity {
 	@PrimaryGeneratedColumn()

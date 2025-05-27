@@ -10,37 +10,37 @@ export class CartController {
 	async addItem(req: Request, res: Response) {
 		const payload = req.validated?.body;
 
-		const result = await this.cartService.addItemToCart({ ...payload, customerId: req.user?.userId });
+		const result = await this.cartService.addItemToCart({ ...payload, customerId: req.user?.actorId });
 		sendResponse(res, HttpStatusCodes.CREATED, 'Item added to cart', result);
 	}
 
 	async viewCart(req: Request, res: Response) {
-		const { userId } = req.user as AuthorizedUser;
-		const cart = await this.cartService.viewCart(Number(userId));
+		const { actorId } = req.user as AuthorizedUser;
+		const cart = await this.cartService.viewCart(Number(actorId));
 		sendResponse(res, HttpStatusCodes.OK, 'Cart details', cart);
 	}
 
 	async updateQuantity(req: Request, res: Response) {
-		const { userId } = req.user as AuthorizedUser;
+		const { actorId } = req.user as AuthorizedUser;
 		const { cartItemId } = req.validated?.params;
 		const { quantity } = req.validated?.body;
-		
-		const cartItem = await this.cartService.updateCartItemQuantity(Number(userId), Number(cartItemId), {
+
+		const cartItem = await this.cartService.updateCartItemQuantity(Number(actorId), Number(cartItemId), {
 			quantity: Number(quantity)
 		});
 		sendResponse(res, HttpStatusCodes.OK, 'Cart Item Updated', cartItem);
 	}
 
 	async clearCart(req: Request, res: Response) {
-		const { userId } = req.user as AuthorizedUser; 
-		const cartItem = await this.cartService.clearCart(Number(userId));
+		const { actorId } = req.user as AuthorizedUser;
+		const cartItem = await this.cartService.clearCart(Number(actorId));
 		sendResponse(res, HttpStatusCodes.NO_CONTENT, 'Cart Cleared', cartItem);
 	}
 
 	async deleteCartItem(req: Request, res: Response) {
 		const { cartItemId } = req.validated?.params;
-		const { userId } = req.user as AuthorizedUser;
-		const cartItem = await this.cartService.deleteCartItem(Number(userId), Number(cartItemId));
+		const { actorId } = req.user as AuthorizedUser;
+		const cartItem = await this.cartService.deleteCartItem(Number(actorId), Number(cartItemId));
 		sendResponse(res, HttpStatusCodes.NO_CONTENT, 'Cart Item Deleted', cartItem);
 	}
 }
