@@ -1,8 +1,11 @@
-import axios from 'axios';
-import { config } from './../../../config/env';
+import axios, { AxiosInstance } from 'axios';
+import { config } from '../../config/env';
 import { PaypalAuthUrl, PaypalCreateOrderUrl } from './paypal.request';
-import logger from '../../../config/logger';
-import ApplicationError from '../../../errors/application.error';
+import logger from '../../config/logger';
+import ApplicationError from '../../errors/application.error';
+import { StatusCodes } from 'http-status-codes';
+import { PaypalAxios } from './paypal.axios';
+import { BaseAxios } from '../../shared/baseAxios';
 
 const orderData = {
 	purchase_units: [
@@ -63,48 +66,39 @@ const orderData = {
 };
 
 export class Paypal {
-	private readonly client: Axios.AxiosInstance;
+	private readonly client: BaseAxios;
 	private accessToken: string | null = null;
-	private readonly baseURL: string;
 
 	constructor() {
-		this.baseURL = config.payment.paypal.baseUrl;
-		this.client = axios.create({ baseURL: this.baseURL });
+		this.client = new PaypalAxios();
 	}
 
 	private async login(): Promise<void> {
 		console.log('login start');
 		const CLIENT_ID = config.payment.paypal.clientId;
 		const CLIENT_SECRET = config.payment.paypal.secretKey;
-		const credentials = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`);
+		const credentials = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
 
 		const data = new URLSearchParams();
 		data.append('grant_type', 'client_credentials');
-		try {
-			const response: any = await this.client.post(PaypalAuthUrl, data, {
-				headers: {
-					Authorization: `Basic ${credentials}`,
-					'Content-Type': 'application/x-www-form-urlencoded'
-				}
-			});
 
-			console.log('resp', response.data);
-			this.accessToken = response.data.access_token;
-			console.log('login finish');
-		} catch (error) {
-			logger.error('Paypal login error', error);
-			throw new ApplicationError('Paypal login is down');
-		}
+		const response: any = await this.client.axios.post(PaypalAuthUrl, data, {
+			headers: {
+				Authorization: `Basic ${credentials}`,
+				'Content-Type': 'application/x-www-form-urlencoded'
+			}
+		});
+
+		this.accessToken = response.access_token;
 	}
 
 	private async ensureAccessToken() {
 		if (!this.accessToken) await this.login();
 	}
 
-	async createOrder() {
+	async createOrder(...data: any) {
 		await this.ensureAccessToken();
-		console.log('create order start');
-		const response: any = await this.client.post(
+		const response: any = await this.client.axios.post(
 			PaypalCreateOrderUrl,
 			{
 				intent: 'CAPTURE',
@@ -130,9 +124,7 @@ export class Paypal {
 			}
 		);
 
-		console.log('response.data', response.data);
-		console.log('create order finish');
-		return response.data;
+		return response;
 	}
 
 	async capturePayment() {}
