@@ -59,7 +59,7 @@ export class OrderItem extends AbstractEntity {
 	}
 
 	/**
-	 * calculates the total price based on current quantity, price, and discount
+	 * calculates the total price based on current quantity, price
 	 */
 	calculateTotalPrice() {
 		this.totalPrice = Number((this.quantity * this.price).toFixed(2));
