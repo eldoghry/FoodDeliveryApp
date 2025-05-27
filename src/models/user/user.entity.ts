@@ -9,10 +9,11 @@ import {
 	OneToMany,
 	OneToOne
 } from 'typeorm';
-import { AbstractEntity } from '../../abstract/base.entity';
+import { AbstractEntity } from '../base.entity';
 import { UserType } from './user-type.entity';
 import { UserRole } from './user-role.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
+import { Customer } from '../customer/customer.entity';
 
 @Entity()
 export class User extends AbstractEntity {
@@ -52,4 +53,8 @@ export class User extends AbstractEntity {
 
 	@OneToOne(() => Restaurant, (restaurant) => restaurant.user)
 	restaurant!: Restaurant;
+
+	@OneToOne(() => Customer, (customer) => customer.user)
+	customer!: Customer;
 }
+ 
