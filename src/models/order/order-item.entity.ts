@@ -37,4 +37,33 @@ export class OrderItem extends AbstractEntity {
 
 	@CreateDateColumn()
 	createdAt!: Date;
+
+	/**
+	 * builder method to create a OrderItem instance with calculated values
+	 *
+	 * @param orderId - ID of the order
+	 * @param itemId - Item ID
+	 * @param quantity - Quantity of the item
+	 * @returns A new OrderItem instance
+	 */
+	static buildOrderItem(dto: { orderId: number; itemId: number; quantity: number; price: number; }) {
+		const orderItem = new OrderItem();
+		orderItem.orderId = dto.orderId;
+		orderItem.itemId = dto.itemId;
+		orderItem.price = dto.price;
+		orderItem.quantity = dto.quantity;
+
+		orderItem.calculateTotalPrice();
+
+		return orderItem;
+	}
+
+	/**
+	 * calculates the total price based on current quantity, price, and discount
+	 */
+	calculateTotalPrice() {
+		this.totalPrice = Number((this.quantity * this.price).toFixed(2));
+		return this.totalPrice;
+	}
+
 }

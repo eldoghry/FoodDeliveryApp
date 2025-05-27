@@ -1,4 +1,15 @@
+import { CartItem } from '../models/cart/cart-item.entity';
+import { OrderItem } from '../models/order/order-item.entity';
 import { Request } from 'express';
+
+
+export function calculateTotalItems(items: CartItem[] | OrderItem[]) {
+	return items.reduce((total, item) => Number(total) + Number(item.quantity), 0);
+}
+
+export function calculateTotalPrice(items: CartItem[] | OrderItem[]) {
+	return items.reduce((total, item) => Number(total) + Number(item.totalPrice), 0);
+}
 
 /**
  * Converts a given number of seconds to milliseconds.
