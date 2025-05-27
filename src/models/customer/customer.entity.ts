@@ -6,26 +6,35 @@ import {
 	UpdateDateColumn,
 	OneToOne,
 	JoinColumn,
-	OneToMany
+	OneToMany,
+	Check
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { User } from '../user/user.entity';
 import { Address } from './address.entity';
+import { Order } from '../order/order.entity';
+
+enum Gender {
+	male = 'male',
+	female = 'female'
+}
 
 export type CustomerRelations = 'addresses' | 'user';
+
+@Check(`"birth_date" <= CURRENT_DATE`)
 @Entity()
 export class Customer extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	customerId!: number;
 
-	@Column({ unique: true })
+	@Column({ unique: true, nullable: false })
 	userId!: number;
 
 	@Column({ type: 'date', nullable: true })
 	birthDate!: Date;
 
-	@Column({ type: 'varchar', length: 6, nullable: true })
-	gender!: 'male' | 'female';
+	@Column({ type: 'enum', enum: Gender, nullable: true })
+	gender!: Gender;
 
 	@CreateDateColumn()
 	createdAt!: Date;
@@ -39,4 +48,7 @@ export class Customer extends AbstractEntity {
 
 	@OneToMany(() => Address, (address) => address.customer)
 	addresses!: Address[];
+
+	@OneToMany(() => Order, (order) => order.customer)
+	orders!: Order[];
 }

@@ -43,24 +43,24 @@ export class CustomerRepository {
 		return await this.addressRepo.save(address);
 	}
 
-	// async getAddressById(addressId: number): Promise<Address | null> {
-	// 	return await this.addressRepo.findOne({
-	// 		where: { addressId },
-	// 		relations: ['user']
-	// 	});
-	// }
+	async getAddressById(addressId: number): Promise<Address | null> {
+		return await this.addressRepo.findOne({
+			where: { addressId },
+			relations: ['customer']
+		});
+	}
 
-	// async getAddressesByUserId(userId: number): Promise<Address[]> {
-	// 	return await this.addressRepo.find({
-	// 		where: { userId },
-	// 		relations: ['user']
-	// 	});
-	// }
+	async getAddressesByCustomerId(customerId: number): Promise<Address[]> {
+		return await this.addressRepo.find({
+			where: { customerId },
+			relations: ['customer']
+		});
+	}
 
-	// async updateAddress(addressId: number, data: Partial<Address>): Promise<Address | null> {
-	// 	await this.addressRepo.update(addressId, data);
-	// 	return await this.getAddressById(addressId);
-	// }
+	async updateAddress(addressId: number, data: Partial<Address>): Promise<Address | null> {
+		await this.addressRepo.update(addressId, data);
+		return await this.getAddressById(addressId);
+	}
 
 	async deleteAddress(addressId: number): Promise<void> {
 		await this.addressRepo.delete(addressId);

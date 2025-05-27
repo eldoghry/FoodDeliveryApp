@@ -9,8 +9,9 @@ import {
 	JoinColumn
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
-import { MenuItem } from './menu-item.entity';
+import { MenuCategory } from './menu-category.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
+import { MenuItem } from './menu-item.entity';
 
 @Entity()
 export class Menu extends AbstractEntity {
@@ -20,10 +21,10 @@ export class Menu extends AbstractEntity {
 	@Column()
 	restaurantId!: number;
 
-	@Column({ type: 'varchar', length: 100 })
+	@Column({ type: 'varchar', length: 100, unique: true })
 	menuTitle!: string;
 
-	@Column({ default: true })
+	@Column({ type: 'boolean', default: true, nullable: false })
 	isActive!: boolean;
 
 	@CreateDateColumn()
@@ -32,10 +33,13 @@ export class Menu extends AbstractEntity {
 	@UpdateDateColumn()
 	updatedAt!: Date;
 
-	@OneToMany(() => MenuItem, (menuItem) => menuItem.menu)
-	menuItems!: MenuItem[];
-
 	@ManyToOne(() => Restaurant, (restaurant) => restaurant.menus)
 	@JoinColumn({ name: 'restaurant_id' })
 	restaurant!: Restaurant;
+
+	@OneToMany(() => MenuCategory, (menuCategory) => menuCategory.menu)
+	menuCategories!: MenuCategory[];
+
+	@OneToMany(() => MenuItem, (menuItem) => menuItem.menu)
+	menuItems!: MenuItem[];
 }

@@ -10,7 +10,7 @@ export class PaymentStatus extends AbstractEntity {
 	@Column({ type: 'varchar', length: 20 })
 	statusName!: string;
 
-	@Column({ default: true })
+	@Column({ type: 'boolean', default: true, nullable: false })
 	isActive!: boolean;
 
 	@CreateDateColumn()

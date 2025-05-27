@@ -1,43 +1,38 @@
-import {
-	Entity,
-	PrimaryGeneratedColumn,
-	Column,
-	CreateDateColumn,
-	UpdateDateColumn,
-	ManyToOne,
-	JoinColumn
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { Customer } from './customer.entity';
+import { Order } from '../order/order.entity';
 
-// Address entity
 @Entity()
 export class Address extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	addressId!: number;
 
-	@Column({ type: 'text' })
-	addressLine1!: string;
-
-	@Column({ type: 'text' })
-	addressLine2!: string;
-
-	@Column({ type: 'varchar', length: 255 })
-	city!: string;
-
-	@Column()
+	@Column({ nullable: false })
 	customerId!: number;
 
-	@Column({ default: false })
-	isDefault!: boolean;
+	@Column({ type: 'text', nullable: false })
+	addressLine1!: string;
 
-	@ManyToOne(() => Customer, (customer) => customer.addresses)
-	@JoinColumn({ name: 'customer_id' })
-	customer!: Customer;
+	@Column({ type: 'text', nullable: false })
+	addressLine2!: string;
+
+	@Column({ type: 'varchar', length: 255, nullable: false  })
+	city!: string;
+
+	@Column({ type: 'boolean', default: false, nullable: false })
+	isDefault!: boolean;
 
 	@CreateDateColumn()
 	createdAt!: Date;
 
 	@UpdateDateColumn()
 	updatedAt!: Date;
+
+	@ManyToOne(() => Customer, (customer) => customer.addresses)
+	@JoinColumn({ name: 'customer_id' })
+	customer!: Customer;
+
+	@OneToMany(() => Order, (order) => order.deliveryAddress)
+	orders!: Order[];
 }

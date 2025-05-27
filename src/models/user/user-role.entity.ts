@@ -18,14 +18,14 @@ export class UserRole extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	userRoleId!: number;
 
-	@Column()
+	@Column({ nullable: false })
 	userId!: number;
 
 	@ManyToOne(() => User, (user) => user.userRoles)
 	@JoinColumn({ name: 'user_id' })
 	user!: User;
 
-	@Column()
+	@Column({ nullable: false })
 	roleId!: number;
 
 	@ManyToOne(() => Role, (role) => role.userRoles)
