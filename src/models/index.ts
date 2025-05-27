@@ -11,6 +11,7 @@ export * from './restaurant/restaurant.entity';
 export * from './menu/menu.entity';
 export * from './menu/menu-category.entity';
 export * from './menu/item.entity';
+export * from './menu/menu-item.entity';
 
 // Order related entities
 export * from './order/order.entity';

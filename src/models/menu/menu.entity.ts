@@ -11,6 +11,7 @@ import {
 import { AbstractEntity } from '../base.entity';
 import { MenuCategory } from './menu-category.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
+import { MenuItem } from './menu-item.entity';
 
 @Entity()
 export class Menu extends AbstractEntity {
@@ -38,4 +39,7 @@ export class Menu extends AbstractEntity {
 
 	@OneToMany(() => MenuCategory, (menuCategory) => menuCategory.menu)
 	menuCategories!: MenuCategory[];
+
+	@OneToMany(() => MenuItem, (menuItem) => menuItem.menu)
+	menuItems!: MenuItem[];
 }
