@@ -4,11 +4,13 @@ import { Request } from 'express';
 
 
 export function calculateTotalItems(items: CartItem[] | OrderItem[]) {
-	return items.reduce((total, item) => Number(total) + Number(item.quantity), 0);
+	const result = items.reduce((total, item) => Number(total) + Number(item.quantity), 0);
+	return result;
 }
 
-export function calculateTotalPrice(items: CartItem[] | OrderItem[]) {
-	return items.reduce((total, item) => Number(total) + Number(item.totalPrice), 0);
+export function calculateTotalPrice(items: CartItem[] | OrderItem[], serviceFees?: number, deliveryFees?: number) {
+	const result = items.reduce((total, item) => Number(total) + Number(item.totalPrice), 0) + (serviceFees || 0) + (deliveryFees || 0);
+	return result;
 }
 
 /**
