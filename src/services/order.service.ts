@@ -39,13 +39,31 @@ export class OrderService {
 		if (customer.addresses.find((address) => address.addressId === payload.addressId) === undefined)
 			throw new ApplicationError(ErrMessages.customer.AddressNotFound, HttpStatusCodes.NOT_FOUND);
 
-		// get customer address from customer service
 		// get cart with items from cart service
 		const cart = await this.cartService.getCartWithItems({ customerId: payload.customerId, relations: ['cartItems'] });
 
-		const paymentService = new PaymentService(payload.paymentMethod);
+		if (!cart.cartItems.length) throw new ApplicationError(ErrMessages.cart.CartIsEmpty, HttpStatusCodes.BAD_REQUEST);
 
-		const paymentResult = await paymentService.processPayment(100);
+		const totalCartItemsAmounts = 100; // todo: get from helper
+		const serviceFees = 10; // todo: get from helper
+		const deliveryFees = 30; // todo: get from helper
+		const totalAmount = totalCartItemsAmounts + serviceFees + deliveryFees;
+
+		// create order and order items
+		const order = await this.orderRepo.createOrder({
+			restaurantId: payload.restaurantId,
+			customerId: payload.customerId,
+			deliveryAddressId: payload.addressId,
+			deliveryFees,
+			serviceFees,
+			totalAmount,
+			placedAt: new Date()
+		});
+
+		const paymentService = new PaymentService(payload.paymentMethod);
+		const paymentResult = await paymentService.processPayment(totalAmount, {
+			items: cart.cartItems
+		});
 
 		if (paymentResult.success) {
 			// update order status
