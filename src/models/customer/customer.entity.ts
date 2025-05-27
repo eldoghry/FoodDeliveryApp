@@ -14,7 +14,6 @@ import { User } from '../user/user.entity';
 import { Address } from './address.entity';
 import { Order } from '../order/order.entity';
 
-
 enum Gender {
 	male = 'male',
 	female = 'female'
@@ -22,9 +21,7 @@ enum Gender {
 
 export type CustomerRelations = 'addresses' | 'user';
 
-
 @Check(`"birth_date" <= CURRENT_DATE`)
-
 @Entity()
 export class Customer extends AbstractEntity {
 	@PrimaryGeneratedColumn()

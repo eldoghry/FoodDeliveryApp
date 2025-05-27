@@ -6,7 +6,8 @@ import {
 	UpdateDateColumn,
 	ManyToOne,
 	JoinColumn,
-	OneToMany
+	OneToMany,
+	OneToOne
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { Customer } from '../customer/customer.entity';
@@ -22,7 +23,7 @@ export class Cart extends AbstractEntity {
 	@Column({ nullable: false })
 	customerId!: number;
 
-	@ManyToOne(() => Customer)
+	@OneToOne(() => Customer)
 	@JoinColumn({ name: 'customer_id' })
 	customer!: Customer;
 

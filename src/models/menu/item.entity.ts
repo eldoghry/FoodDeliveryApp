@@ -1,4 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn, Check } from 'typeorm';
+import {
+	Entity,
+	PrimaryGeneratedColumn,
+	Column,
+	CreateDateColumn,
+	UpdateDateColumn,
+	OneToMany,
+	ManyToOne,
+	JoinColumn,
+	Check,
+	ManyToMany
+} from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { CartItem } from '../cart/cart-item.entity';
 import { OrderItem } from '../order/order-item.entity';
@@ -11,13 +22,6 @@ import { MenuItem } from './menu-item.entity';
 export class Item extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	itemId!: number;
-
-	@Column({ nullable: false })
-	categoryId!: number;
-
-	@ManyToOne(() => Category, (category) => category.items)
-	@JoinColumn({ name: 'category_id' })
-	category!: Category;
 
 	@Column({ type: 'varchar', length: 512, default: '' })
 	imagePath!: string;
@@ -37,7 +41,7 @@ export class Item extends AbstractEntity {
 	@Column({ type: 'text', default: '' })
 	notes!: string;
 
-	@Column({type: 'boolean', default: true, nullable: false })
+	@Column({ type: 'boolean', default: true, nullable: false })
 	isAvailable!: boolean;
 
 	@CreateDateColumn()
@@ -45,6 +49,9 @@ export class Item extends AbstractEntity {
 
 	@UpdateDateColumn()
 	updatedAt!: Date;
+
+	@ManyToMany(() => Category, (category) => category.items)
+	categories!: Category[];
 
 	@OneToMany(() => CartItem, (cartItem) => cartItem.item)
 	cartItems!: CartItem[];
