@@ -1,7 +1,7 @@
 import { AppDataSource } from '../config/data-source';
 import { Restaurant } from '../models/restaurant/restaurant.entity';
 import { Repository } from 'typeorm';
-import { Status } from '../models/restaurant/restaurant.entity';
+import { RestaurantStatus } from '../models/restaurant/restaurant.entity';
 
 export class RestaurantRepository {
 	private restaurantRepo: Repository<Restaurant>;
@@ -41,10 +41,7 @@ export class RestaurantRepository {
 		return await this.getRestaurantById(restaurantId);
 	}
 
-	async updateRestaurantStatus(
-		restaurantId: number,
-		status: Status
-	): Promise<Restaurant | null> {
+	async updateRestaurantStatus(restaurantId: number, status: RestaurantStatus): Promise<Restaurant | null> {
 		await this.restaurantRepo.update(restaurantId, { status });
 		return await this.getRestaurantById(restaurantId);
 	}
@@ -61,5 +58,4 @@ export class RestaurantRepository {
 			.andWhere('restaurant.isActive = :isActive', { isActive: true })
 			.getMany();
 	}
-
 }

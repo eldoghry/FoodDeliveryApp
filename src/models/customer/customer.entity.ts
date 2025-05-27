@@ -14,7 +14,7 @@ import { User } from '../user/user.entity';
 import { Address } from './address.entity';
 import { Order } from '../order/order.entity';
 
-enum Gender {
+export enum Gender {
 	male = 'male',
 	female = 'female'
 }
