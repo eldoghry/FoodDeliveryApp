@@ -14,8 +14,7 @@ import { AbstractEntity } from '../base.entity';
 import { Menu } from '../menu/menu.entity';
 import { Order } from '../order/order.entity';
 
-
-export enum Status {
+export enum RestaurantStatus {
 	open = 'open',
 	busy = 'busy',
 	pause = 'pause',
@@ -42,8 +41,8 @@ export class Restaurant extends AbstractEntity {
 	@Column({ type: 'jsonb', nullable: false })
 	location!: Record<string, any>;
 
-	@Column({ type: 'enum', enum: Status, nullable: false })
-	status!: Status;
+	@Column({ type: 'enum', enum: RestaurantStatus, nullable: false })
+	status!: RestaurantStatus;
 
 	@Column({ type: 'varchar', length: 20, unique: true, nullable: false })
 	commercialRegistrationNumber!: string;
