@@ -7,7 +7,8 @@ import ErrMessages from '../errors/error-messages';
 import { OrderRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
 import { CustomerService } from './customer.service';
-import { Paypal } from './payment/paypal/paypal';
+import { Paypal } from '../payment/paypal/paypal';
+import { PaymentService } from '../payment/payment.service';
 
 export class OrderService {
 	private orderRepo = new OrderRepository();
@@ -23,10 +24,10 @@ export class OrderService {
 		addressId: number;
 		paymentMethod: PaymentMethodEnum;
 	}) {
-		const res = await this.paypalService.createOrder();
-		console.log(res);
+		// const res = await this.paypalService.createOrder();
+		// console.log(res);
 
-		return res;
+		// return res;
 
 		// get restaurant from restaurant service
 		// get customer with address from customer service
@@ -41,6 +42,14 @@ export class OrderService {
 		// get customer address from customer service
 		// get cart with items from cart service
 		const cart = await this.cartService.getCartWithItems({ customerId: payload.customerId, relations: ['cartItems'] });
+
+		const paymentService = new PaymentService(payload.paymentMethod);
+
+		const paymentResult = await paymentService.processPayment(100);
+
+		if (paymentResult.success) {
+			// update order status
+		}
 
 		return { cart, customer };
 
