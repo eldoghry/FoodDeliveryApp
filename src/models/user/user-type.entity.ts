@@ -7,7 +7,7 @@ export class UserType extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	userTypeId!: number;
 
-	@Column({ type: 'varchar', length: 100, unique: true })
+	@Column({ type: 'varchar', length: 100, unique: true, nullable: false })
 	name!: string;
 
 	@CreateDateColumn()

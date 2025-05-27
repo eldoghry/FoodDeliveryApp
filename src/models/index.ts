@@ -9,13 +9,14 @@ export * from './restaurant/restaurant.entity';
 
 // Menu related entities
 export * from './menu/menu.entity';
-export * from './menu/menu-item.entity';
+export * from './menu/menu-category.entity';
 export * from './menu/item.entity';
+export * from './menu/menu-item.entity';
 
 // Order related entities
 export * from './order/order.entity';
 export * from './order/order-item.entity';
-export * from './order/order-status.entity';
+export * from './order/order-status_log.entity';
 
 // Cart related entities
 export * from './cart/cart.entity';

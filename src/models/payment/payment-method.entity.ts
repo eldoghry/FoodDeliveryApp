@@ -13,7 +13,7 @@ export class PaymentMethod extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	paymentMethodId!: number;
 
-	@Column({ type: 'varchar', length: 50 })
+	@Column({ type: 'varchar', length: 100, nullable: false })
 	methodName!: string;
 
 	@Column({ type: 'text', default: '' })
@@ -22,10 +22,10 @@ export class PaymentMethod extends AbstractEntity {
 	@Column({ type: 'varchar', length: 255, default: '' })
 	iconUrl!: string;
 
-	@Column({ default: 0 })
+	@Column({ type: 'integer', default: 0, nullable: false })
 	order!: number;
 
-	@Column({ default: true })
+	@Column({ type: 'boolean', default: true, nullable: false })
 	isActive!: boolean;
 
 	@CreateDateColumn()

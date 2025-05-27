@@ -6,22 +6,22 @@ export class Auditing {
 	@PrimaryGeneratedColumn()
 	auditingId!: number;
 
-	@Column()
+	@Column({ nullable: false })
 	userId!: number;
 
-	@Column({ type: 'jsonb', default: {} })
+	@Column({ type: 'jsonb', default: {}, nullable: false })
 	auditEvent!: Record<string, any>;
 
-	@Column({ type: 'jsonb', default: {} })
+	@Column({ type: 'jsonb', default: {}, nullable: false })
 	auditData!: Record<string, any>;
 
-	@Column({ type: 'timestamp' })
+	@Column({ type: 'timestamp', nullable: false })
 	auditDate!: Date;
 
 	@CreateDateColumn()
 	createdAt!: Date;
 
-	@ManyToOne(() => User)
+	@ManyToOne(() => User, (user) => user.audits)
 	@JoinColumn({ name: 'user_id' })
-	user!: User;
+	user!: User; 
 }
