@@ -1,18 +1,18 @@
 import { AppDataSource } from '../config/data-source';
 import { Order } from '../models/order/order.entity';
 import { OrderItem } from '../models/order/order-item.entity';
-import { OrderStatus } from '../models/order/order-status.entity';
+import { OrderStatusLog } from '../models/order/order-status_log.entity';
 import { Repository } from 'typeorm';
 
 export class OrderRepository {
 	private orderRepo: Repository<Order>;
 	private orderItemRepo: Repository<OrderItem>;
-	private orderStatusRepo: Repository<OrderStatus>;
+	private orderStatusLogRepo: Repository<OrderStatusLog>;
 
 	constructor() {
 		this.orderRepo = AppDataSource.getRepository(Order);
 		this.orderItemRepo = AppDataSource.getRepository(OrderItem);
-		this.orderStatusRepo = AppDataSource.getRepository(OrderStatus);
+		this.orderStatusLogRepo = AppDataSource.getRepository(OrderStatusLog);
 	}
 
 	// Order operations
@@ -24,14 +24,14 @@ export class OrderRepository {
 	async getOrderById(orderId: number): Promise<Order | null> {
 		return await this.orderRepo.findOne({
 			where: { orderId },
-			relations: ['orderStatus', 'branch', 'cart', 'customer', 'deliveryAddress']
+			relations: ['orderStatusLogs', 'restaurant', 'customer', 'deliveryAddress', 'orderItems']
 		});
 	}
 
 	async getOrdersByCustomerId(customerId: number): Promise<Order[]> {
 		return await this.orderRepo.find({
 			where: { customerId },
-			relations: ['orderStatus', 'branch', 'cart', 'customer', 'deliveryAddress'],
+			relations: ['orderStatusLogs', 'restaurant', 'customer', 'deliveryAddress', 'orderItems'],
 			order: { createdAt: 'DESC' }
 		});
 	}
@@ -41,14 +41,10 @@ export class OrderRepository {
 		return await this.getOrderById(orderId);
 	}
 
-	async updateOrderStatus(orderId: number, orderStatusId: number): Promise<Order | null> {
-		await this.orderRepo.update(orderId, { orderStatusId });
-		return await this.getOrderById(orderId);
-	}
 
 	async cancelOrder(
 		orderId: number,
-		cancelledBy: 'customer' | 'restaurant' | 'system' | 'driver',
+		cancelledBy: 'customer' | 'restaurant' | 'system',
 		reason: string
 	): Promise<Order | null> {
 		const order = await this.getOrderById(orderId);
@@ -83,26 +79,32 @@ export class OrderRepository {
 		});
 	}
 
-	// Order Status operations
-	async getAllOrderStatuses(): Promise<OrderStatus[]> {
-		return await this.orderStatusRepo.find();
+	// Order Status Log operations
+
+	async createOrderStatusLog(data: Partial<OrderStatusLog>): Promise<OrderStatusLog> {
+		const orderStatusLog = this.orderStatusLogRepo.create(data);
+		return await this.orderStatusLogRepo.save(orderStatusLog);
 	}
 
-	async getOrderStatusById(orderStatusId: number): Promise<OrderStatus | null> {
-		return await this.orderStatusRepo.findOne({
-			where: { orderStatusId }
+	async getAllOrderStatusLogs(): Promise<OrderStatusLog[]> {
+		return await this.orderStatusLogRepo.find();
+	}
+
+	async getOrderStatusLogById(orderStatusLogId: number): Promise<OrderStatusLog | null> {
+		return await this.orderStatusLogRepo.findOne({
+			where: { orderStatusLogId }
 		});
 	}
 
 	// Helper methods
-	async calculateOrderTotal(orderId: number): Promise<number> {
-		const orderItems = await this.getOrderItems(orderId);
-		return orderItems.reduce((total, item) => total + item.totalPrice, 0);
-	}
+	// async calculateOrderTotal(orderId: number): Promise<number> {
+	// 	const orderItems = await this.getOrderItems(orderId);
+	// 	return orderItems.reduce((total, item) => total + item.totalPrice, 0);
+	// }
 
-	async updateOrderTotalItems(orderId: number): Promise<void> {
-		const orderItems = await this.getOrderItems(orderId);
-		const totalItems = orderItems.reduce((total, item) => total + item.quantity, 0);
-		await this.updateOrder(orderId, { totalItems });
-	}
+	// async updateOrderTotalItems(orderId: number): Promise<void> {
+	// 	const orderItems = await this.getOrderItems(orderId);
+	// 	const totalItems = orderItems.reduce((total, item) => total + item.quantity, 0);
+	// 	await this.updateOrder(orderId, { totalItems });
+	// }
 }
