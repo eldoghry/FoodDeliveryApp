@@ -15,7 +15,7 @@ import { Menu } from '../menu/menu.entity';
 import { Order } from '../order/order.entity';
 
 
-enum Status {
+export enum Status {
 	open = 'open',
 	busy = 'busy',
 	pause = 'pause',

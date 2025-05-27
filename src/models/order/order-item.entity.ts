@@ -30,7 +30,7 @@ export class OrderItem extends AbstractEntity {
 	quantity!: number;
 
 	@Column({ type: 'decimal', precision: 10, scale: 2, nullable: false })
-	itemPrice!: number;
+	price!: number;
 
 	@Column({ type: 'decimal', precision: 10, scale: 2, nullable: false })
 	totalPrice!: number;
