@@ -30,5 +30,6 @@ export class PaypalStrategy implements IPaymentStrategy {
 
 	async verifyPayment(): Promise<any> {
 		// TODO later
+		// check of paypal success  or fail
 	}
 }
