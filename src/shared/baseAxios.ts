@@ -46,7 +46,8 @@ export abstract class BaseAxios {
 			method: response.config.method,
 			data: response.data
 		};
-		logger.info(`${this.NAME} Axios response`, logData);
+
+		// logger.info(`${this.NAME} Axios response`, response.data);
 
 		return response.data;
 	}

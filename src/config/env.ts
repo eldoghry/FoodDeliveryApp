@@ -27,7 +27,9 @@ const envSchema = Joi.object({
 	JWT_REFRESH_EXPIRE_IN: Joi.string().required(),
 	PAYPAL_BASE_URL: Joi.string().required(),
 	PAYPAL_CLIENT_ID: Joi.string().required(),
-	PAYPAL_SECRET_KEY: Joi.string().required()
+	PAYPAL_SECRET_KEY: Joi.string().required(),
+	PAYPAL_REDIRECT_URL: Joi.string().required(),
+	PAYPAL_CANCEL_URL: Joi.string().required()
 	// TODO: add more env variable here
 }).unknown(true);
 
@@ -70,7 +72,9 @@ export const config = {
 		paypal: {
 			baseUrl: envVars.PAYPAL_BASE_URL,
 			clientId: envVars.PAYPAL_CLIENT_ID,
-			secretKey: envVars.PAYPAL_SECRET_KEY
+			secretKey: envVars.PAYPAL_SECRET_KEY,
+			redirectUrl: envVars.PAYPAL_REDIRECT_URL,
+			cancelUrl: envVars.PAYPAL_CANCEL_URL
 		}
 	}
 };
