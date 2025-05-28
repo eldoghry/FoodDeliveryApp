@@ -41,6 +41,7 @@
 		"morgan": "^1.10.0",
 		"pg": "^8.15.6",
 		"reflect-metadata": "^0.2.2",
+		"shebang-regex": "^4.0.0",
 		"swagger-jsdoc": "^6.2.8",
 		"swagger-ui-express": "^5.0.1",
 		"ts-node": "^10.9.2",
@@ -48,7 +49,8 @@
 		"typeorm-naming-strategies": "^4.1.0",
 		"typescript": "^5.8.3",
 		"uuid": "^11.1.0",
-		"winston": "^3.17.0"
+		"winston": "^3.17.0",
+		"yn": "^5.0.0"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^19.8.0",
