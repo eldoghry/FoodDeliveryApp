@@ -8,10 +8,9 @@ import ErrMessages from '../errors/error-messages';
 import { OrderRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
 import { CustomerService } from './customer.service';
-import { Paypal } from '../payment/paypal/paypal';
-import { PaymentService } from '../payment/payment.service';
+import { PaymentService } from './payment/payment.service';
 import { calculateTotalItems, calculateTotalPrice } from '../utils/helper';
-import { CartItem, Customer, Order, OrderStatusEnum } from '../models';
+import { CartItem, Customer, Order, OrderRelations, OrderStatusEnum } from '../models';
 import { Notify } from '../shared/notify';
 import EventEmitter from 'events';
 import { RestaurantService } from './restaurant.service';
@@ -68,7 +67,8 @@ export class OrderService {
 
 		const paymentService = new PaymentService(paymentMethod);
 		const paymentResult = await paymentService.processPayment(totalAmount, {
-			items: cart.cartItems
+			items: cart.cartItems,
+			order
 		});
 
 		if (!paymentResult.success) {
@@ -127,7 +127,20 @@ export class OrderService {
 		});
 	}
 
-	placePaypalOrders() {
+	async getOrderOrFailBy(filter: { orderId: number; relations?: OrderRelations[] }) {
+		const order = await this.orderRepo.getOrderBy(filter);
+
+		if (!order) throw new ApplicationError(ErrMessages.order.OrderNotFound, StatusCodes.NOT_FOUND);
+		return order;
+	}
+
+	async placePaypalOrders(orderId: number, isPaymentSuccess: boolean) {
+		const order = await this.getOrderOrFailBy({ orderId });
+		if (isPaymentSuccess) {
+			order.status = OrderStatusEnum.pending;
+			await order.save();
+			logger.info('Order payment confirmed', order.orderId);
+		}
 		// change order to pending(paypal success) | failed (paypal failed)
 		// call order change status method (change order status + log status)
 	}

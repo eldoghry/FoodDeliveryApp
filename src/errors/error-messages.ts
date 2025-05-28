@@ -88,7 +88,9 @@ const ErrMessages = {
 
 	payment: {
 		PaymentFailed: 'Payment failed'
-	}
+	},
+
+	order: { OrderNotFound: 'Order not found' }
 };
 
 export default ErrMessages;

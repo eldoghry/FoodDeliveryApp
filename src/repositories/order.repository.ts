@@ -1,5 +1,5 @@
 import { AppDataSource } from '../config/data-source';
-import { Order } from '../models/order/order.entity';
+import { Order, OrderRelations } from '../models/order/order.entity';
 import { OrderItem } from '../models/order/order-item.entity';
 import { OrderStatusLog } from '../models/order/order-status_log.entity';
 import { Repository } from 'typeorm';
@@ -40,7 +40,6 @@ export class OrderRepository {
 		await this.orderRepo.update(orderId, data);
 		return await this.getOrderById(orderId);
 	}
-
 
 	async cancelOrder(
 		orderId: number,
@@ -93,6 +92,17 @@ export class OrderRepository {
 	async getOrderStatusLogById(orderStatusLogId: number): Promise<OrderStatusLog | null> {
 		return await this.orderStatusLogRepo.findOne({
 			where: { orderStatusLogId }
+		});
+	}
+
+	async getOrderBy(filter: { orderId: number; relations?: OrderRelations[] }) {
+		if (Object.keys(filter).length === 0) return null;
+
+		const { relations, ...whereCondition } = filter;
+
+		return await this.orderRepo.findOne({
+			where: whereCondition,
+			relations
 		});
 	}
 
