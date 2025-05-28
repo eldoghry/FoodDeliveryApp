@@ -60,13 +60,13 @@ export class Order extends AbstractEntity {
 	@Column({ type: 'decimal', precision: 10, scale: 2, nullable: false })
 	totalAmount!: number;
 
-	@Column({ type: 'timestamp', nullable: false })
+	@Column({ type: 'timestamp', nullable: true })
 	placedAt!: Date;
 
-	@Column({ type: 'timestamp', nullable: false })
+	@Column({ type: 'timestamp', nullable: true })
 	deliveredAt!: Date;
 
-	@Column({ type: 'jsonb' })
+	@Column({ type: 'jsonb', nullable: true })
 	cancellationInfo!: Record<string, any>; // {canceledBy: user-1, cancelReason: "wrong order"}
 
 	@CreateDateColumn()

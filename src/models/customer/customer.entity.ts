@@ -19,7 +19,7 @@ export enum Gender {
 	female = 'female'
 }
 
-export type CustomerRelations = 'addresses' | 'user';
+export type CustomerRelations = 'addresses' | 'user' | 'orders';
 
 @Check(`"birth_date" <= CURRENT_DATE`)
 @Entity()
