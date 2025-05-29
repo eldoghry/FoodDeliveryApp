@@ -261,4 +261,18 @@ export class CartService {
 
 		return cart;
 	}
+
+	async getAndValidateCart(customerId: number, restaurantId: number) {
+		const cart = await this.getCartWithItems({ customerId, relations: ['cartItems'] });
+
+		// * validate cart not empty and cart items belong to restaurant
+		if (!cart.cartItems.length) throw new ApplicationError(ErrMessages.cart.CartIsEmpty, HttpStatusCodes.BAD_REQUEST);
+
+		const itemsNotBelongToRestaurant = cart.cartItems.filter((item) => item.restaurantId !== restaurantId);
+
+		if (itemsNotBelongToRestaurant.length)
+			throw new ApplicationError(ErrMessages.cart.CartItemDoesNotBelongToTheSpecifiedCart, HttpStatusCodes.BAD_REQUEST);
+
+		return cart;
+	}
 }

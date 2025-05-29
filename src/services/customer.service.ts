@@ -6,7 +6,7 @@ import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { CustomerRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
-import { CustomerRelations } from '../models';
+import { Customer, CustomerRelations } from '../models';
 
 export class CustomerService {
 	private customerRepo = new CustomerRepository();
@@ -16,5 +16,13 @@ export class CustomerService {
 		const customer = await this.customerRepo.getCustomerById(filter);
 		if (!customer) throw new ApplicationError(ErrMessages.customer.CustomerNotFound, HttpStatusCodes.NOT_FOUND);
 		return customer;
+	}
+
+	async validateCustomerAddress(customer: Customer, addressId: number) {
+		const hasAddress = customer.addresses.some((address) => address.addressId === addressId);
+
+		if (!hasAddress) {
+			throw new ApplicationError(ErrMessages.customer.AddressNotFound, HttpStatusCodes.NOT_FOUND);
+		}
 	}
 }

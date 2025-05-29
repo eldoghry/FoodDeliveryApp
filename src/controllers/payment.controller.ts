@@ -28,7 +28,7 @@ export class PaymentController {
 			if (result.status === 'COMPLETED') {
 				const orderId = result.purchase_units[0].reference_id;
 				const orderService = new OrderService();
-				await orderService.placePaypalOrders(+orderId, true);
+				await orderService.processPaypalPaymentCallback(+orderId, true);
 			}
 		}
 

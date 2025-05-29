@@ -1,7 +1,7 @@
 import { Restaurant } from './../models/restaurant/restaurant.entity';
 import { CartService } from './cart.service';
 import { PaymentMethodEnum } from './../models/payment/payment-method.entity';
-import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
+import { StatusCodes } from 'http-status-codes';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
@@ -9,12 +9,12 @@ import { OrderRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
 import { CustomerService } from './customer.service';
 import { PaymentService } from './payment/payment.service';
-import { calculateTotalItems, calculateTotalPrice } from '../utils/helper';
-import { CartItem, Customer, Order, OrderRelations, OrderStatusEnum } from '../models';
+import { calculateTotalPrice } from '../utils/helper';
+import { Customer, Order, OrderRelations, OrderStatusEnum } from '../models';
 import { Notify } from '../shared/notify';
-import EventEmitter from 'events';
 import { RestaurantService } from './restaurant.service';
 import { PlaceOrderResponse } from '../interfaces/order.interface';
+import { PaymentResult } from './payment/paymentStrategy.interface';
 
 export class OrderService {
 	private orderRepo = new OrderRepository();
@@ -42,11 +42,10 @@ export class OrderService {
 		});
 
 		// * validate delivery address belong to user
-		if (customer.addresses.find((address) => address.addressId === addressId) === undefined)
-			throw new ApplicationError(ErrMessages.customer.AddressNotFound, HttpStatusCodes.NOT_FOUND);
+		this.customerService.validateCustomerAddress(customer, addressId);
 
 		// * get cart with items
-		const cart = await this.getAndValidateCart(customerId, restaurantId);
+		const cart = await this.cartService.getAndValidateCart(customerId, restaurantId);
 
 		// const totalItems = calculateTotalItems(cart.cartItems);
 		// const totalCartItemsAmounts = 100; // todo: get from helper
@@ -66,54 +65,15 @@ export class OrderService {
 		});
 
 		const paymentService = new PaymentService(paymentMethod);
-		const paymentResult = await paymentService.processPayment(totalAmount, {
+		const processPaymentResult = await paymentService.processPayment(totalAmount, {
 			items: cart.cartItems,
 			order
 		});
 
-		if (!paymentResult.success) {
-			// todo: use update status & log method
-			order.status = OrderStatusEnum.failed;
-			await order.save();
-			return { success: false, error: paymentResult?.error, order };
-		}
-
-		// 3. Handle gateway redirects
-		if (paymentResult?.redirectUrl) {
-			return { success: true, paymentReference: paymentResult.paymentId, paymentUrl: paymentResult.redirectUrl, order };
-		}
-
-		if (paymentMethod === PaymentMethodEnum.COD) {
-			// todo: use update status & log method
-			order.status = OrderStatusEnum.pending;
-			order.placedAt = new Date(); // set placedAt to current date
-			await order.save();
-			await this.cartService.clearCart(customer.user.userId);
-			await this.sendingPlaceOrderNotification(order, customer, restaurant);
-			return { success: true, paymentReference: paymentResult.paymentId, order };
-		} else if (paymentMethod === PaymentMethodEnum.CARD) {
-			// todo: use update status & log method
-		}
-
-		// order still waiting payment
-		return { success: true, paymentReference: paymentResult.paymentId, paymentUrl: paymentResult.redirectUrl, order };
+		return this.handlePaymentResult({ processPaymentResult, order, customer, restaurant, paymentMethod });
 	}
 
-	private async getAndValidateCart(customerId: number, restaurantId: number) {
-		const cart = await this.cartService.getCartWithItems({ customerId, relations: ['cartItems'] });
-
-		// * validate cart not empty and cart items belong to restaurant
-		if (!cart.cartItems.length) throw new ApplicationError(ErrMessages.cart.CartIsEmpty, HttpStatusCodes.BAD_REQUEST);
-
-		const itemsNotBelongToRestaurant = cart.cartItems.filter((item) => item.restaurantId !== restaurantId);
-
-		if (itemsNotBelongToRestaurant.length)
-			throw new ApplicationError(ErrMessages.cart.CartItemDoesNotBelongToTheSpecifiedCart, HttpStatusCodes.BAD_REQUEST);
-
-		return cart;
-	}
-
-	private async sendingPlaceOrderNotification(order: Order, customer: Customer, restaurant: Restaurant) {
+	private async sendingPlaceOrderNotifications(order: Order, customer: Customer, restaurant: Restaurant) {
 		await Notify.sendNotification('sms', {
 			message: 'Your order has been placed successfully',
 			phone: customer.user.phone
@@ -134,14 +94,67 @@ export class OrderService {
 		return order;
 	}
 
-	async placePaypalOrders(orderId: number, isPaymentSuccess: boolean) {
-		const order = await this.getOrderOrFailBy({ orderId });
-		if (isPaymentSuccess) {
-			order.status = OrderStatusEnum.pending;
+	private async handlePaymentResult(params: {
+		processPaymentResult: PaymentResult;
+		order: Order;
+		paymentMethod: PaymentMethodEnum;
+		customer: Customer;
+		restaurant: Restaurant;
+	}): Promise<PlaceOrderResponse> {
+		const { processPaymentResult, order, paymentMethod, customer, restaurant } = params;
+
+		if (!processPaymentResult.success) {
+			// todo: use update status & log method
+			order.status = OrderStatusEnum.failed;
 			await order.save();
-			logger.info('Order payment confirmed', order.orderId);
+			return { success: false, error: processPaymentResult?.error, order };
 		}
-		// change order to pending(paypal success) | failed (paypal failed)
-		// call order change status method (change order status + log status)
+
+		// 3. Handle gateway redirects
+		if (processPaymentResult?.redirectUrl) {
+			return {
+				success: true,
+				paymentReference: processPaymentResult.paymentId,
+				paymentUrl: processPaymentResult.redirectUrl,
+				order
+			};
+		}
+
+		if (paymentMethod === PaymentMethodEnum.COD) {
+			// todo: use update status & log method
+			await this.finalizeOrderCOD(order, customer, restaurant);
+			return { success: true, paymentReference: processPaymentResult.paymentId, order };
+		}
+
+		// Fallback for card (pending state assumed)
+		return {
+			success: true,
+			paymentReference: processPaymentResult.paymentId,
+			paymentUrl: processPaymentResult.redirectUrl,
+			order
+		};
+	}
+
+	async finalizeOrderCOD(order: Order, customer: Customer, restaurant: Restaurant) {
+		// todo: use update status & log method
+		order.status = OrderStatusEnum.pending;
+		order.placedAt = new Date(); // set placedAt to current date
+		await order.save();
+		await this.cartService.clearCart(customer.user.userId); // todo: change it to work user customer id instead of user id
+		await this.sendingPlaceOrderNotifications(order, customer, restaurant);
+	}
+
+	async processPaypalPaymentCallback(orderId: number, isPaymentSuccess: boolean) {
+		const order = await this.getOrderOrFailBy({ orderId });
+
+		// todo: use update status & log method
+		const orderStatus = isPaymentSuccess ? OrderStatusEnum.pending : OrderStatusEnum.failed;
+
+		order.status = orderStatus;
+
+		await order.save();
+
+		isPaymentSuccess && logger.info('Order payment confirmed', order.orderId);
+		!isPaymentSuccess && logger.info('Order payment failed', order.orderId);
 	}
 }
