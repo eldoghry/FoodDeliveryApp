@@ -216,9 +216,9 @@ export class CartService {
 		});
 	}
 
-	async clearCart(userId: number): Promise<boolean> {
+	async clearCart(customerId: number): Promise<boolean> {
 		return await this.dataSource.transaction(async (manager) => {
-			const customer = await this.validateCustomer(userId);
+			const customer = await this.validateCustomer(customerId);
 			const cart = await this.validateCart(customer!.customerId);
 
 			const deleted = await this.deleteAllCartItems(cart.cartId, manager);

@@ -140,12 +140,17 @@ export class OrderService {
 		order.status = OrderStatusEnum.pending;
 		order.placedAt = new Date(); // set placedAt to current date
 		await order.save();
-		await this.cartService.clearCart(customer.user.userId); // todo: change it to work user customer id instead of user id
+		await this.cartService.clearCart(customer.customerId);
 		await this.sendingPlaceOrderNotifications(order, customer, restaurant);
 	}
 
 	async processPaypalPaymentCallback(orderId: number, isPaymentSuccess: boolean) {
-		const order = await this.getOrderOrFailBy({ orderId });
+		const order = await this.getOrderOrFailBy({ orderId, relations: ['restaurant'] });
+
+		const customer = await this.customerService.getCustomerByIdOrFail({
+			customerId: order.customerId,
+			relations: ['user']
+		});
 
 		// todo: use update status & log method
 		const orderStatus = isPaymentSuccess ? OrderStatusEnum.pending : OrderStatusEnum.failed;
@@ -154,7 +159,12 @@ export class OrderService {
 
 		await order.save();
 
-		isPaymentSuccess && logger.info('Order payment confirmed', order.orderId);
-		!isPaymentSuccess && logger.info('Order payment failed', order.orderId);
+		if (isPaymentSuccess) {
+			await this.cartService.clearCart(customer.customerId);
+			await this.sendingPlaceOrderNotifications(order, customer, order.restaurant);
+			logger.info('Order payment confirmed', order.orderId);
+		} else {
+			logger.info('Order payment failed', order.orderId);
+		}
 	}
 }

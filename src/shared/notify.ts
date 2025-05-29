@@ -19,10 +19,10 @@ export class Notify {
 	}
 
 	static sendSms(data: NotificationSms) {
-		console.log(`Sending SMS to ${data.phone}: ${data.message}`);
+		console.log(`📱 Sending SMS to ${data.phone}: ${data.message}`);
 	}
 
 	static sendEmail(data: NotificationEmail) {
-		console.log(`Sending Email to ${data.receivers.toString()}: ${data.message}`);
+		console.log(`📨 Sending Email to ${data.receivers.toString()}: ${data.message}`);
 	}
 }
