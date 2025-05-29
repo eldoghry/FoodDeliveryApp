@@ -8,8 +8,8 @@ CREATE TABLE "order" (
     delivery_fees DECIMAL(5,2) NOT NULL CHECK (delivery_fees >= 0.00),
     service_fees DECIMAL(5,2) NOT NULL CHECK (service_fees >= 0.00),
     total_amount DECIMAL(10,2) NOT NULL CHECK (total_amount >= 0.00),
-    placed_at TIMESTAMP NOT NULL,
-    delivered_at TIMESTAMP NOT NULL,
+    placed_at TIMESTAMP,
+    delivered_at TIMESTAMP,
     cancellation_info JSONB,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

@@ -65,6 +65,11 @@ const ErrMessages = {
 		FailedToClearCart: 'Failed to clear cart',
 		FailedToDeleteCartItem: 'Failed to delete cart item'
 	},
+	order: {
+		InvalidOrderStatus: 'Invalid Order Status',
+		OrderNotFound: 'Order Not Found',
+		CannotCancelOrderAfter5Minutes: 'Cannot cancel order after 5 minutes of placing it'
+	},
 	customer: {
 		CustomerNotFound: 'Customer not found',
 		AddressNotFound: 'Customer Address not found'
@@ -88,9 +93,7 @@ const ErrMessages = {
 
 	payment: {
 		PaymentFailed: 'Payment failed'
-	},
-
-	order: { OrderNotFound: 'Order not found' }
+	}
 };
 
 export default ErrMessages;
