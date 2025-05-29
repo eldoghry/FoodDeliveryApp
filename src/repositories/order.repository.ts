@@ -1,7 +1,7 @@
 import { AppDataSource } from '../config/data-source';
 import { Order } from '../models/order/order.entity';
 import { OrderItem } from '../models/order/order-item.entity';
-import { OrderStatusLog } from '../models/order/order-status_log.entity';
+import { OrderStatusEnum, OrderStatusLog } from '../models/order/order-status_log.entity';
 import { Repository } from 'typeorm';
 import { OrderStatusChangeBy } from '../models';
 
@@ -40,6 +40,14 @@ export class OrderRepository {
 	async updateOrder(orderId: number, data: Partial<Order>): Promise<Order | null> {
 		await this.orderRepo.update(orderId, data);
 		return await this.getOrderById(orderId);
+	}
+
+	async updateOrderStatus(orderId: number, status: OrderStatusEnum): Promise<Partial<Order> | undefined> {
+		await this.orderRepo.update(orderId, { status });
+		return await this.orderRepo.createQueryBuilder('o').select([
+			'o.order_id AS "orderId"',
+			'o.status AS "status"',
+		]).where('o.order_id = :orderId', { orderId }).getRawOne();
 	}
 
 
@@ -94,6 +102,12 @@ export class OrderRepository {
 	async getOrderStatusLogById(orderStatusLogId: number): Promise<OrderStatusLog | null> {
 		return await this.orderStatusLogRepo.findOne({
 			where: { orderStatusLogId }
+		});
+	}
+
+	async getOrderStatusLogByOrderId(orderId: number): Promise<OrderStatusLog | null> {
+		return await this.orderStatusLogRepo.findOne({
+			where: { orderId }
 		});
 	}
 

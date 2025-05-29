@@ -47,10 +47,9 @@ OrderRouter.post(
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/OrderStatusLog'
+ *               $ref: '#/components/schemas/UpdateOrderStatusResponse'
  *       400:
  *         description: |
- *           Invalid request body.
  *           - Status is required
  *           - Status must be a string
  *           - Status must be one of the following: [initiated, pending, confirmed, onTheWay, canceled, delivered, failed]

@@ -103,7 +103,7 @@ export class OrderService {
 
 	// update status field in order table
 	async changeOrderStatus(orderId: number, newStatus: OrderStatusEnum) {
-		return await this.orderRepo.updateOrder(orderId, { status: newStatus });
+		return await this.orderRepo.updateOrderStatus(orderId, newStatus);
 	}
 
 	private isValidActor(actor: any): actor is OrderStatusChangeBy {

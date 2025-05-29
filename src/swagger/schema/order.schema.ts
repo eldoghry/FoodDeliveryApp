@@ -10,6 +10,13 @@ const swaggerSchema = {
             }
         }
     },
+    UpdateOrderStatusResponse: {
+        type: 'object',
+        properties: {
+            orderId: { type: 'integer', description: 'The ID of the order.', example: 1 },
+            status: { type: 'string', description: 'The new status of the order.', enum: ['initiated', 'pending', 'confirmed', 'onTheWay', 'canceled', 'delivered', 'failed'], example: 'delivered' },
+        }
+    },
     OrderStatusLog: {
         type: 'object',
         properties: {
