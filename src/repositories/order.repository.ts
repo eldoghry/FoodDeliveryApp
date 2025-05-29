@@ -3,6 +3,7 @@ import { Order } from '../models/order/order.entity';
 import { OrderItem } from '../models/order/order-item.entity';
 import { OrderStatusLog } from '../models/order/order-status_log.entity';
 import { Repository } from 'typeorm';
+import { OrderStatusChangeBy } from '../models';
 
 export class OrderRepository {
 	private orderRepo: Repository<Order>;
@@ -44,7 +45,7 @@ export class OrderRepository {
 
 	async cancelOrder(
 		orderId: number,
-		cancelledBy: 'customer' | 'restaurant' | 'system',
+		cancelledBy: OrderStatusChangeBy,
 		reason: string
 	): Promise<Order | null> {
 		const order = await this.getOrderById(orderId);

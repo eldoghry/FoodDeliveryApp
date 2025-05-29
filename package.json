@@ -5,7 +5,7 @@
 	"scripts": {
 		"prepare": "husky install",
 		"build": "tsc",
-		"start": "node dist/server.js",
+		"start": "node dist/src/server.js",
 		"dev": "cross-env NODE_ENV=development nodemon --legacy-watch",
 		"lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
 		"lint:fix": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
