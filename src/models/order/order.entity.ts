@@ -60,10 +60,10 @@ export class Order extends AbstractEntity {
 	@Column({ type: 'decimal', precision: 10, scale: 2, nullable: false })
 	totalAmount!: number;
 
-	@Column({ type: 'timestamp', nullable: false })
+	@Column({ type: 'timestamp'})
 	placedAt!: Date;
 
-	@Column({ type: 'timestamp', nullable: false })
+	@Column({ type: 'timestamp' })
 	deliveredAt!: Date;
 
 	@Column({ type: 'jsonb' })

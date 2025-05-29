@@ -11,6 +11,6 @@ ApiRouter.use('/app', AppRouter);
 ApiRouter.use('/auth', AuthRouter);
 ApiRouter.use('/user', UserRouter);
 ApiRouter.use('/cart', CartRouter);
-ApiRouter.use('/order', OrderRouter);
+ApiRouter.use('/orders', OrderRouter);
 
 export default ApiRouter;
