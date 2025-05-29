@@ -16,7 +16,6 @@ export const updateOrderStatusParamsSchema = Joi.object({
 
 export const updateOrderStatusBodySchema = Joi.object({
 	status: Joi.string()
-		.valid(...Object.values(OrderStatusEnum))
 		.required().messages({
 			'any.required': 'Status is required',
 		})

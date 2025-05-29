@@ -105,8 +105,8 @@ export class OrderRepository {
 		});
 	}
 
-	async getOrderStatusLogByOrderId(orderId: number): Promise<OrderStatusLog | null> {
-		return await this.orderStatusLogRepo.findOne({
+	async getOrderStatusLogByOrderId(orderId: number): Promise<OrderStatusLog[]> {
+		return await this.orderStatusLogRepo.find({
 			where: { orderId }
 		});
 	}
