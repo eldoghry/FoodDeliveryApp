@@ -18,8 +18,9 @@ export class OrderRepository {
 
 	// Order operations
 	async createOrder(data: Partial<Order>): Promise<Order> {
-		const order = this.orderRepo.create(data);
-		return await this.orderRepo.save(order);
+		const order = await this.orderRepo.create(data).save();
+		await this.createOrderStatusLog({ orderId: order.orderId, status: OrderStatusEnum.initiated });
+		return order;
 	}
 
 	async getOrderById(orderId: number): Promise<Order | null> {
