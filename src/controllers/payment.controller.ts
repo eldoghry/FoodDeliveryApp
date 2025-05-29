@@ -10,15 +10,14 @@ import { OrderService } from '../services/order.service';
 
 export class PaymentController {
 	async handlePaypalCallback(req: Request, res: Response) {
-		const paymentService = new PaymentService(PaymentMethodEnum.CARD);
-
 		const event: PayPalWebhookEvent = req.body;
-
 		// console.log('paypal event', event);
 
 		if (!event) throw new ApplicationError('Invalid paypal callback', StatusCodes.BAD_REQUEST);
 
 		logger.info('Received PayPal event:', event.event_type);
+
+		const paymentService = new PaymentService(PaymentMethodEnum.CARD);
 
 		if (event.event_type === 'CHECKOUT.ORDER.APPROVED') {
 			const paypalOrderId = event.resource.id;

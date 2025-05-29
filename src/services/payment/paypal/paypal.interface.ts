@@ -77,3 +77,23 @@ export interface PaypalCaptureResponse {
 	status: string;
 	purchase_units: PurchaseUnit[];
 }
+
+export interface PaypalAuthResponse {
+	scope: string;
+	access_token: string; //  OAuth 2.0 access token
+	token_type: string; // Typically "Bearer", indicating the type of the token.
+	app_id: string; //The ID of the PayPal app associated with this token.
+	expires_in: number; // The number of seconds until the token expires (e.g., 31668 seconds ≈ 8.8 hours).
+	nonce: string; //
+}
+
+export interface PaypalCreateOrderResponse {
+	id: string; // The unique identifier for the created order.
+	status: string; // The status of the order (e.g., "CREATED", "APPROVED").
+	// purchase_units: PurchaseUnit[]; // An array of purchase units associated with the order.
+	links: Array<{
+		href: string; // The URL to access the resource.
+		rel: string; // The relationship type (e.g., "self", "approve").
+		method: string; // The HTTP method to use for the link (e.g., "GET", "POST").
+	}>;
+}

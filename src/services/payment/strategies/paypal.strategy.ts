@@ -7,7 +7,7 @@ import { CreateOrderBodyRequest, PaypalCaptureResponse } from '../paypal/paypal.
 import { Order } from './../../../models/order/order.entity';
 
 export class PaypalStrategy implements IPaymentStrategy {
-	private readonly paypalService = new Paypal();
+	private readonly paypalService = Paypal.getInstance();
 
 	async processPayment(amount: number, data: any): Promise<PaymentResult> {
 		logger.info(`Paypal payment registered: ${amount}`);

@@ -1,12 +1,14 @@
-import axios, { AxiosInstance } from 'axios';
 import { config } from '../../../config/env';
 import { PaypalAuthUrl, PaypalCaptureOrder, PaypalCreateOrderUrl } from './paypal.request';
 import logger from '../../../config/logger';
-import ApplicationError from '../../../errors/application.error';
-import { StatusCodes } from 'http-status-codes';
 import { PaypalAxios } from './paypal.axios';
 import { BaseAxios } from '../../../shared/baseAxios';
-import { CreateOrderBodyRequest, PaypalCaptureResponse } from './paypal.interface';
+import {
+	CreateOrderBodyRequest,
+	PaypalAuthResponse,
+	PaypalCaptureResponse,
+	PaypalCreateOrderResponse
+} from './paypal.interface';
 import { v4 as UUIDV4 } from 'uuid';
 
 const orderData = {
@@ -68,15 +70,21 @@ const orderData = {
 };
 
 export class Paypal {
+	private static instance: Paypal;
 	private readonly client: BaseAxios;
 	private accessToken: string | null = null;
+	private tokenExpiryTime: number | null = null;
 
-	constructor() {
+	private constructor() {
 		this.client = new PaypalAxios();
 	}
 
+	static getInstance(): Paypal {
+		if (!this.instance) this.instance = new Paypal();
+		return this.instance;
+	}
+
 	private async login(): Promise<void> {
-		console.log('login start');
 		const CLIENT_ID = config.payment.paypal.clientId;
 		const CLIENT_SECRET = config.payment.paypal.secretKey;
 		const credentials = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
@@ -84,7 +92,7 @@ export class Paypal {
 		const data = new URLSearchParams();
 		data.append('grant_type', 'client_credentials');
 
-		const response: any = await this.client.axios.post(PaypalAuthUrl, data, {
+		const response: PaypalAuthResponse = await this.client.axios.post(PaypalAuthUrl, data, {
 			headers: {
 				Authorization: `Basic ${credentials}`,
 				'Content-Type': 'application/x-www-form-urlencoded'
@@ -92,16 +100,21 @@ export class Paypal {
 		});
 
 		this.accessToken = response.access_token;
+		this.tokenExpiryTime = Date.now() + response.expires_in * 1000 - 60000; // Subtract 1 minute for safety
+		logger.info('PayPal access token obtained successfully');
 	}
 
-	private async ensureAccessToken() {
-		if (!this.accessToken) await this.login();
+	private async ensureAccessToken(): Promise<void> {
+		const now = Date.now();
+		if (!this.accessToken || !this.tokenExpiryTime || now >= this.tokenExpiryTime) {
+			await this.login();
+		}
 	}
 
-	async createOrder(payload: CreateOrderBodyRequest) {
-		// await this.ensureAccessToken();
-		await this.login();
-		const response: any = await this.client.axios.post(
+	async createOrder(payload: CreateOrderBodyRequest): Promise<PaypalCreateOrderResponse> {
+		await this.ensureAccessToken();
+
+		const response: PaypalCreateOrderResponse = await this.client.axios.post(
 			PaypalCreateOrderUrl,
 			// {
 			// 	intent: 'CAPTURE',
@@ -132,12 +145,12 @@ export class Paypal {
 	}
 
 	async capturePayment(paypalOrderId: string): Promise<PaypalCaptureResponse> {
-		// await this.ensureAccessToken();
-		await this.login();
-		const url = PaypalCaptureOrder(paypalOrderId);
+		await this.ensureAccessToken();
+
+		const paypalCaptureUrl = PaypalCaptureOrder(paypalOrderId);
 
 		const response: any = await this.client.axios.post(
-			url,
+			paypalCaptureUrl,
 			{},
 			{
 				headers: {
