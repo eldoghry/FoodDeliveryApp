@@ -1,3 +1,5 @@
+import logger from '../config/logger';
+
 class NotificationMeta {}
 
 class NotificationSms extends NotificationMeta {
@@ -19,10 +21,10 @@ export class Notify {
 	}
 
 	static sendSms(data: NotificationSms) {
-		console.log(`📱 Sending SMS to ${data.phone}: ${data.message}`);
+		logger.info(`📱 Sending SMS to ${data.phone}: ${data.message}`);
 	}
 
 	static sendEmail(data: NotificationEmail) {
-		console.log(`📨 Sending Email to ${data.receivers.toString()}: ${data.message}`);
+		logger.info(`📨 Sending Email to ${data.receivers.toString()}: ${data.message}`);
 	}
 }

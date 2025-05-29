@@ -23,7 +23,7 @@ export class OrderService {
 	private dataSource = AppDataSource; // to be used for typeorm transactions
 	private restaurantService = new RestaurantService();
 
-	async placeOrder(payload: {
+	async checkout(payload: {
 		customerId: number;
 		restaurantId: number;
 		// cartId: number;
@@ -105,8 +105,12 @@ export class OrderService {
 
 		if (!processPaymentResult.success) {
 			// todo: use update status & log method
-			order.status = OrderStatusEnum.failed;
-			await order.save();
+			// order.status = OrderStatusEnum.failed;
+			// await order.save();
+
+			await this.updateOrderStatus(order.orderId, OrderStatusEnum.failed, OrderStatusChangeBy.payment);
+			await order.reload();
+
 			return { success: false, error: processPaymentResult?.error, order };
 		}
 
@@ -137,9 +141,11 @@ export class OrderService {
 
 	async finalizeOrderCOD(order: Order, customer: Customer, restaurant: Restaurant) {
 		// todo: use update status & log method
-		order.status = OrderStatusEnum.pending;
+		// order.status = OrderStatusEnum.pending;
 		order.placedAt = new Date(); // set placedAt to current date
 		await order.save();
+		await this.updateOrderStatus(order.orderId, OrderStatusEnum.pending, OrderStatusChangeBy.payment);
+		await order.reload();
 		await this.cartService.clearCart(customer.customerId);
 		await this.sendingPlaceOrderNotifications(order, customer, restaurant);
 	}
@@ -155,9 +161,13 @@ export class OrderService {
 		// todo: use update status & log method
 		const orderStatus = isPaymentSuccess ? OrderStatusEnum.pending : OrderStatusEnum.failed;
 
-		order.status = orderStatus;
+		// order.status = orderStatus;
+		// await order.save();
 
+		await this.updateOrderStatus(order.orderId, orderStatus, OrderStatusChangeBy.payment);
+		order.placedAt = new Date();
 		await order.save();
+		await order.reload();
 
 		if (isPaymentSuccess) {
 			await this.cartService.clearCart(customer.customerId);

@@ -18,7 +18,7 @@ export class PaypalStrategy implements IPaymentStrategy {
 
 		try {
 			const order = await this.paypalService.createOrder(payload);
-			logger.info(`Paypal order created: ${order.id}`);
+			logger.info(`📄 Paypal order created: ${order.id}`);
 
 			return {
 				success: true,
@@ -27,7 +27,7 @@ export class PaypalStrategy implements IPaymentStrategy {
 				redirectUrl: order.links.find((link: any) => link.rel === 'approve')?.href
 			};
 		} catch (error) {
-			logger.error('Error creating Paypal order:', error);
+			logger.error('💥 Error creating Paypal order:', error);
 			return {
 				success: false,
 				paymentId: '',
@@ -40,10 +40,10 @@ export class PaypalStrategy implements IPaymentStrategy {
 		logger.info(`Paypal payment verification: ${paypalOrderId}`);
 		try {
 			const verifyResult = await this.paypalService.capturePayment(paypalOrderId);
-			logger.info(`Paypal order created: ${JSON.stringify(verifyResult)}`);
+			logger.info(`💵 Paypal order captured: ${verifyResult.id}[${verifyResult.status}}]`);
 			return verifyResult;
 		} catch (error) {
-			logger.error('Error Paypal payment verification:', error);
+			logger.error('💥 Error Paypal payment verification:', error);
 			throw error;
 		}
 	}

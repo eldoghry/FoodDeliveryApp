@@ -8,9 +8,9 @@ import { OrderStatusChangeBy } from '../models/order/order-status_log.entity';
 export class OrderController {
 	private orderService = new OrderService();
 
-	async placeOrder(req: Request, res: Response) {
+	async checkout(req: Request, res: Response) {
 		const payload = req?.validated?.body;
-		const orderResult = await this.orderService.placeOrder({
+		const orderResult = await this.orderService.checkout({
 			customerId: req?.user?.actorId as number,
 			addressId: payload?.addressId,
 			paymentMethod: payload?.paymentMethod,

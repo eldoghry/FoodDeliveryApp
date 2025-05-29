@@ -24,7 +24,7 @@ export class PaymentController {
 			const result = (await paymentService.verifyPayment(paypalOrderId)) as PaypalCaptureResponse;
 
 			// console.log(result);
-
+			// console.dir(result.purchase_units[0].payments, { depth: null });
 			if (result.status === 'COMPLETED') {
 				const orderId = result.purchase_units[0].reference_id;
 				const orderService = new OrderService();

@@ -39,6 +39,7 @@ interface PurchaseUnit {
 	// invoice_id: string;
 	reference_id: string;
 	amount: Amount;
+	payments?: Record<string, any>;
 	// items: Item[];
 }
 
