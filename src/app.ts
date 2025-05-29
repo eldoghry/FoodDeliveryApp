@@ -13,6 +13,7 @@ export const createApp = (): Application => {
 
 	// register middlewares
 	app.use(addRequestTimeMiddleware); // add request time
+	app.set('trust proxy', '127.0.0.1');
 	app.use(express.json());
 	app.use(express.urlencoded({ extended: true }));
 	app.use(cors());

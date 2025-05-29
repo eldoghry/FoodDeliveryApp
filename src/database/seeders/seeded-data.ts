@@ -134,7 +134,8 @@ const restaurantSeedData: SeedData<Restaurant> = {
 		status: faker.helpers.arrayElement(Object.values(RestaurantStatus)),
 		commercialRegistrationNumber: faker.string.alphanumeric(10),
 		vatNumber: faker.string.alphanumeric(12),
-		isActive: faker.datatype.boolean()
+		isActive: faker.datatype.boolean(),
+		email: `orders@restaurant${index + 1}.com`
 	}))
 };
 

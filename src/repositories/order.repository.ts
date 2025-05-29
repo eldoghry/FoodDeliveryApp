@@ -1,5 +1,5 @@
 import { AppDataSource } from '../config/data-source';
-import { Order } from '../models/order/order.entity';
+import { Order, OrderRelations } from '../models/order/order.entity';
 import { OrderItem } from '../models/order/order-item.entity';
 import { OrderStatusEnum, OrderStatusLog } from '../models/order/order-status_log.entity';
 import { Repository } from 'typeorm';
@@ -18,8 +18,9 @@ export class OrderRepository {
 
 	// Order operations
 	async createOrder(data: Partial<Order>): Promise<Order> {
-		const order = this.orderRepo.create(data);
-		return await this.orderRepo.save(order);
+		const order = await this.orderRepo.create(data).save();
+		await this.createOrderStatusLog({ orderId: order.orderId, status: OrderStatusEnum.initiated });
+		return order;
 	}
 
 	async getOrderById(orderId: number): Promise<Order | null> {
@@ -44,18 +45,14 @@ export class OrderRepository {
 
 	async updateOrderStatus(orderId: number, status: OrderStatusEnum): Promise<Partial<Order> | undefined> {
 		await this.orderRepo.update(orderId, { status });
-		return await this.orderRepo.createQueryBuilder('o').select([
-			'o.order_id AS "orderId"',
-			'o.status AS "status"',
-		]).where('o.order_id = :orderId', { orderId }).getRawOne();
+		return await this.orderRepo
+			.createQueryBuilder('o')
+			.select(['o.order_id AS "orderId"', 'o.status AS "status"'])
+			.where('o.order_id = :orderId', { orderId })
+			.getRawOne();
 	}
 
-
-	async cancelOrder(
-		orderId: number,
-		cancelledBy: OrderStatusChangeBy,
-		reason: string
-	): Promise<Order | null> {
+	async cancelOrder(orderId: number, cancelledBy: OrderStatusChangeBy, reason: string): Promise<Order | null> {
 		const order = await this.getOrderById(orderId);
 		if (!order) return null;
 
@@ -103,6 +100,14 @@ export class OrderRepository {
 		return await this.orderStatusLogRepo.findOne({
 			where: { orderStatusLogId }
 		});
+	}
+
+	async getOrderBy(filter: { orderId: number; relations?: OrderRelations[] }) {
+		if (Object.keys(filter).length === 0) return null;
+
+		const { relations, ...whereCondition } = filter;
+
+		return await this.orderRepo.findOne({ where: whereCondition, relations });
 	}
 
 	async getOrderStatusLogByOrderId(orderId: number): Promise<OrderStatusLog[]> {

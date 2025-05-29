@@ -16,6 +16,8 @@ import { Address } from '../customer/address.entity';
 import { OrderItem } from './order-item.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
 
+export type OrderRelations = 'orderStatusLogs' | 'orderItems' | 'deliveryAddress' | 'restaurant' | 'customer';
+
 @Check(`"delivery_fees" >= 0.00`)
 @Check(`"service_fees" >= 0.00`)
 @Check(`"total_amount" >= 0.00`)
@@ -60,13 +62,13 @@ export class Order extends AbstractEntity {
 	@Column({ type: 'decimal', precision: 10, scale: 2, nullable: false })
 	totalAmount!: number;
 
-	@Column({ type: 'timestamp'})
+	@Column({ type: 'timestamp', nullable: true })
 	placedAt!: Date;
 
-	@Column({ type: 'timestamp' })
+	@Column({ type: 'timestamp', nullable: true })
 	deliveredAt!: Date;
 
-	@Column({ type: 'jsonb' })
+	@Column({ type: 'jsonb', nullable: true })
 	cancellationInfo!: Record<string, any>; // {canceledBy: user-1, cancelReason: "wrong order"}
 
 	@CreateDateColumn()

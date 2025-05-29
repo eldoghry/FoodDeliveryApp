@@ -5,7 +5,11 @@ import { isRestaurantAvailable } from '../middlewares/isRestaurantAvailable.midd
 import { validateRequest } from '../middlewares/validate-request.middleware';
 import { OrderController } from '../controllers';
 import { isCustomer } from '../middlewares/isCustomer.middleware';
-import { checkoutBodySchema, updateOrderStatusBodySchema, updateOrderStatusParamsSchema } from '../validators/order.validator';
+import {
+	checkoutBodySchema,
+	updateOrderStatusBodySchema,
+	updateOrderStatusParamsSchema
+} from '../validators/order.validator';
 import { isRestaurant } from '../middlewares/isRestaurant.middleware';
 
 const OrderRouter = Router();
@@ -16,8 +20,8 @@ OrderRouter.post(
 	isAuthenticated,
 	isCustomer,
 	validateRequest({ body: checkoutBodySchema }),
-	// isRestaurantAvailable,
-	controller.placeOrder.bind(controller)
+	isRestaurantAvailable,
+	controller.checkout.bind(controller)
 );
 
 /**
@@ -71,6 +75,6 @@ OrderRouter.patch(
 	isRestaurant,
 	validateRequest({ params: updateOrderStatusParamsSchema, body: updateOrderStatusBodySchema }),
 	controller.updateOrderStatus.bind(controller)
-)
+);
 
 export default OrderRouter;

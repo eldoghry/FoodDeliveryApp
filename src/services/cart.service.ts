@@ -216,9 +216,9 @@ export class CartService {
 		});
 	}
 
-	async clearCart(userId: number): Promise<boolean> {
+	async clearCart(customerId: number): Promise<boolean> {
 		return await this.dataSource.transaction(async (manager) => {
-			const customer = await this.validateCustomer(userId);
+			const customer = await this.validateCustomer(customerId);
 			const cart = await this.validateCart(customer!.customerId);
 
 			const deleted = await this.deleteAllCartItems(cart.cartId, manager);
@@ -258,6 +258,20 @@ export class CartService {
 		const cart = await this.cartRepo.getCartWithItems(filter);
 
 		if (!cart) throw new ApplicationError(ErrMessages.cart.CartNotFound, HttpStatusCodes.NOT_FOUND);
+
+		return cart;
+	}
+
+	async getAndValidateCart(customerId: number, restaurantId: number) {
+		const cart = await this.getCartWithItems({ customerId, relations: ['cartItems'] });
+
+		// * validate cart not empty and cart items belong to restaurant
+		if (!cart.cartItems.length) throw new ApplicationError(ErrMessages.cart.CartIsEmpty, HttpStatusCodes.BAD_REQUEST);
+
+		const itemsNotBelongToRestaurant = cart.cartItems.filter((item) => item.restaurantId !== restaurantId);
+
+		if (itemsNotBelongToRestaurant.length)
+			throw new ApplicationError(ErrMessages.cart.CartItemDoesNotBelongToTheSpecifiedCart, HttpStatusCodes.BAD_REQUEST);
 
 		return cart;
 	}

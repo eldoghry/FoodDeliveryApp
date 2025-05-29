@@ -21,6 +21,7 @@ export enum RestaurantStatus {
 	closed = 'closed'
 }
 
+export type RestaurantRelations = 'user' | 'menus' | 'cartItems' | 'orders';
 @Entity()
 export class Restaurant extends AbstractEntity {
 	@PrimaryGeneratedColumn()
@@ -52,6 +53,9 @@ export class Restaurant extends AbstractEntity {
 
 	@Column({ type: 'boolean', default: true, nullable: false })
 	isActive!: boolean;
+
+	@Column({ type: 'varchar', length: 100, unique: true })
+	email!: string;
 
 	@CreateDateColumn()
 	createdAt!: Date;

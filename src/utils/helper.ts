@@ -65,3 +65,9 @@ export function getIpFromRequest(req: Request): string | null {
 
 	return null;
 }
+
+export function generatePaymentReference(prefix = 'PAY') {
+	const timestamp = Date.now().toString(36).toUpperCase();
+	const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
+	return `${prefix}-${timestamp}-${randomPart}`;
+}
