@@ -67,7 +67,7 @@ export class Order extends AbstractEntity {
 	deliveredAt!: Date;
 
 	@Column({ type: 'jsonb' })
-	cancellationInfo!: Record<string, any>; // {canceledBy: user-1, cancelReason: "wrong order"}
+	cancellationInfo!: Record<string, any>; // {canceledBy: user-1, reason: "wrong order", canceledAt: "2025-05-29T22:25:54.819Z"}
 
 	@CreateDateColumn()
 	createdAt!: Date;

@@ -10,6 +10,16 @@ const swaggerSchema = {
             }
         }
     },
+    CancelOrderBody: {
+        type: 'object',
+        properties: {
+            reason: {
+                type: 'string',
+                description: 'The reason for canceling the order.',
+                example: 'Customer requested to cancel the order'
+            }
+        }
+    },
     UpdateOrderStatusResponse: {
         type: 'object',
         properties: {

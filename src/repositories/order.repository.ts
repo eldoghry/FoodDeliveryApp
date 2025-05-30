@@ -42,8 +42,8 @@ export class OrderRepository {
 		return await this.getOrderById(orderId);
 	}
 
-	async updateOrderStatus(orderId: number, status: OrderStatusEnum): Promise<Partial<Order> | undefined> {
-		await this.orderRepo.update(orderId, { status });
+	async updateOrderStatus(orderId: number,data: Partial<Order>): Promise<Partial<Order> | undefined> {
+		await this.orderRepo.update(orderId, data);
 		return await this.orderRepo.createQueryBuilder('o').select([
 			'o.order_id AS "orderId"',
 			'o.status AS "status"',

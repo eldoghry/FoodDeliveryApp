@@ -22,7 +22,15 @@ export class OrderController {
 	async updateOrderStatus(req: Request, res: Response) {
 		const orderId = req?.validated?.params?.orderId;
 		const { status } = req?.validated?.body;
-		const data = await this.orderService.updateOrderStatus(orderId, status, OrderStatusChangeBy.restaurant);
+		const data = await this.orderService.updateOrderStatus(orderId, {status}, OrderStatusChangeBy.restaurant);
 		sendResponse(res, StatusCodes.OK, 'Order status updated successfully', data);
+	}
+
+	async cancelOrder(req: Request, res: Response) {
+		const orderId = req?.validated?.params?.orderId;
+		const actorType = req?.user?.actorType;
+		const payload = req?.validated?.body;
+		const data = await this.orderService.cancelOrder(orderId, actorType!, payload)
+		sendResponse(res, StatusCodes.OK, 'Order cancelled successfully', data);
 	}
 }

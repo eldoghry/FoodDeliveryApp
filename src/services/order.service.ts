@@ -53,11 +53,28 @@ export class OrderService {
 		return minutesSinceCreation <= 5;
 	}
 
-	// validate order status transition
-	private async validateOrderStatus(orderId: number, newStatus: OrderStatusEnum, actor: OrderStatusChangeBy) {
+	private validateCancelTime(date: Date) {
+		if (!this.isWithin5Minutes(date)) {
+			throw new ApplicationError(ErrMessages.order.CannotCancelOrderAfter5Minutes, HttpStatusCodes.BAD_REQUEST);
+		}
+		return true;
+	}
+
+	private async validateOrder(orderId: number) {
 		const order = await this.orderRepo.getOrderById(orderId);
 		if (!order) {
 			throw new ApplicationError(ErrMessages.order.OrderNotFound, HttpStatusCodes.NOT_FOUND);
+		}
+		return order;
+	}
+
+	// validate order status transition
+	private async validateOrderStatus(orderId: number, newStatus: OrderStatusEnum, actor: OrderStatusChangeBy) {
+		const order = await this.validateOrder(orderId);
+
+		const validStatuses = Object.values(OrderStatusEnum);
+		if (!validStatuses.includes(newStatus)) {
+			throw new ApplicationError(`Invalid status: ${newStatus}`, HttpStatusCodes.BAD_REQUEST);
 		}
 
 		const currentStatus = order.status;
@@ -85,11 +102,13 @@ export class OrderService {
 			throw new ApplicationError(`Invalid actor: ${actor} for order status transition from ${currentStatus} to ${newStatus}`, HttpStatusCodes.BAD_REQUEST);
 		}
 
+		const pendingStatusLogDate = order.orderStatusLogs.find(log => log.status === OrderStatusEnum.pending)?.createdAt;
+
 		// Specific checks for cancelation based on current status & actor
 		if (allowedStatuses.includes(OrderStatusEnum.canceled) &&
 			!(
 				(currentStatus === OrderStatusEnum.pending &&
-					actor === OrderStatusChangeBy.system) ||
+					actor === OrderStatusChangeBy.system && this.validateCancelTime(pendingStatusLogDate!)) ||
 				(currentStatus === OrderStatusEnum.confirmed &&
 					actor === OrderStatusChangeBy.restaurant)
 			)
@@ -99,11 +118,6 @@ export class OrderService {
 				HttpStatusCodes.BAD_REQUEST
 			);
 		}
-	}
-
-	// update status field in order table
-	async changeOrderStatus(orderId: number, newStatus: OrderStatusEnum) {
-		return await this.orderRepo.updateOrderStatus(orderId, newStatus);
 	}
 
 	private isValidActor(actor: any): actor is OrderStatusChangeBy {
@@ -127,9 +141,25 @@ export class OrderService {
 	}
 
 
-	async updateOrderStatus(orderId: number, newStatus: OrderStatusEnum, actor: OrderStatusChangeBy) {
-		await this.addOrderStatusLog(orderId, newStatus, actor);
-		return await this.changeOrderStatus(orderId, newStatus);
+	async updateOrderStatus(orderId: number, payload: any, actor: OrderStatusChangeBy) {
+		await this.addOrderStatusLog(orderId, payload.status, actor);
+		return await this.orderRepo.updateOrderStatus(orderId, payload);
+	}
+
+
+	async cancelOrder(orderId: number, actorType: string, payload: { reason: string }) {
+		let actor: OrderStatusChangeBy;
+		if (actorType === 'customer') {
+			actor = OrderStatusChangeBy.system;
+		} else if (actorType.includes('restaurant')) {
+			actor = OrderStatusChangeBy.restaurant;
+		} else {
+			throw new ApplicationError(`${actorType} is not allowed to cancel an order`, HttpStatusCodes.BAD_REQUEST);
+		}
+
+		const now = new Date();
+		const formattedDate = now.toISOString().replace('T', ' ').replace('Z', '');
+		return await this.updateOrderStatus(orderId, { status: OrderStatusEnum.canceled, cancellationInfo: { cancelledBy: actor, reason: payload.reason, cancelledAt: formattedDate } }, actor)
 	}
 }
 

@@ -10,7 +10,7 @@ export const checkoutBodySchema = Joi.object({
 		.required()
 }).required();
 
-export const updateOrderStatusParamsSchema = Joi.object({
+export const orderParamsSchema = Joi.object({
 	orderId: Joi.number().integer().min(1).required()
 }).required();
 
@@ -19,4 +19,10 @@ export const updateOrderStatusBodySchema = Joi.object({
 		.required().messages({
 			'any.required': 'Status is required',
 		})
+}).required();
+
+export const cancelOrderBodySchema = Joi.object({
+	reason: Joi.string().required().messages({
+		'any.required': 'Reason is required',
+	})
 }).required();
