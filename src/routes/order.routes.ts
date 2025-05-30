@@ -22,7 +22,7 @@ OrderRouter.post(
 
 /**
  * @swagger
- * /orders/{order_id}/status:
+ * /orders/{orderId}/status:
  *   patch:
  *     summary: Update the status of an order
  *     tags:
@@ -31,7 +31,7 @@ OrderRouter.post(
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: order_id
+ *         name: orderId
  *         required: true
  *         schema:
  *           type: integer
@@ -75,7 +75,7 @@ OrderRouter.patch(
 
 /**
  * @swagger
- * /orders/{order_id}/cancel:
+ * /orders/{orderId}/cancel:
  *   post:
  *     summary: Cancel an order
  *     description: Cancel an order by customer or restaurant
@@ -85,7 +85,7 @@ OrderRouter.patch(
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: order_id
+ *         name: orderId
  *         required: true
  *         schema:
  *           type: integer
@@ -124,6 +124,46 @@ OrderRouter.post(
 	isAuthenticated,
 	validateRequest({ params: orderParamsSchema , body: cancelOrderBodySchema }),
 	controller.cancelOrder.bind(controller)
+)
+
+/**
+ * @swagger
+ * /orders/{orderId}/summary:
+ *   get:
+ *     summary: Get order summary
+ *     description: Get order summary by order ID
+ *     tags:
+ *       - Order
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Order summary retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/OrderSummary'
+ *       400:
+ *         description: Order not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Order not found
+ */
+OrderRouter.get(
+	'/:orderId/summary',
+	isAuthenticated,
+	isCustomer,
+	validateRequest({ params: orderParamsSchema }),
+	controller.getOrderSummary.bind(controller)
 )
 
 export default OrderRouter;

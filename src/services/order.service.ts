@@ -306,9 +306,14 @@ export class OrderService {
 		} else {
 			throw new ApplicationError(`${actorType} is not allowed to cancel an order`, HttpStatusCode.BAD_REQUEST);
 		}
+		return await this.updateOrderStatus(orderId, { status: OrderStatusEnum.canceled, cancellationInfo: { cancelledBy: actor, reason: payload.reason, cancelledAt: new Date() } }, actor)
+	}
 
-		const now = new Date();
-		const formattedDate = now.toISOString().replace('T', ' ').replace('Z', '');
-		return await this.updateOrderStatus(orderId, { status: OrderStatusEnum.canceled, cancellationInfo: { cancelledBy: actor, reason: payload.reason, cancelledAt: formattedDate } }, actor)
+	async getOrderSummary(orderId: number) {
+		const order = await this.validateOrder(orderId);
+		const orderSummary = await this.orderRepo.getOrderSummary(orderId);
+		const totalItemsPrice = calculateTotalPrice(order.orderItems).toFixed(2);
+		const totalAmount = calculateTotalPrice(order.orderItems, order.serviceFees, order.deliveryFees).toFixed(2);
+		return { ...orderSummary, totalItemsPrice, totalAmount }
 	}
 }

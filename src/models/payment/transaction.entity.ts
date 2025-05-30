@@ -40,7 +40,7 @@ export class Transaction extends AbstractEntity {
 	@Column({ nullable: false })
 	orderId!: number;
 
-	@ManyToOne(() => Order)
+	@ManyToOne(() => Order, (order) => order.transactions)
 	@JoinColumn({ name: 'order_id' })
 	order!: Order;
 

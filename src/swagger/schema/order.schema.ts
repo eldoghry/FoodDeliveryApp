@@ -93,6 +93,21 @@ const swaggerSchema = {
                 }
             }
         ]
+    },
+    OrderSummary: {
+        type: 'object',
+        properties: {
+            orderId: { type: 'integer', description: 'The ID of the order.', example: 1 },
+            restaurantId: { type: 'integer', description: 'The ID of the restaurant.', example: 1 },
+            status: { type: 'string', description: 'The status of the order.', enum: ['initiated', 'pending', 'confirmed', 'onTheWay', 'canceled', 'delivered', 'failed'], example: 'delivered' },
+            customerInstructions: { type: 'string', description: 'The instructions provided by the customer.', example: 'no onions' },
+            paymentMethod: { type: 'string', description: 'The payment method used for the order.', example: 'Credit Card' },
+            placedAt: { type: 'string', description: 'The timestamp when the order was placed.', example: '2022-01-01T00:00:00.000Z' },
+            totalItemsPrice: { type: 'number', description: 'The total price of the items in the order.', example: 30.00 },
+            serviceFees: { type: 'number', description: 'The service fees for the order.', example: 2.00 },
+            deliveryFees: { type: 'number', description: 'The delivery fees for the order.', example: 15.00 },
+            totalAmount: { type: 'number', description: 'The total amount of the order.', example: 47.00 },
+        }
     }
 }
 

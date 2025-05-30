@@ -15,6 +15,7 @@ import { Customer } from '../customer/customer.entity';
 import { Address } from '../customer/address.entity';
 import { OrderItem } from './order-item.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
+import { Transaction } from '../payment/transaction.entity';
 
 export type OrderRelations = 'orderStatusLogs' | 'orderItems' | 'deliveryAddress' | 'restaurant' | 'customer';
 
@@ -82,4 +83,7 @@ export class Order extends AbstractEntity {
 
 	@OneToMany(() => OrderStatusLog, (orderStatusLog) => orderStatusLog.order)
 	orderStatusLogs!: OrderStatusLog[];
+
+	@OneToMany(() => Transaction, (transaction) => transaction.order)
+	transactions!: Transaction[];
 }

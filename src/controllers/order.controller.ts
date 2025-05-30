@@ -39,4 +39,10 @@ export class OrderController {
 		const data = await this.orderService.cancelOrder(orderId, actorType!, payload)
 		sendResponse(res, StatusCodes.OK, 'Order cancelled successfully', data);
 	}
+
+	async getOrderSummary(req: Request, res: Response) {
+		const orderId = req?.validated?.params?.orderId;
+		const data = await this.orderService.getOrderSummary(orderId)
+		sendResponse(res, StatusCodes.OK, 'Order summary retrieved successfully', data)
+	}
 }
