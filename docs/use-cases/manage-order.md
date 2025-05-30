@@ -175,7 +175,6 @@ Defines categories for menus. Each menu can have multiple categories.
 Defines items with pricing and availability.
 
 - `item_id` (PK)
-- `category_id` – Foreign key to `category`
 - `image_path`, `name`, `description`, `price`, `energy_val_cal`, `notes`
 - `is_available`, `created_at`, `updated_at`
 
