@@ -14,12 +14,12 @@ import { User } from '../user/user.entity';
 import { Address } from './address.entity';
 import { Order } from '../order/order.entity';
 
-enum Gender {
+export enum Gender {
 	male = 'male',
 	female = 'female'
 }
 
-export type CustomerRelations = 'addresses' | 'user';
+export type CustomerRelations = 'addresses' | 'user' | 'orders';
 
 @Check(`"birth_date" <= CURRENT_DATE`)
 @Entity()

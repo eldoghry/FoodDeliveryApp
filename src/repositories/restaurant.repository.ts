@@ -1,7 +1,7 @@
 import { AppDataSource } from '../config/data-source';
-import { Restaurant } from '../models/restaurant/restaurant.entity';
+import { Restaurant, RestaurantRelations } from '../models/restaurant/restaurant.entity';
 import { Repository } from 'typeorm';
-import { Status } from '../models/restaurant/restaurant.entity';
+import { RestaurantStatus } from '../models/restaurant/restaurant.entity';
 
 export class RestaurantRepository {
 	private restaurantRepo: Repository<Restaurant>;
@@ -15,18 +15,20 @@ export class RestaurantRepository {
 		return await this.restaurantRepo.save(restaurant);
 	}
 
-	async getRestaurantById(restaurantId: number): Promise<Restaurant | null> {
+	async getRestaurantBy(filter: { restaurantId?: number; userId?: number; relations?: RestaurantRelations[] }) {
+		const { relations, ...whereOptions } = filter;
 		return await this.restaurantRepo.findOne({
-			where: { restaurantId },
-			relations: ['user']
+			where: whereOptions,
+			relations: relations
 		});
 	}
 
+	async getRestaurantById(restaurantId: number): Promise<Restaurant | null> {
+		return this.getRestaurantBy({ restaurantId, relations: ['user'] });
+	}
+
 	async getRestaurantByUserId(userId: number): Promise<Restaurant | null> {
-		return await this.restaurantRepo.findOne({
-			where: { userId },
-			relations: ['user']
-		});
+		return this.getRestaurantBy({ userId, relations: ['user'] });
 	}
 
 	async getAllRestaurants(): Promise<Restaurant[]> {
@@ -41,10 +43,7 @@ export class RestaurantRepository {
 		return await this.getRestaurantById(restaurantId);
 	}
 
-	async updateRestaurantStatus(
-		restaurantId: number,
-		status: Status
-	): Promise<Restaurant | null> {
+	async updateRestaurantStatus(restaurantId: number, status: RestaurantStatus): Promise<Restaurant | null> {
 		await this.restaurantRepo.update(restaurantId, { status });
 		return await this.getRestaurantById(restaurantId);
 	}
@@ -61,5 +60,4 @@ export class RestaurantRepository {
 			.andWhere('restaurant.isActive = :isActive', { isActive: true })
 			.getMany();
 	}
-
 }

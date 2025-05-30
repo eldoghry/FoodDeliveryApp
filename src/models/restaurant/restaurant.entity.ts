@@ -14,14 +14,14 @@ import { AbstractEntity } from '../base.entity';
 import { Menu } from '../menu/menu.entity';
 import { Order } from '../order/order.entity';
 
-
-export enum Status {
+export enum RestaurantStatus {
 	open = 'open',
 	busy = 'busy',
 	pause = 'pause',
 	closed = 'closed'
 }
 
+export type RestaurantRelations = 'user' | 'menus' | 'cartItems' | 'orders';
 @Entity()
 export class Restaurant extends AbstractEntity {
 	@PrimaryGeneratedColumn()
@@ -42,8 +42,8 @@ export class Restaurant extends AbstractEntity {
 	@Column({ type: 'jsonb', nullable: false })
 	location!: Record<string, any>;
 
-	@Column({ type: 'enum', enum: Status, nullable: false })
-	status!: Status;
+	@Column({ type: 'enum', enum: RestaurantStatus, nullable: false })
+	status!: RestaurantStatus;
 
 	@Column({ type: 'varchar', length: 20, unique: true, nullable: false })
 	commercialRegistrationNumber!: string;
@@ -53,6 +53,9 @@ export class Restaurant extends AbstractEntity {
 
 	@Column({ type: 'boolean', default: true, nullable: false })
 	isActive!: boolean;
+
+	@Column({ type: 'varchar', length: 100, unique: true })
+	email!: string;
 
 	@CreateDateColumn()
 	createdAt!: Date;

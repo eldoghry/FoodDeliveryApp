@@ -11,7 +11,7 @@
 		"lint:fix": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
 		"format": "prettier --write \"src/**/*.ts\"",
 		"format:check": "prettier --check \"src/**/*.ts\"",
-		"seed": "npx ts-node ./src/database/seeders/index.ts",
+		"seed": "cross-env NODE_ENV=development npx ts-node ./src/database/seeders/index.ts",
 		"test": "cross-env NODE_ENV=test jest",
 		"test:watch": "cross-env NODE_ENV=test jest --watch",
 		"test:cov": "cross-env NODE_ENV=test jest --coverage",
@@ -26,6 +26,7 @@
 		"node": ">=20.0.0"
 	},
 	"dependencies": {
+		"axios": "^1.9.0",
 		"cors": "^2.8.5",
 		"cross-env": "^7.0.3",
 		"dotenv": "^16.5.0",
@@ -40,6 +41,7 @@
 		"morgan": "^1.10.0",
 		"pg": "^8.15.6",
 		"reflect-metadata": "^0.2.2",
+		"shebang-regex": "^4.0.0",
 		"swagger-jsdoc": "^6.2.8",
 		"swagger-ui-express": "^5.0.1",
 		"ts-node": "^10.9.2",
@@ -47,7 +49,8 @@
 		"typeorm-naming-strategies": "^4.1.0",
 		"typescript": "^5.8.3",
 		"uuid": "^11.1.0",
-		"winston": "^3.17.0"
+		"winston": "^3.17.0",
+		"yn": "^5.0.0"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^19.8.0",

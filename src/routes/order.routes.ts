@@ -16,8 +16,8 @@ OrderRouter.post(
 	isAuthenticated,
 	isCustomer,
 	validateRequest({ body: checkoutBodySchema }),
-	// isRestaurantAvailable,
-	controller.placeOrder.bind(controller)
+	isRestaurantAvailable,
+	controller.checkout.bind(controller)
 );
 
 /**

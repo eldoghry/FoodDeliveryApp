@@ -2,13 +2,19 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { AbstractEntity } from '../base.entity';
 import { Transaction } from './transaction.entity';
 
+export enum PaymentStatusEnum {
+	pending = 'pending',
+	paid = 'paid',
+	failed = 'failed',
+	refunded = 'refunded'
+}
 @Entity()
 export class PaymentStatus extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	paymentStatusId!: number;
 
 	@Column({ type: 'varchar', length: 20 })
-	statusName!: string;
+	statusName!: PaymentStatusEnum;
 
 	@Column({ type: 'boolean', default: true, nullable: false })
 	isActive!: boolean;
