@@ -171,13 +171,15 @@ Defines categories for menus. Each menu can have multiple categories.
 - `menu_category`: Composite table linking `menu_id` with `category_id`
 
 
-### `item`
+### `item` and `category_items`
 Defines items with pricing and availability.
 
 - `item_id` (PK)
 - `category_id` – Foreign key to `category`
 - `image_path`, `name`, `description`, `price`, `energy_val_cal`, `notes`
 - `is_available`, `created_at`, `updated_at`
+
+- `category_items`: Composite table linking `category_id` with `item_id`
 
 ### `cart`
 Represents a customer’s cart.
@@ -356,6 +358,7 @@ CREATE TABLE restaurant (
     "status" VARCHAR(6) NOT NULL CHECK (status IN ('open', 'busy', 'pause', 'closed')),
     commercial_registration_number VARCHAR(20) UNIQUE NOT NULL,
     vat_number VARCHAR(15) UNIQUE NOT NULL,
+    email VARCHAR(255),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -398,6 +401,12 @@ CREATE TABLE item (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE category_items (
+    category_id INT NOT NULL REFERENCES category(category_id),
+    item_id INT NOT NULL REFERENCES item(item_id)
+    PRIMARY KEY (category_id, item_id)
+);
+
 CREATE TABLE cart (
     cart_id SERIAL PRIMARY KEY,
     customer_id INT NOT NULL REFERENCES customer(customer_id),
@@ -427,8 +436,8 @@ CREATE TABLE "order" (
     delivery_fees DECIMAL(5,2) NOT NULL CHECK (delivery_fees >= 0.00),
     service_fees DECIMAL(5,2) NOT NULL CHECK (service_fees >= 0.00),
     total_amount DECIMAL(10,2) NOT NULL CHECK (total_amount >= 0.00),
-    placed_at TIMESTAMP NOT NULL,
-    delivered_at TIMESTAMP NOT NULL,
+    placed_at TIMESTAMP,
+    delivered_at TIMESTAMP,
     cancellation_info JSONB,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
