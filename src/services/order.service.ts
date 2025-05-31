@@ -1,20 +1,20 @@
-import { Restaurant } from './../models/restaurant/restaurant.entity';
-import { CartService } from './cart.service';
-import { PaymentMethodEnum } from './../models/payment/payment-method.entity';
-import { StatusCodes as HttpStatusCode } from 'http-status-codes';
+import {StatusCodes as HttpStatusCode} from 'http-status-codes';
+import {AppDataSource} from '../config/data-source';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
-import { OrderRepository } from '../repositories';
-import { AppDataSource } from '../config/data-source';
-import { CustomerService } from './customer.service';
-import { PaymentService } from './payment/payment.service';
-import { calculateTotalPrice } from '../utils/helper';
-import { Customer, Order, OrderRelations, OrderStatusEnum, OrderStatusChangeBy } from '../models';
-import { Notify } from '../shared/notify';
-import { RestaurantService } from './restaurant.service';
-import { PlaceOrderResponse } from '../interfaces/order.interface';
-import { PaymentResult } from './payment/paymentStrategy.interface';
+import {PlaceOrderResponse} from '../interfaces/order.interface';
+import {Customer, Order, OrderRelations, OrderStatusChangeBy, OrderStatusEnum} from '../models';
+import {OrderRepository} from '../repositories';
+import {Notify} from '../shared/notify';
+import {calculateTotalPrice} from '../utils/helper';
+import {PaymentMethodEnum} from './../models/payment/payment-method.entity';
+import {Restaurant} from './../models/restaurant/restaurant.entity';
+import {CartService} from './cart.service';
+import {CustomerService} from './customer.service';
+import {PaymentService} from './payment/payment.service';
+import {PaymentResult} from './payment/paymentStrategy.interface';
+import {RestaurantService} from './restaurant.service';
 
 export class OrderService {
 	private orderRepo = new OrderRepository();
@@ -30,10 +30,10 @@ export class OrderService {
 		addressId: number;
 		paymentMethod: PaymentMethodEnum;
 	}): Promise<PlaceOrderResponse> {
-		const { customerId, addressId, restaurantId, paymentMethod } = payload;
+		const {customerId, addressId, restaurantId, paymentMethod} = payload;
 
 		// * get restaurant
-		const restaurant = await this.restaurantService.getRestaurantOrFail({ restaurantId });
+		const restaurant = await this.restaurantService.getRestaurantOrFail({restaurantId});
 
 		// * get customer with address from customer service
 		const customer = await this.customerService.getCustomerByIdOrFail({
@@ -70,7 +70,7 @@ export class OrderService {
 			order
 		});
 
-		return this.handlePaymentResult({ processPaymentResult, order, customer, restaurant, paymentMethod });
+		return this.handlePaymentResult({processPaymentResult, order, customer, restaurant, paymentMethod});
 	}
 
 	private async sendingPlaceOrderNotifications(order: Order, customer: Customer, restaurant: Restaurant) {
@@ -83,11 +83,11 @@ export class OrderService {
 			message: 'New order has been placed successfully',
 			sender: 'system@fooddelivery.com',
 			receivers: [restaurant.email],
-			data: { order }
+			data: {order}
 		});
 	}
 
-	async getOrderOrFailBy(filter: { orderId: number; relations?: OrderRelations[] }) {
+	async getOrderOrFailBy(filter: {orderId: number; relations?: OrderRelations[]}) {
 		const order = await this.orderRepo.getOrderBy(filter);
 
 		if (!order) throw new ApplicationError(ErrMessages.order.OrderNotFound, HttpStatusCode.NOT_FOUND);
@@ -101,7 +101,7 @@ export class OrderService {
 		customer: Customer;
 		restaurant: Restaurant;
 	}): Promise<PlaceOrderResponse> {
-		const { processPaymentResult, order, paymentMethod, customer, restaurant } = params;
+		const {processPaymentResult, order, paymentMethod, customer, restaurant} = params;
 
 		if (!processPaymentResult.success) {
 			// todo: use update status & log method
@@ -111,7 +111,7 @@ export class OrderService {
 			await this.updateOrderStatus(order.orderId, OrderStatusEnum.failed, OrderStatusChangeBy.payment);
 			await order.reload();
 
-			return { success: false, error: processPaymentResult?.error, order };
+			return {success: false, error: processPaymentResult?.error, order};
 		}
 
 		// 3. Handle gateway redirects
@@ -127,7 +127,7 @@ export class OrderService {
 		if (paymentMethod === PaymentMethodEnum.COD) {
 			// todo: use update status & log method
 			await this.finalizeOrderCOD(order, customer, restaurant);
-			return { success: true, paymentReference: processPaymentResult.paymentId, order };
+			return {success: true, paymentReference: processPaymentResult.paymentId, order};
 		}
 
 		// Fallback for card (pending state assumed)
@@ -151,7 +151,7 @@ export class OrderService {
 	}
 
 	async processPaypalPaymentCallback(orderId: number, isPaymentSuccess: boolean) {
-		const order = await this.getOrderOrFailBy({ orderId, relations: ['restaurant'] });
+		const order = await this.getOrderOrFailBy({orderId, relations: ['restaurant']});
 
 		const customer = await this.customerService.getCustomerByIdOrFail({
 			customerId: order.customerId,
@@ -197,7 +197,7 @@ export class OrderService {
 		// Define valid status transitions & valid actors for each status
 		const orderStatusTransitionsByActors: Record<
 			OrderStatusEnum,
-			{ transitions: OrderStatusEnum[]; actors: OrderStatusChangeBy[] }
+			{transitions: OrderStatusEnum[]; actors: OrderStatusChangeBy[]}
 		> = {
 			initiated: {
 				transitions: [OrderStatusEnum.pending, OrderStatusEnum.failed],
@@ -211,10 +211,10 @@ export class OrderService {
 				transitions: [OrderStatusEnum.onTheWay, OrderStatusEnum.canceled, OrderStatusEnum.delivered],
 				actors: [OrderStatusChangeBy.restaurant]
 			},
-			onTheWay: { transitions: [OrderStatusEnum.delivered], actors: [OrderStatusChangeBy.restaurant] },
-			canceled: { transitions: [], actors: [OrderStatusChangeBy.system, OrderStatusChangeBy.restaurant] },
-			delivered: { transitions: [], actors: [OrderStatusChangeBy.restaurant] },
-			failed: { transitions: [], actors: [OrderStatusChangeBy.payment] }
+			onTheWay: {transitions: [OrderStatusEnum.delivered], actors: [OrderStatusChangeBy.restaurant]},
+			canceled: {transitions: [], actors: [OrderStatusChangeBy.system, OrderStatusChangeBy.restaurant]},
+			delivered: {transitions: [], actors: [OrderStatusChangeBy.restaurant]},
+			failed: {transitions: [], actors: [OrderStatusChangeBy.payment]}
 		};
 
 		// Check if the transition is valid & actor is allowed to perform this transition
@@ -277,5 +277,10 @@ export class OrderService {
 	async updateOrderStatus(orderId: number, newStatus: OrderStatusEnum, actor: OrderStatusChangeBy) {
 		await this.addOrderStatusLog(orderId, newStatus, actor);
 		return await this.changeOrderStatus(orderId, newStatus);
+	}
+
+
+	async getOrderDetails(orderId: number, customerId: number) {
+		return await this.orderRepo.getOrderDetails(orderId, customerId);
 	}
 }

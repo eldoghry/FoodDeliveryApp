@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import ApiRouter from './routes/api.routes';
+import OrderRouter from './routes/order.routes';
 import { addRequestTimeMiddleware, ErrorHandler, NotFoundHandler } from './middlewares';
 import { defaultRateLimiter } from './config/ratelimiter';
 import swaggerUi from 'swagger-ui-express';
@@ -23,6 +24,9 @@ export const createApp = (): Application => {
 
 	// setup routes
 	app.use('/api/v1', ApiRouter);
+
+
+	app.use('/api/v1/orders', OrderRouter);
 
 	// swagger
 	app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerJsDocSpecs));

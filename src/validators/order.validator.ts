@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { OrderStatusChangeBy, OrderStatusEnum, PaymentMethodEnum } from '../models';
+import {OrderStatusChangeBy, OrderStatusEnum, PaymentMethodEnum} from '../models';
 
 export const checkoutBodySchema = Joi.object({
 	restaurantId: Joi.number().integer().min(1).required(),
@@ -19,4 +19,8 @@ export const updateOrderStatusBodySchema = Joi.object({
 		.required().messages({
 			'any.required': 'Status is required',
 		})
+}).required();
+
+export const getOrderDetailsParamsSchema = Joi.object({
+	orderId: Joi.number().integer().min(1).required()
 }).required();

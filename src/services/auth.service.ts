@@ -1,9 +1,7 @@
-import HttpStatusCodes from 'http-status-codes';
-import ApplicationError from '../errors/application.error';
-import { UserRepository } from '../repositories/user.repository';
-import { JwtService } from '../shared/jwt';
-import { config } from '../config/env';
-import { AuthorizedUser } from '../middlewares/auth.middleware';
+import {config} from '../config/env';
+import {AuthorizedUser} from '../middlewares/auth.middleware';
+import {UserRepository} from '../repositories/user.repository';
+import {JwtService} from '../shared/jwt';
 
 export class AuthService {
 	private repo = new UserRepository();
@@ -11,7 +9,7 @@ export class AuthService {
 
 	async login(data: any) {
 		// todo: implement login logic
-		const { role } = data;
+		const {role} = data;
 		const roles = [];
 		if (role === 'customer') roles.push('customer');
 		if (role === 'restaurant_user') roles.push('restaurant_user', 'editor');
@@ -20,7 +18,7 @@ export class AuthService {
 			userId: 1, // This should be replaced with actual user ID after authentication
 			roles,
 			actorType: role === 'customer' ? 'customer' : 'restaurant_user',
-			actorId: 1 // This should be replaced with actual actor ID after authentication
+			actorId: 6 // This should be replaced with actual actor ID after authentication
 		};
 
 		const token = this.jwtService.sign(payload);
@@ -28,7 +26,7 @@ export class AuthService {
 			expiresIn: config.jwt.refreshTTL
 		});
 
-		return { token, refresh };
+		return {token, refresh};
 	}
 
 	async logout() {
