@@ -33,8 +33,8 @@ export class OrderRepository {
 	async getOrdersByActorId(actorId: number, actorType: 'customer' | 'restaurant'): Promise<Order[]> {
 		const whereCondition = actorType === 'customer' ? { customerId: actorId } : { restaurantId: actorId };
 		return await this.orderRepo.find({
-			where:whereCondition,
-			relations: ['orderStatusLogs', 'restaurant', 'customer','customer.user', 'deliveryAddress', 'orderItems.item','transactions.paymentMethod'],
+			where: whereCondition,
+			relations: ['restaurant', 'customer.user', 'deliveryAddress', 'orderItems.item', 'transactions.paymentMethod'],
 			order: { createdAt: 'DESC' }
 		});
 	}
@@ -44,7 +44,7 @@ export class OrderRepository {
 		return await this.getOrderById(orderId);
 	}
 
-	async updateOrderStatus(orderId: number,data: Partial<Order>): Promise<Partial<Order> | undefined> {
+	async updateOrderStatus(orderId: number, data: Partial<Order>): Promise<Partial<Order> | undefined> {
 		await this.orderRepo.update(orderId, data);
 		return await this.orderRepo.createQueryBuilder('o').select([
 			'o.order_id AS "orderId"',
