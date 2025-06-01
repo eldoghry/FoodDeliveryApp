@@ -3,9 +3,8 @@ import { isAuthenticated } from '../middlewares/auth.middleware';
 import { isRestaurantAvailable } from '../middlewares/isRestaurantAvailable.middleware';
 import { validateRequest } from '../middlewares/validate-request.middleware';
 import { OrderController } from '../controllers';
-import { isCustomer } from '../middlewares/isCustomer.middleware';
 import { cancelOrderBodySchema, checkoutBodySchema, getOrdersQuerySchema, orderParamsSchema, updateOrderStatusBodySchema } from '../validators/order.validator';
-import { isRestaurant } from '../middlewares/isRestaurant.middleware';
+import { verifyActor } from '../middlewares/verifyActor.middleware';
 
 const OrderRouter = Router();
 const controller = new OrderController();
@@ -13,7 +12,7 @@ const controller = new OrderController();
 OrderRouter.post(
 	'/checkout',
 	isAuthenticated,
-	isCustomer,
+	verifyActor({ allowedActorTypes: ['customer'] }),
 	validateRequest({ body: checkoutBodySchema }),
 	isRestaurantAvailable,
 	controller.checkout.bind(controller)
@@ -67,7 +66,7 @@ OrderRouter.post(
 OrderRouter.patch(
 	'/:orderId/status',
 	isAuthenticated,
-	isRestaurant,
+	verifyActor({ allowedActorTypes: ['restaurant_user'] }),
 	validateRequest({ params: orderParamsSchema, body: updateOrderStatusBodySchema }),
 	controller.updateOrderStatus.bind(controller)
 )
@@ -121,6 +120,7 @@ OrderRouter.patch(
 OrderRouter.post(
 	'/:orderId/cancel',
 	isAuthenticated,
+	verifyActor({ allowedActorTypes: ['customer', 'restaurant_user'] }),
 	validateRequest({ params: orderParamsSchema , body: cancelOrderBodySchema }),
 	controller.cancelOrder.bind(controller)
 )
@@ -160,7 +160,7 @@ OrderRouter.post(
 OrderRouter.get(
 	'/:orderId/summary',
 	isAuthenticated,
-	isCustomer,
+	verifyActor({ allowedActorTypes: ['customer'] }),
 	validateRequest({ params: orderParamsSchema }),
 	controller.getOrderSummary.bind(controller)
 )
@@ -214,6 +214,7 @@ OrderRouter.get(
 OrderRouter.get(
 	'/',
 	isAuthenticated,
+	verifyActor({ allowedActorTypes: ['customer', 'restaurant_user'] }),
 	validateRequest({ query: getOrdersQuerySchema }),
 	controller.getOrders.bind(controller)
 )
