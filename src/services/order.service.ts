@@ -316,4 +316,66 @@ export class OrderService {
 		const totalAmount = calculateTotalPrice(order.orderItems, order.serviceFees, order.deliveryFees).toFixed(2);
 		return { ...orderSummary, totalItemsPrice, totalAmount }
 	}
+
+	private orderHistoryData(order: Order, actorType: string) {
+		const isCustomer = actorType === 'customer';
+		let actorResult: Record<string, any> = {};
+		let statusRelatedData: Record<string, any> = {};
+
+		if (isCustomer) {
+			actorResult = { restaurant: { id: order.restaurantId, name: order.restaurant.name } };
+		} else {
+			actorResult = { customer: { id: order.customerId, name: order.customer.user.name, phone: order.customer.user.phone } };
+		}
+		// Status-specific fields
+		if (order.status === OrderStatusEnum.canceled) {
+			statusRelatedData = {
+				placedAt: order.placedAt,
+				cancellationInfo: order.cancellationInfo,
+			};
+		} else if (order.status === OrderStatusEnum.delivered) {
+			statusRelatedData = {
+				placedAt: order.placedAt,
+				deliveredAt: order.deliveredAt,
+			};
+		}
+
+		const items = order.orderItems.map(item => {
+			return {
+				orderId: item.orderId,
+				itemId: item.itemId,
+				imagePath: item.item.imagePath,
+				name: item.item.name,
+				quantity: item.quantity,
+				price: item.price,
+				totalPrice: item.totalPrice,
+			}
+		})
+		return {
+			orderId: order.orderId,
+			status: order.status,
+			...actorResult,
+			items,
+			deliveryAddress: order.deliveryAddress,
+			deliveryFees: order.deliveryFees,
+			serviceFees: order.serviceFees,
+			totalAmount: order.totalAmount,
+			customerInstructions: order.customerInstructions,
+			...statusRelatedData,
+			paymentMethod: order.transactions[0]?.paymentMethod.methodName,
+			createdAt: order.createdAt,
+			updatedAt: order.updatedAt,
+		}
+	}
+	// get orders history for customer or restaurant
+	async getOrdersHistory(actorType: string, actorId: number) {
+		if (!actorId) {
+			throw new ApplicationError(`Actor id is required`, HttpStatusCode.BAD_REQUEST);
+		}
+		if (!(actorType == 'customer' || actorType.includes('restaurant'))) {
+			throw new ApplicationError(`${actorType} is not allowed to get orders history`, HttpStatusCode.BAD_REQUEST);
+		}
+		const orders = await this.orderRepo.getOrdersByActorId(actorId, actorType as 'customer' | 'restaurant');
+		return orders.map(order => this.orderHistoryData(order, actorType));
+	}
 }

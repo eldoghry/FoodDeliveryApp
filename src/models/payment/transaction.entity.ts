@@ -54,7 +54,7 @@ export class Transaction extends AbstractEntity {
 	@JoinColumn({ name: 'payment_status_id' })
 	paymentStatus!: PaymentStatus;
 
-	@Column({ type: 'varchar', length: 100, nullable: false })
+	@Column({ type: 'varchar', length: 100 , unique:true })
 	transactionCode!: string;
 
 	@CreateDateColumn()

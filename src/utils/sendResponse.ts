@@ -34,13 +34,17 @@ export function sendPaginatedResponse<T>(
 	res: Response,
 	statusCode: number,
 	message: string,
-	data: T,
-	pagination: {
-		total: number;
-		page: number;
-		pageSize: number;
-		totalPages: number;
+	data: T[],
+	page: number,
+	perPage: number,
+): Response<ApiResponse<T[]>> {
+	const startIndex = (page - 1) * perPage;
+	const paginatedData = data.slice(startIndex, startIndex + perPage); 
+	const pagination = {
+		total: data.length,
+		page: page || 1,
+		perPage: perPage || 10,
+		totalPages: Math.ceil(data.length / perPage),
 	}
-): Response<ApiResponse<T>> {
-	return sendResponse(res, statusCode, message, data, pagination);
+	return sendResponse(res, statusCode, message, paginatedData, pagination);
 }

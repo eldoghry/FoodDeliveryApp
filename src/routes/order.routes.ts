@@ -1,11 +1,10 @@
-import { Order } from './../models/order/order.entity';
 import { Router } from 'express';
 import { isAuthenticated } from '../middlewares/auth.middleware';
 import { isRestaurantAvailable } from '../middlewares/isRestaurantAvailable.middleware';
 import { validateRequest } from '../middlewares/validate-request.middleware';
 import { OrderController } from '../controllers';
 import { isCustomer } from '../middlewares/isCustomer.middleware';
-import { cancelOrderBodySchema, checkoutBodySchema, orderParamsSchema, updateOrderStatusBodySchema } from '../validators/order.validator';
+import { cancelOrderBodySchema, checkoutBodySchema, getOrdersQuerySchema, orderParamsSchema, updateOrderStatusBodySchema } from '../validators/order.validator';
 import { isRestaurant } from '../middlewares/isRestaurant.middleware';
 
 const OrderRouter = Router();
@@ -164,6 +163,59 @@ OrderRouter.get(
 	isCustomer,
 	validateRequest({ params: orderParamsSchema }),
 	controller.getOrderSummary.bind(controller)
+)
+
+
+/**
+ * @swagger
+ * /orders:
+ *   get:
+ *     summary: Get orders history
+ *     description: Get orders history by customer or restaurant
+ *     tags:
+ *       - Order
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: perPage
+ *         required: false
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Orders history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/CustomerOrdersHistory'
+ *                 - $ref: '#/components/schemas/RestaurantOrdersHistory'
+ *       400:
+ *         description: |
+ *           - page must be a number
+ *           - page must be greater than or equal to 1
+ *           - perPage must be a number
+ *           - perPage must be greater than or equal to 1
+ *           - perPage must be less than or equal to 25
+ *           - Actor id is required
+ *           - ${actorType} is not allowed to get orders history 
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+
+OrderRouter.get(
+	'/',
+	isAuthenticated,
+	validateRequest({ query: getOrdersQuerySchema }),
+	controller.getOrders.bind(controller)
 )
 
 export default OrderRouter;

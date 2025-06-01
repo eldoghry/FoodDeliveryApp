@@ -1,9 +1,10 @@
 import { StatusCodes } from 'http-status-codes';
 import { OrderService } from '../services/order.service';
-import { sendResponse } from '../utils/sendResponse';
+import { sendPaginatedResponse, sendResponse } from '../utils/sendResponse';
 import { Request, Response } from 'express';
 import ApplicationError from '../errors/application.error';
 import { OrderStatusChangeBy } from '../models/order/order-status_log.entity';
+import { AuthorizedUser } from '../middlewares/auth.middleware';
 
 export class OrderController {
 	private orderService = new OrderService();
@@ -28,7 +29,7 @@ export class OrderController {
 	async updateOrderStatus(req: Request, res: Response) {
 		const orderId = req?.validated?.params?.orderId;
 		const { status } = req?.validated?.body;
-		const data = await this.orderService.updateOrderStatus(orderId, {status}, OrderStatusChangeBy.restaurant);
+		const data = await this.orderService.updateOrderStatus(orderId, { status }, OrderStatusChangeBy.restaurant);
 		sendResponse(res, StatusCodes.OK, 'Order status updated successfully', data);
 	}
 
@@ -44,5 +45,12 @@ export class OrderController {
 		const orderId = req?.validated?.params?.orderId;
 		const data = await this.orderService.getOrderSummary(orderId)
 		sendResponse(res, StatusCodes.OK, 'Order summary retrieved successfully', data)
+	}
+
+	async getOrders(req: Request, res: Response) {
+		const { actorType, actorId } = req?.user as AuthorizedUser
+		const { page, perPage } = req?.validated?.query
+		const data = await this.orderService.getOrdersHistory(actorType, actorId)
+		sendPaginatedResponse(res, StatusCodes.OK, 'Orders retrieved successfully', data, page, perPage)
 	}
 }

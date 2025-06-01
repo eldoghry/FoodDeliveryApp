@@ -30,10 +30,11 @@ export class OrderRepository {
 		});
 	}
 
-	async getOrdersByCustomerId(customerId: number): Promise<Order[]> {
+	async getOrdersByActorId(actorId: number, actorType: 'customer' | 'restaurant'): Promise<Order[]> {
+		const whereCondition = actorType === 'customer' ? { customerId: actorId } : { restaurantId: actorId };
 		return await this.orderRepo.find({
-			where: { customerId },
-			relations: ['orderStatusLogs', 'restaurant', 'customer', 'deliveryAddress', 'orderItems'],
+			where:whereCondition,
+			relations: ['orderStatusLogs', 'restaurant', 'customer','customer.user', 'deliveryAddress', 'orderItems.item','transactions.paymentMethod'],
 			order: { createdAt: 'DESC' }
 		});
 	}
