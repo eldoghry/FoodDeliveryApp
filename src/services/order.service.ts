@@ -163,12 +163,16 @@ export class OrderService {
 		// todo: use update status & log method
 		const orderStatus = isPaymentSuccess ? OrderStatusEnum.pending : OrderStatusEnum.failed;
 
-		// order.status = orderStatus;
 		// await order.save();
 
-		await this.updateOrderStatus(order.orderId, { status: orderStatus }, OrderStatusChangeBy.payment);
-		order.placedAt = new Date();
-		await order.save();
+		await this.updateOrderStatus(
+			order.orderId,
+			{ status: orderStatus, placedAt: isPaymentSuccess ? new Date() : undefined },
+			OrderStatusChangeBy.payment
+		);
+		// order.placedAt = new Date();
+		// order.status = orderStatus;
+		// await order.save();
 		await order.reload();
 
 		if (isPaymentSuccess) {
