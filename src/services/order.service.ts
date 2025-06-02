@@ -10,7 +10,7 @@ import { AppDataSource } from '../config/data-source';
 import { CustomerService } from './customer.service';
 import { PaymentService } from './payment/payment.service';
 import { calculateTotalPrice } from '../utils/helper';
-import { Customer, Order, OrderRelations, OrderStatusEnum, OrderStatusChangeBy } from '../models';
+import { Customer, Order, OrderRelations, OrderStatusEnum, OrderStatusChangeBy, Cart } from '../models';
 import { Notify } from '../shared/notify';
 import { RestaurantService } from './restaurant.service';
 import { PlaceOrderResponse } from '../interfaces/order.interface';
@@ -108,7 +108,7 @@ export class OrderService {
 			// order.status = OrderStatusEnum.failed;
 			// await order.save();
 
-			await this.updateOrderStatus(order.orderId, OrderStatusEnum.failed, OrderStatusChangeBy.payment);
+			await this.updateOrderStatus(order.orderId, { status: OrderStatusEnum.failed }, OrderStatusChangeBy.payment);
 			await order.reload();
 
 			return { success: false, error: processPaymentResult?.error, order };
@@ -144,8 +144,10 @@ export class OrderService {
 		// order.status = OrderStatusEnum.pending;
 		order.placedAt = new Date(); // set placedAt to current date
 		await order.save();
-		await this.updateOrderStatus(order.orderId, OrderStatusEnum.pending, OrderStatusChangeBy.payment);
+		await this.updateOrderStatus(order.orderId, { status: OrderStatusEnum.pending }, OrderStatusChangeBy.payment);
 		await order.reload();
+		const cart = await this.cartService.getCartWithItems({ customerId: customer.customerId, relations: ['cartItems'] });
+		await this.addOrderItems(order.orderId, cart);
 		await this.cartService.clearCart(customer.customerId);
 		await this.sendingPlaceOrderNotifications(order, customer, restaurant);
 	}
@@ -164,12 +166,18 @@ export class OrderService {
 		// order.status = orderStatus;
 		// await order.save();
 
-		await this.updateOrderStatus(order.orderId, orderStatus, OrderStatusChangeBy.payment);
+		await this.updateOrderStatus(order.orderId, { status: orderStatus }, OrderStatusChangeBy.payment);
 		order.placedAt = new Date();
 		await order.save();
 		await order.reload();
 
 		if (isPaymentSuccess) {
+			const cart = await this.cartService.getCartWithItems({
+				customerId: customer.customerId,
+				relations: ['cartItems']
+			});
+			await this.addOrderItems(order.orderId, cart);
+
 			await this.cartService.clearCart(customer.customerId);
 			await this.sendingPlaceOrderNotifications(order, customer, order.restaurant);
 			logger.info('Order payment confirmed', order.orderId);
@@ -184,7 +192,6 @@ export class OrderService {
 		const minutesSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60);
 		return minutesSinceCreation <= 5;
 	}
-
 
 	private validateCancelTime(date: Date) {
 		if (!this.isWithin5Minutes(date)) {
@@ -252,16 +259,16 @@ export class OrderService {
 			);
 		}
 
-		const pendingStatusLogDate = order.orderStatusLogs.find(log => log.status === OrderStatusEnum.pending)?.createdAt;
+		const pendingStatusLogDate = order.orderStatusLogs.find((log) => log.status === OrderStatusEnum.pending)?.createdAt;
 
 		// Specific checks for cancelation based on current status & actor
 		if (
 			allowedStatuses.includes(OrderStatusEnum.canceled) &&
 			!(
 				(currentStatus === OrderStatusEnum.pending &&
-					actor === OrderStatusChangeBy.system && this.validateCancelTime(pendingStatusLogDate!)) ||
-				(currentStatus === OrderStatusEnum.confirmed &&
-					actor === OrderStatusChangeBy.restaurant)
+					actor === OrderStatusChangeBy.system &&
+					this.validateCancelTime(pendingStatusLogDate!)) ||
+				(currentStatus === OrderStatusEnum.confirmed && actor === OrderStatusChangeBy.restaurant)
 			)
 		) {
 			throw new ApplicationError(
@@ -291,11 +298,13 @@ export class OrderService {
 		});
 	}
 
-	async updateOrderStatus(orderId: number, payload: any, actor: OrderStatusChangeBy) {
+	async updateOrderStatus(orderId: number, payload: Partial<Order>, actor: OrderStatusChangeBy) {
+		if (!payload.status)
+			throw new ApplicationError('Order status is required to update order status', HttpStatusCode.BAD_REQUEST);
+
 		await this.addOrderStatusLog(orderId, payload.status, actor);
 		return await this.orderRepo.updateOrderStatus(orderId, payload);
 	}
-
 
 	async cancelOrder(orderId: number, actorType: string, payload: { reason: string }) {
 		let actor: OrderStatusChangeBy;
@@ -306,7 +315,14 @@ export class OrderService {
 		} else {
 			throw new ApplicationError(`${actorType} is not allowed to cancel an order`, HttpStatusCode.BAD_REQUEST);
 		}
-		return await this.updateOrderStatus(orderId, { status: OrderStatusEnum.canceled, cancellationInfo: { cancelledBy: actor, reason: payload.reason, cancelledAt: new Date() } }, actor)
+		return await this.updateOrderStatus(
+			orderId,
+			{
+				status: OrderStatusEnum.canceled,
+				cancellationInfo: { cancelledBy: actor, reason: payload.reason, cancelledAt: new Date() }
+			},
+			actor
+		);
 	}
 
 	async getOrderSummary(orderId: number) {
@@ -314,7 +330,7 @@ export class OrderService {
 		const orderSummary = await this.orderRepo.getOrderSummary(orderId);
 		const totalItemsPrice = calculateTotalPrice(order.orderItems).toFixed(2);
 		const totalAmount = calculateTotalPrice(order.orderItems, order.serviceFees, order.deliveryFees).toFixed(2);
-		return { ...orderSummary, totalItemsPrice, totalAmount }
+		return { ...orderSummary, totalItemsPrice, totalAmount };
 	}
 
 	private orderHistoryData(order: Order, actorType: string) {
@@ -325,22 +341,24 @@ export class OrderService {
 		if (isCustomer) {
 			actorResult = { restaurant: { id: order.restaurantId, name: order.restaurant.name } };
 		} else {
-			actorResult = { customer: { id: order.customerId, name: order.customer.user.name, phone: order.customer.user.phone } };
+			actorResult = {
+				customer: { id: order.customerId, name: order.customer.user.name, phone: order.customer.user.phone }
+			};
 		}
 		// Status-specific fields
 		if (order.status === OrderStatusEnum.canceled) {
 			statusRelatedData = {
 				placedAt: order.placedAt,
-				cancellationInfo: order.cancellationInfo,
+				cancellationInfo: order.cancellationInfo
 			};
 		} else if (order.status === OrderStatusEnum.delivered) {
 			statusRelatedData = {
 				placedAt: order.placedAt,
-				deliveredAt: order.deliveredAt,
+				deliveredAt: order.deliveredAt
 			};
 		}
 
-		const items = order.orderItems.map(item => {
+		const items = order.orderItems.map((item) => {
 			return {
 				orderId: item.orderId,
 				itemId: item.itemId,
@@ -348,9 +366,9 @@ export class OrderService {
 				name: item.item.name,
 				quantity: item.quantity,
 				price: item.price,
-				totalPrice: item.totalPrice,
-			}
-		})
+				totalPrice: item.totalPrice
+			};
+		});
 		return {
 			orderId: order.orderId,
 			status: order.status,
@@ -364,8 +382,8 @@ export class OrderService {
 			...statusRelatedData,
 			paymentMethod: order.transactions[0]?.paymentMethod.methodName,
 			createdAt: order.createdAt,
-			updatedAt: order.updatedAt,
-		}
+			updatedAt: order.updatedAt
+		};
 	}
 	// get orders history for customer or restaurant
 	async getOrdersHistory(actorType: string, actorId: number) {
@@ -376,6 +394,22 @@ export class OrderService {
 			throw new ApplicationError(`${actorType} is not allowed to get orders history`, HttpStatusCode.BAD_REQUEST);
 		}
 		const orders = await this.orderRepo.getOrdersByActorId(actorId, actorType as 'customer' | 'restaurant');
-		return orders.map(order => this.orderHistoryData(order, actorType));
+		return orders.map((order) => this.orderHistoryData(order, actorType));
+	}
+
+	async addOrderItems(orderId: number, cart: Cart) {
+		const items = cart.cartItems;
+		if (!items.length) throw new ApplicationError('no items on cart', HttpStatusCode.BAD_REQUEST);
+		await Promise.all(
+			items.map((item) =>
+				this.orderRepo.addOrderItem({
+					orderId: orderId,
+					itemId: item.itemId,
+					quantity: item.quantity,
+					price: item.price,
+					totalPrice: item.totalPrice
+				})
+			)
+		);
 	}
 }
