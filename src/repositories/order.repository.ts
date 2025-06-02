@@ -2,7 +2,7 @@ import { AppDataSource } from '../config/data-source';
 import { Order, OrderRelations } from '../models/order/order.entity';
 import { OrderItem } from '../models/order/order-item.entity';
 import { OrderStatusEnum, OrderStatusLog } from '../models/order/order-status_log.entity';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { OrderStatusChangeBy } from '../models';
 
 export class OrderRepository {
@@ -16,6 +16,17 @@ export class OrderRepository {
 		this.orderStatusLogRepo = AppDataSource.getRepository(OrderStatusLog);
 	}
 
+	private getOrderRepo(manager?: EntityManager): Repository<Order> {
+		return manager ? manager.getRepository(Order) : this.orderRepo;
+	}
+
+	private getOrderItemRepo(manager?: EntityManager): Repository<OrderItem> {
+		return manager ? manager.getRepository(OrderItem) : this.orderItemRepo;
+	}
+
+	private getOrderStatusLogRepo(manager?: EntityManager): Repository<OrderStatusLog> {
+		return manager ? manager.getRepository(OrderStatusLog) : this.orderStatusLogRepo;
+	}
 	// Order operations
 	async createOrder(data: Partial<Order>): Promise<Order> {
 		const order = await this.orderRepo.create(data).save();
@@ -30,9 +41,10 @@ export class OrderRepository {
 		});
 	}
 
-	async getOrdersByActorId(actorId: number, actorType: 'customer' | 'restaurant'): Promise<Order[]> {
+	async getOrdersByActorId(actorId: number, actorType: 'customer' | 'restaurant', manager?: EntityManager): Promise<Order[]> {
+		const repo = this.getOrderRepo(manager);
 		const whereCondition = actorType === 'customer' ? { customerId: actorId } : { restaurantId: actorId };
-		return await this.orderRepo.find({
+		return await repo.find({
 			where: whereCondition,
 			relations: ['restaurant', 'customer.user', 'deliveryAddress', 'orderItems.item', 'transactions.paymentMethod'],
 			order: { createdAt: 'DESC' }
@@ -44,9 +56,10 @@ export class OrderRepository {
 		return await this.getOrderById(orderId);
 	}
 
-	async updateOrderStatus(orderId: number, data: Partial<Order>): Promise<Partial<Order> | undefined> {
-		await this.orderRepo.update(orderId, data);
-		return await this.orderRepo.createQueryBuilder('o').select([
+	async updateOrderStatus(orderId: number, data: Partial<Order>, manager?: EntityManager): Promise<Partial<Order> | undefined> {
+		const repo = this.getOrderRepo(manager);
+		await repo.update(orderId, data);
+		return await repo.createQueryBuilder('o').select([
 			'o.order_id AS "orderId"',
 			'o.status AS "status"',
 		]).where('o.order_id = :orderId', { orderId }).getRawOne();
@@ -74,9 +87,10 @@ export class OrderRepository {
 
 	// Order Status Log operations
 
-	async createOrderStatusLog(data: Partial<OrderStatusLog>): Promise<OrderStatusLog> {
-		const orderStatusLog = this.orderStatusLogRepo.create(data);
-		return await this.orderStatusLogRepo.save(orderStatusLog);
+	async createOrderStatusLog(data: Partial<OrderStatusLog>, manager?: EntityManager): Promise<OrderStatusLog> {
+		const repo = this.getOrderStatusLogRepo(manager);
+		const orderStatusLog = repo.create(data);
+		return await repo.save(orderStatusLog);
 	}
 
 	async getAllOrderStatusLogs(): Promise<OrderStatusLog[]> {
@@ -103,8 +117,9 @@ export class OrderRepository {
 		});
 	}
 
-	async getOrderSummary(orderId: number): Promise<Partial<Order> | undefined> {
-		return await this.orderRepo.createQueryBuilder('o').select([
+	async getOrderSummary(orderId: number, manager?: EntityManager): Promise<Partial<Order> | undefined> {
+		const repo = this.getOrderRepo(manager);
+		return await repo.createQueryBuilder('o').select([
 			'o.order_id AS "orderId"',
 			'o.restaurant_id AS "restaurantId"',
 			'o.status AS "status"',

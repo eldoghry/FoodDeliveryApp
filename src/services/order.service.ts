@@ -282,18 +282,22 @@ export class OrderService {
 	// update status log table
 	async addOrderStatusLog(orderId: number, newStatus: OrderStatusEnum, actor: OrderStatusChangeBy) {
 		this.isValidActor(actor);
-		await this.validateOrderStatus(orderId, newStatus, actor);
-
-		await this.orderRepo.createOrderStatusLog({
-			orderId,
-			status: newStatus,
-			changeBy: actor
+		return await this.dataSource.transaction(async (manager) => {
+		    await this.validateOrderStatus(orderId, newStatus, actor);
+			await this.orderRepo.createOrderStatusLog({
+				orderId,
+				status: newStatus, 
+				changeBy: actor
+			}, manager);
 		});
 	}
+	
 
 	async updateOrderStatus(orderId: number, payload: any, actor: OrderStatusChangeBy) {
 		await this.addOrderStatusLog(orderId, payload.status, actor);
-		return await this.orderRepo.updateOrderStatus(orderId, payload);
+		return await this.dataSource.transaction(async (manager) => {
+			return await this.orderRepo.updateOrderStatus(orderId, payload,manager);
+		})
 	}
 
 
@@ -310,11 +314,13 @@ export class OrderService {
 	}
 
 	async getOrderSummary(orderId: number) {
-		const order = await this.validateOrder(orderId);
-		const orderSummary = await this.orderRepo.getOrderSummary(orderId);
-		const totalItemsPrice = calculateTotalPrice(order.orderItems).toFixed(2);
-		const totalAmount = calculateTotalPrice(order.orderItems, order.serviceFees, order.deliveryFees).toFixed(2);
-		return { ...orderSummary, totalItemsPrice, totalAmount }
+		return await this.dataSource.transaction(async (manager) => {
+			const order = await this.validateOrder(orderId);
+			const orderSummary = await this.orderRepo.getOrderSummary(orderId, manager);
+			const totalItemsPrice = calculateTotalPrice(order.orderItems).toFixed(2);
+			const totalAmount = calculateTotalPrice(order.orderItems, order.serviceFees, order.deliveryFees).toFixed(2);
+			return { ...orderSummary, totalItemsPrice, totalAmount }
+		})
 	}
 
 	private orderHistoryData(order: Order, actorType: string) {
@@ -375,7 +381,10 @@ export class OrderService {
 		if (!(actorType == 'customer' || actorType.includes('restaurant'))) {
 			throw new ApplicationError(`${actorType} is not allowed to get orders history`, HttpStatusCode.BAD_REQUEST);
 		}
-		const orders = await this.orderRepo.getOrdersByActorId(actorId, actorType as 'customer' | 'restaurant');
-		return orders.map(order => this.orderHistoryData(order, actorType));
+
+		return await this.dataSource.transaction(async (manager) => {
+			const orders = await this.orderRepo.getOrdersByActorId(actorId, actorType as 'customer' | 'restaurant', manager);
+			return orders.map(order => this.orderHistoryData(order, actorType));
+		})
 	}
 }
