@@ -15,19 +15,22 @@ export const orderParamsSchema = Joi.object({
 }).required();
 
 export const updateOrderStatusBodySchema = Joi.object({
-	status: Joi.string()
-		.required().messages({
-			'any.required': 'Status is required',
-		})
+	status: Joi.string().required().messages({
+		'any.required': 'Status is required'
+	})
 }).required();
 
 export const cancelOrderBodySchema = Joi.object({
 	reason: Joi.string().required().messages({
-		'any.required': 'Reason is required',
+		'any.required': 'Reason is required'
 	})
 }).required();
 
 export const getOrdersQuerySchema = Joi.object({
 	page: Joi.number().integer().min(1).default(1),
-	perPage: Joi.number().integer().min(1).max(25).default(10),
+	perPage: Joi.number().integer().min(1).max(25).default(10)
+}).required();
+
+export const getOrderDetailsParamsSchema = Joi.object({
+	orderId: Joi.number().integer().min(1).required()
 }).required();

@@ -1,20 +1,27 @@
-import { Restaurant } from './../models/restaurant/restaurant.entity';
-import { CartService } from './cart.service';
-import { PaymentMethodEnum } from './../models/payment/payment-method.entity';
 import { StatusCodes as HttpStatusCode } from 'http-status-codes';
+import { AppDataSource } from '../config/data-source';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { OrderRepository } from '../repositories';
-import { AppDataSource } from '../config/data-source';
 import { CustomerService } from './customer.service';
 import { PaymentService } from './payment/payment.service';
 import { calculateTotalPrice } from '../utils/helper';
-import { Customer, Order, OrderRelations, OrderStatusEnum, OrderStatusChangeBy, Cart } from '../models';
+import {
+	Customer,
+	Order,
+	OrderRelations,
+	OrderStatusEnum,
+	OrderStatusChangeBy,
+	Cart,
+	PaymentMethodEnum,
+	Restaurant
+} from '../models';
 import { Notify } from '../shared/notify';
 import { RestaurantService } from './restaurant.service';
 import { PlaceOrderResponse } from '../interfaces/order.interface';
 import { PaymentResult } from './payment/paymentStrategy.interface';
+import { CartService } from './cart.service';
 
 export class OrderService {
 	private orderRepo = new OrderRepository();
@@ -415,5 +422,9 @@ export class OrderService {
 				})
 			)
 		);
+	}
+
+	async getOrderDetails(orderId: number, customerId: number) {
+		return await this.orderRepo.getOrderDetails(orderId, customerId);
 	}
 }

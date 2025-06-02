@@ -37,20 +37,31 @@ export class OrderController {
 		const orderId = req?.validated?.params?.orderId;
 		const actorType = req?.user?.actorType;
 		const payload = req?.validated?.body;
-		const data = await this.orderService.cancelOrder(orderId, actorType!, payload)
+		const data = await this.orderService.cancelOrder(orderId, actorType!, payload);
 		sendResponse(res, StatusCodes.OK, 'Order cancelled successfully', data);
 	}
 
 	async getOrderSummary(req: Request, res: Response) {
 		const orderId = req?.validated?.params?.orderId;
-		const data = await this.orderService.getOrderSummary(orderId)
-		sendResponse(res, StatusCodes.OK, 'Order summary retrieved successfully', data)
+		const data = await this.orderService.getOrderSummary(orderId);
+		sendResponse(res, StatusCodes.OK, 'Order summary retrieved successfully', data);
 	}
 
 	async getOrders(req: Request, res: Response) {
-		const { actorType, actorId } = req?.user as AuthorizedUser
-		const { page, perPage } = req?.validated?.query
-		const data = await this.orderService.getOrdersHistory(actorType, actorId)
-		sendPaginatedResponse(res, StatusCodes.OK, 'Orders retrieved successfully', data, page, perPage)
+		const { actorType, actorId } = req?.user as AuthorizedUser;
+		const { page, perPage } = req?.validated?.query;
+		const data = await this.orderService.getOrdersHistory(actorType, actorId);
+		sendPaginatedResponse(res, StatusCodes.OK, 'Orders retrieved successfully', data, page, perPage);
+	}
+
+	async getOrderDetails(req: Request, res: Response) {
+		const orderId = req?.validated?.params?.orderId;
+
+		const data = await this.orderService.getOrderDetails(orderId, req?.user?.actorId as number);
+
+		console.log(data);
+		if (!data) throw new ApplicationError(`Order not found`, StatusCodes.NOT_FOUND, true, 'Order not found');
+
+		sendResponse(res, StatusCodes.OK, 'Order details retrieved successfully', data);
 	}
 }

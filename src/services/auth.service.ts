@@ -1,9 +1,7 @@
-import HttpStatusCodes from 'http-status-codes';
-import ApplicationError from '../errors/application.error';
-import { UserRepository } from '../repositories/user.repository';
-import { JwtService } from '../shared/jwt';
 import { config } from '../config/env';
 import { AuthorizedUser } from '../middlewares/auth.middleware';
+import { UserRepository } from '../repositories/user.repository';
+import { JwtService } from '../shared/jwt';
 
 export class AuthService {
 	private repo = new UserRepository();

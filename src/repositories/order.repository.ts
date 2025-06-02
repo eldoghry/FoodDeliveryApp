@@ -1,9 +1,9 @@
+import { Repository } from 'typeorm';
 import { AppDataSource } from '../config/data-source';
-import { Order, OrderRelations } from '../models/order/order.entity';
+import { OrderStatusChangeBy } from '../models';
 import { OrderItem } from '../models/order/order-item.entity';
 import { OrderStatusEnum, OrderStatusLog } from '../models/order/order-status_log.entity';
-import { Repository } from 'typeorm';
-import { OrderStatusChangeBy } from '../models';
+import { Order, OrderRelations } from '../models/order/order.entity';
 
 export class OrderRepository {
 	private orderRepo: Repository<Order>;
@@ -129,4 +129,61 @@ export class OrderRepository {
 		// console.log(query.getSql());
 		// return query.getRawOne();
 	}
+
+	async getOrderDetails(orderId: number, customerId: number) {
+		console.log({ customerId });
+		const order = await this.orderRepo.findOne({
+			where: { orderId, customerId },
+			relations: ['restaurant', 'customer', 'deliveryAddress', 'orderStatusLogs', 'orderItems.item']
+		});
+
+		if (!order) return null;
+
+		// const orderItems = await this.orderItemRepo.find({
+		// 	where: { orderId },
+		// 	relations: ['item']
+		// });
+
+		return {
+			orderId: order.orderId,
+			restaurantId: order.restaurantId,
+			deliveryAddressId: order.deliveryAddressId,
+			status: order.status,
+			customerInstructions: order.customerInstructions,
+			deliveryFees: order.deliveryFees,
+			serviceFees: order.serviceFees,
+			totalAmount: order.totalAmount,
+			placedAt: order.placedAt,
+			deliveredAt: order.deliveredAt,
+			cancellationInfo: order.cancellationInfo,
+			customerId: order.customerId,
+			orderItems: order.orderItems,
+			orderStatusLogs: order.orderStatusLogs,
+			restaurant: {
+				id: order.restaurant?.restaurantId,
+				name: order.restaurant?.name,
+				logoUrl: order.restaurant?.logoUrl,
+				bannerUrl: order.restaurant?.bannerUrl
+			},
+			deliveryAddress: {
+				id: order.deliveryAddress?.addressId,
+				addressLine1: order.deliveryAddress?.addressLine1,
+				addressLine2: order.deliveryAddress?.addressId
+			},
+			createdAt: order.createdAt,
+			updatedAt: order.updatedAt
+		};
+	}
+
+	// Helper methods
+	// async calculateOrderTotal(orderId: number): Promise<number> {
+	// 	const orderItems = await this.getOrderItems(orderId);
+	// 	return orderItems.reduce((total, item) => total + item.totalPrice, 0);
+	// }
+
+	// async updateOrderTotalItems(orderId: number): Promise<void> {
+	// 	const orderItems = await this.getOrderItems(orderId);
+	// 	const totalItems = orderItems.reduce((total, item) => total + item.quantity, 0);
+	// 	await this.updateOrder(orderId, { totalItems });
+	// }
 }
