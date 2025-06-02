@@ -174,16 +174,4 @@ export class OrderRepository {
 			updatedAt: order.updatedAt
 		};
 	}
-
-	// Helper methods
-	// async calculateOrderTotal(orderId: number): Promise<number> {
-	// 	const orderItems = await this.getOrderItems(orderId);
-	// 	return orderItems.reduce((total, item) => total + item.totalPrice, 0);
-	// }
-
-	// async updateOrderTotalItems(orderId: number): Promise<void> {
-	// 	const orderItems = await this.getOrderItems(orderId);
-	// 	const totalItems = orderItems.reduce((total, item) => total + item.quantity, 0);
-	// 	await this.updateOrder(orderId, { totalItems });
-	// }
 }
