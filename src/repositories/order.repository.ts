@@ -30,10 +30,11 @@ export class OrderRepository {
 		});
 	}
 
-	async getOrdersByCustomerId(customerId: number): Promise<Order[]> {
+	async getOrdersByActorId(actorId: number, actorType: 'customer' | 'restaurant'): Promise<Order[]> {
+		const whereCondition = actorType === 'customer' ? { customerId: actorId } : { restaurantId: actorId };
 		return await this.orderRepo.find({
-			where: { customerId },
-			relations: ['orderStatusLogs', 'restaurant', 'customer', 'deliveryAddress', 'orderItems'],
+			where: whereCondition,
+			relations: ['restaurant', 'customer.user', 'deliveryAddress', 'orderItems.item', 'transactions.paymentMethod'],
 			order: { createdAt: 'DESC' }
 		});
 	}
@@ -43,26 +44,12 @@ export class OrderRepository {
 		return await this.getOrderById(orderId);
 	}
 
-	async updateOrderStatus(orderId: number, status: OrderStatusEnum): Promise<Partial<Order> | undefined> {
-		await this.orderRepo.update(orderId, { status });
-		return await this.orderRepo
-			.createQueryBuilder('o')
-			.select(['o.order_id AS "orderId"', 'o.status AS "status"'])
-			.where('o.order_id = :orderId', { orderId })
-			.getRawOne();
-	}
-
-	async cancelOrder(orderId: number, cancelledBy: OrderStatusChangeBy, reason: string): Promise<Order | null> {
-		const order = await this.getOrderById(orderId);
-		if (!order) return null;
-
-		order.cancellationInfo = {
-			cancelledBy,
-			reason,
-			cancelledAt: new Date()
-		};
-
-		return await this.orderRepo.save(order);
+	async updateOrderStatus(orderId: number, data: Partial<Order>): Promise<Partial<Order> | undefined> {
+		await this.orderRepo.update(orderId, data);
+		return await this.orderRepo.createQueryBuilder('o').select([
+			'o.order_id AS "orderId"',
+			'o.status AS "status"',
+		]).where('o.order_id = :orderId', { orderId }).getRawOne();
 	}
 
 	// Order Item operations
@@ -116,15 +103,17 @@ export class OrderRepository {
 		});
 	}
 
-	// Helper methods
-	// async calculateOrderTotal(orderId: number): Promise<number> {
-	// 	const orderItems = await this.getOrderItems(orderId);
-	// 	return orderItems.reduce((total, item) => total + item.totalPrice, 0);
-	// }
-
-	// async updateOrderTotalItems(orderId: number): Promise<void> {
-	// 	const orderItems = await this.getOrderItems(orderId);
-	// 	const totalItems = orderItems.reduce((total, item) => total + item.quantity, 0);
-	// 	await this.updateOrder(orderId, { totalItems });
-	// }
+	async getOrderSummary(orderId: number): Promise<Partial<Order> | undefined> {
+		return await this.orderRepo.createQueryBuilder('o').select([
+			'o.order_id AS "orderId"',
+			'o.restaurant_id AS "restaurantId"',
+			'o.status AS "status"',
+			'o.customer_instructions AS "customerInstructions"',
+			'o.placed_at AS "placedAt"',
+			'o.service_fees AS "serviceFees"',
+			'o.delivery_fees AS "deliveryFees"',
+			'o.total_amount AS "totalAmount"',
+			'pm.method_name AS "paymentMethod"',
+		]).innerJoin('o.transactions', 'tr').innerJoin('tr.paymentMethod', 'pm').where('o.order_id = :orderId', { orderId }).getRawOne();
+	}
 }

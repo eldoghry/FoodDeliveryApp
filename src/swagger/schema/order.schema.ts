@@ -10,6 +10,16 @@ const swaggerSchema = {
             }
         }
     },
+    CancelOrderBody: {
+        type: 'object',
+        properties: {
+            reason: {
+                type: 'string',
+                description: 'The reason for canceling the order.',
+                example: 'Customer requested to cancel the order'
+            }
+        }
+    },
     UpdateOrderStatusResponse: {
         type: 'object',
         properties: {
@@ -31,6 +41,8 @@ const swaggerSchema = {
         properties: {
             orderId: { type: 'integer', description: 'The ID of the order.', example: 1 },
             itemId: { type: 'integer', description: 'The ID of the item.', example: 1 },
+            imagePath: { type: 'string', description: 'The image path of the item.', example: 'Item 1' },
+            name: { type: 'string', description: 'The name of the item.', example: 'Item 1' },
             quantity: { type: 'integer', description: 'The quantity of the item.', example: 2 },
             price: { type: 'number', description: 'The price of the item.', example: 10.00 },
             totalPrice: { type: 'number', description: 'The total price of the item.', example: 20.00 },
@@ -69,10 +81,10 @@ const swaggerSchema = {
                     customer: { $ref: '#/components/schemas/Customer' },
                     deliveryAddress: { $ref: '#/components/schemas/Address' },
                     orderItems: {
-                        type: 'array', 
+                        type: 'array',
                         description: 'The items in the order.',
                         items: { $ref: '#/components/schemas/OrderItem' }
-                    }, 
+                    },
                     orderStatusLogs: {
                         type: 'array',
                         description: 'The status logs of the order.',
@@ -83,6 +95,133 @@ const swaggerSchema = {
                 }
             }
         ]
+    },
+    OrderSummary: {
+        type: 'object',
+        properties: {
+            orderId: { type: 'integer', description: 'The ID of the order.', example: 1 },
+            restaurantId: { type: 'integer', description: 'The ID of the restaurant.', example: 1 },
+            status: { type: 'string', description: 'The status of the order.', enum: ['initiated', 'pending', 'confirmed', 'onTheWay', 'canceled', 'delivered', 'failed'], example: 'delivered' },
+            customerInstructions: { type: 'string', description: 'The instructions provided by the customer.', example: 'no onions' },
+            paymentMethod: { type: 'string', description: 'The payment method used for the order.', example: 'Credit Card' },
+            placedAt: { type: 'string', description: 'The timestamp when the order was placed.', example: '2022-01-01T00:00:00.000Z' },
+            totalItemsPrice: { type: 'number', description: 'The total price of the items in the order.', example: 30.00 },
+            serviceFees: { type: 'number', description: 'The service fees for the order.', example: 2.00 },
+            deliveryFees: { type: 'number', description: 'The delivery fees for the order.', example: 15.00 },
+            totalAmount: { type: 'number', description: 'The total amount of the order.', example: 47.00 },
+        }
+    },
+    canceledStatusData: {
+        type: 'object',
+        properties: {
+            status: { type: 'string', description: 'The status of the order.', enum: ['initiated', 'pending', 'confirmed', 'onTheWay', 'canceled', 'delivered', 'failed'], example: 'canceled' },
+            placedAt: { type: 'string', description: 'The timestamp when the order was placed.', example: '2022-01-01T00:00:00.000Z' },
+            cancellationInfo: {
+                type: 'object',
+                properties: {
+                    cancelledBy: { type: 'string', description: 'The actor who cancelled the order.', enum: ['system', 'restaurant', 'payment'], example: 'restaurant' },
+                    reason: { type: 'string', description: 'The reason for cancelling the order.', example: 'item not available' },
+                    cancelledAt: { type: 'string', description: 'The timestamp when the order was cancelled.', example: '2022-01-01T00:00:00.000Z' }
+                }
+            },
+        }
+    },
+    deliveredStatusData: {
+        type: 'object',
+        properties: {
+            status: { type: 'string', description: 'The status of the order.', enum: ['initiated', 'pending', 'confirmed', 'onTheWay', 'canceled', 'delivered', 'failed'], example: 'delivered' },
+            placedAt: { type: 'string', description: 'The timestamp when the order was placed.', example: '2022-01-01T00:00:00.000Z' },
+            deliveredAt: { type: 'string', description: 'The timestamp when the order was delivered.', example: '2022-01-01T00:00:00.000Z' }
+        }
+    },
+    OrderHistory: {
+        type: 'object',
+        properties: {
+            orderId: { type: 'integer', description: 'The ID of the order.', example: 1 },
+            items: {
+                type: 'array',
+                description: 'The items in the order.',
+                items: { $ref: '#/components/schemas/OrderItem' }
+            },
+            deliveryAddress: { $ref: '#/components/schemas/Address' },
+            customerInstructions: { type: 'string', description: 'The instructions provided by the customer.', example: 'no onions' },
+            placedAt: { type: 'string', description: 'The timestamp when the order was placed.', example: '2022-01-01T00:00:00.000Z' },
+            deliveredAt: { type: 'string', description: 'The timestamp when the order was delivered.', example: '2022-01-01T00:00:00.000Z' },
+            cancellationInfo: {
+                type: 'object',
+                properties: {
+                    cancelledBy: { type: 'string', description: 'The actor who cancelled the order.', enum: ['system', 'restaurant', 'payment'], example: 'restaurant' },
+                    reason: { type: 'string', description: 'The reason for cancelling the order.', example: 'item not available' },
+                    cancelledAt: { type: 'string', description: 'The timestamp when the order was cancelled.', example: '2022-01-01T00:00:00.000Z' }
+                }
+            },
+            totalItemsPrice: { type: 'number', description: 'The total price of the items in the order.', example: 30.00 },
+            deliveryFees: { type: 'number', description: 'The delivery fees for the order.', example: 15.00 },
+            serviceFees: { type: 'number', description: 'The service fees for the order.', example: 2.00 },
+            totalAmount: { type: 'number', description: 'The total amount of the order.', example: 47.00 },
+            paymentMethod: { type: 'string', description: 'The payment method used for the order.', example: 'Credit Card' },
+            createdAt: { type: 'string', description: 'The timestamp when the order was created.', example: '2022-01-01T00:00:00.000Z' },
+            updatedAt: { type: 'string', description: 'The timestamp when the order was updated.', example: '2022-01-01T00:00:00.000Z' },
+        },
+        oneOf: [{ $ref: '#/components/schemas/canceledStatusData' }, { $ref: '#/components/schemas/deliveredStatusData' }],
+    },
+    pagination: {
+        type: 'object',
+        properties: {
+            page: { type: 'integer', description: 'The page number.', example: 1 },
+            perPage: { type: 'integer', description: 'The number of items per page.', example: 10 },
+            totalPages: { type: 'integer', description: 'The total number of pages.', example: 1 },
+            total: { type: 'integer', description: 'The total number of items.', example: 10 },
+        }
+    },
+    CustomerOrdersHistory: {
+        title: 'Customer Orders History',
+        type: 'object',
+        properties: {
+            data: {
+                type: 'array',
+                description: 'The orders of the customer.',
+                items: {
+                    allOf: [{ $ref: '#/components/schemas/OrderHistory' }, {
+                        type: 'object', properties: {
+                            restaurant: {
+                                type: 'object',
+                                properties: {
+                                    id: { type: 'integer', description: 'The ID of the restaurant.', example: 1 },
+                                    name: { type: 'string', description: 'The name of the restaurant.', example: 'John Doe' },
+                                }
+                            },
+                        }
+                    }],
+                }
+            },
+            pagination: { $ref: '#/components/schemas/pagination' },
+        }
+    },
+    RestaurantOrdersHistory: {
+        title: 'Restaurant Orders History',
+        type: 'object',
+        properties: {
+            data: {
+                type: 'array',
+                description: 'The orders of the restaurant.',
+                items: {
+                    allOf: [{ $ref: '#/components/schemas/OrderHistory' }, {
+                        type: 'object', properties: {
+                            customer: {
+                                type: 'object',
+                                properties: {
+                                    id: { type: 'integer', description: 'The ID of the customer.', example: 1 },
+                                    name: { type: 'string', description: 'The name of the customer.', example: 'John Doe' },
+                                    phone: { type: 'string', description: 'The phone number of the customer.', example: '1234567890' },
+                                }
+                            },
+                        }
+                    }]
+                }
+            },
+            pagination: { $ref: '#/components/schemas/pagination' },
+        }
     }
 }
 

@@ -9,7 +9,7 @@ export function calculateTotalItems(items: CartItem[] | OrderItem[]) {
 }
 
 export function calculateTotalPrice(items: CartItem[] | OrderItem[], serviceFees?: number, deliveryFees?: number) {
-	const result = items.reduce((total, item) => Number(total) + Number(item.totalPrice), 0) + (serviceFees || 0) + (deliveryFees || 0);
+	const result = items.reduce((total, item) => Number(total) + Number(item.totalPrice), 0) + (Number(serviceFees) || 0) + (Number(deliveryFees) || 0);
 	return result;
 }
 

@@ -40,7 +40,7 @@ export class Transaction extends AbstractEntity {
 	@Column({ nullable: false })
 	orderId!: number;
 
-	@ManyToOne(() => Order)
+	@ManyToOne(() => Order, (order) => order.transactions)
 	@JoinColumn({ name: 'order_id' })
 	order!: Order;
 
@@ -54,7 +54,7 @@ export class Transaction extends AbstractEntity {
 	@JoinColumn({ name: 'payment_status_id' })
 	paymentStatus!: PaymentStatus;
 
-	@Column({ type: 'varchar', length: 100, nullable: false })
+	@Column({ type: 'varchar', length: 100 , unique:true })
 	transactionCode!: string;
 
 	@CreateDateColumn()
