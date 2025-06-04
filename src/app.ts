@@ -7,8 +7,10 @@ import { addRequestTimeMiddleware, ErrorHandler, NotFoundHandler } from './middl
 import { defaultRateLimiter } from './config/ratelimiter';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsDocSpecs from './swagger/swagger';
+import { initializeTransactionalContext } from 'typeorm-transactional';
 
 export const createApp = (): Application => {
+	initializeTransactionalContext();
 	const app = express();
 
 	// register middlewares
