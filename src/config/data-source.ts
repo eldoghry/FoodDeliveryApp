@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm';
 import { config } from './env';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import logger from './logger';
+import { initializeTransactionalContext, addTransactionalDataSource, StorageDriver } from 'typeorm-transactional';
 
 //
 export const AppDataSource = new DataSource({
@@ -23,6 +24,9 @@ export const AppDataSource = new DataSource({
 	},
 	namingStrategy: new SnakeNamingStrategy()
 });
+
+initializeTransactionalContext({ storageDriver: StorageDriver.ASYNC_LOCAL_STORAGE });
+addTransactionalDataSource(AppDataSource);
 
 export const initiateDataSource = async () => {
 	// start database connection

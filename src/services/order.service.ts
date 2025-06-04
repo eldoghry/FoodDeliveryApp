@@ -22,6 +22,7 @@ import { RestaurantService } from './restaurant.service';
 import { PlaceOrderResponse } from '../interfaces/order.interface';
 import { PaymentResult } from './payment/paymentStrategy.interface';
 import { CartService } from './cart.service';
+import { Transactional } from 'typeorm-transactional';
 
 export class OrderService {
 	private orderRepo = new OrderRepository();
@@ -273,19 +274,24 @@ export class OrderService {
 		const pendingStatusLogDate = order.orderStatusLogs.find((log) => log.status === OrderStatusEnum.pending)?.createdAt;
 
 		// Specific checks for cancelation based on current status & actor
-		if (
-			allowedStatuses.includes(OrderStatusEnum.canceled) &&
-			!(
-				(currentStatus === OrderStatusEnum.pending &&
-					actor === OrderStatusChangeBy.system &&
-					this.validateCancelTime(pendingStatusLogDate!)) ||
-				(currentStatus === OrderStatusEnum.confirmed && actor === OrderStatusChangeBy.restaurant)
-			)
-		) {
-			throw new ApplicationError(
-				`'${actor}' is not allowed to cancel an order in '${currentStatus}' status`,
-				HttpStatusCode.BAD_REQUEST
-			);
+		// if (
+		// 	allowedStatuses.includes(OrderStatusEnum.canceled) &&
+		// 	!(
+		// 		(currentStatus === OrderStatusEnum.pending &&
+		// 			actor === OrderStatusChangeBy.system &&
+		// 			this.validateCancelTime(pendingStatusLogDate!)) ||
+		// 		(currentStatus === OrderStatusEnum.confirmed && actor === OrderStatusChangeBy.restaurant)
+		// 	)
+		// ) {
+		// 	throw new ApplicationError(
+		// 		`'${actor}' is not allowed to cancel an order in '${currentStatus}' status`,
+		// 		HttpStatusCode.BAD_REQUEST
+		// 	);
+		// }
+
+		// check if client cancel order within 5 min
+		if (newStatus === OrderStatusEnum.canceled && actor === OrderStatusChangeBy.system) {
+			this.validateCancelTime(pendingStatusLogDate!);
 		}
 	}
 
@@ -309,6 +315,7 @@ export class OrderService {
 		});
 	}
 
+	@Transactional()
 	async updateOrderStatus(orderId: number, payload: Partial<Order>, actor: OrderStatusChangeBy) {
 		if (!payload.status)
 			throw new ApplicationError('Order status is required to update order status', HttpStatusCode.BAD_REQUEST);
