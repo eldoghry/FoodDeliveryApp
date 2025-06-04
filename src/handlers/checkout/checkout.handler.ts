@@ -1,11 +1,5 @@
 import { CheckoutPayload } from '../../interfaces/order.interface';
-import { Cart, Customer, Order, PaymentMethodEnum, Restaurant } from '../../models';
-import { OrderRepository } from '../../repositories';
-import { CartService } from '../../services/cart.service';
-import { CustomerService } from '../../services/customer.service';
-import { PaymentService } from '../../services/payment/payment.service';
-import { RestaurantService } from '../../services/restaurant.service';
-import { calculateTotalPrice } from '../../utils/helper';
+import { Cart, Customer, Order, Restaurant } from '../../models';
 
 export interface CheckoutContext {
 	payload: CheckoutPayload;
