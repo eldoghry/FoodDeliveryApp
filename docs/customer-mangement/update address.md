@@ -7,6 +7,12 @@ Customer update new addresses
 ## Actors
 
 - Customer
+-
+
+## Constraint
+
+- Only 1 address should be active
+- only address owner can update his address
 
 ## API Design
 
@@ -25,6 +31,7 @@ Customer update new addresses
 	"floor": "string",
 	"apartment": "string",
 	"isDefault": true
+	// ...
 }
 ```
 

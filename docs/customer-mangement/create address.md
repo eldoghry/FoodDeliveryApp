@@ -10,7 +10,9 @@ Customer create new addresses
 
 ## Constraint
 
-- Maximum 10 saved addresses per customer
+- Maximum 5 saved addresses per customer (by system setting)
+- Only 1 address should be active
+- new address is default by default in case isDefault property not equal false
 
 ## API Design
 
@@ -34,7 +36,7 @@ Customer create new addresses
 		"lat": "number",
 		"lng": "number"
 	},
-	"isDefault": false
+	"isDefault": false // optional
 }
 ```
 

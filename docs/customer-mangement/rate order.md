@@ -14,10 +14,11 @@ Customer update new addresses
 - Orders can only be rated within 7 days of completion
 - Rating scale: 1-5 stars
 - Maximum comment length: 500 characters
+- Only one rate per order id
 
 ## API Design
 
-#### PUT /api/v1/customer/addresses/{addressId}
+#### POST /api/v1/customer/{orderId}/rate
 
 - Authorization: Bearer {token}
 

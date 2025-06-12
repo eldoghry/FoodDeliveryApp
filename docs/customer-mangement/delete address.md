@@ -8,6 +8,12 @@ Customer delete addresses
 
 - Customer
 
+## Constraint
+
+- only address owner can update his address
+- don't have uncompleted order on the same address
+- soft delete
+
 ## API Design
 
 #### DELETE /api/v1/customer/addresses/{addressId}
