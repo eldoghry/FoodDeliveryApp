@@ -1,4 +1,4 @@
-import { Order } from '../models';
+import { Order, PaymentMethodEnum } from '../models';
 
 export interface PlaceOrderResponse {
 	paymentReference?: string;
@@ -6,4 +6,11 @@ export interface PlaceOrderResponse {
 	error?: any;
 	paymentUrl?: string;
 	order: Order;
+}
+
+export interface CheckoutPayload {
+	customerId: number;
+	restaurantId: number;
+	addressId: number;
+	paymentMethod: PaymentMethodEnum;
 }

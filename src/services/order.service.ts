@@ -19,66 +19,48 @@ import {
 } from '../models';
 import { Notify } from '../shared/notify';
 import { RestaurantService } from './restaurant.service';
-import { PlaceOrderResponse } from '../interfaces/order.interface';
+import { CheckoutPayload, PlaceOrderResponse } from '../interfaces/order.interface';
 import { PaymentResult } from './payment/paymentStrategy.interface';
 import { CartService } from './cart.service';
 import { Transactional } from 'typeorm-transactional';
+import {
+	CalculateAmountsHandler,
+	CheckoutContext,
+	CreateOrderHandler,
+	ProcessPaymentHandler,
+	ValidateCartHandler,
+	ValidateCustomerAddressHandler,
+	ValidateCustomerHandler,
+	ValidateRestaurantHandler
+} from '../handlers/checkout';
 
 export class OrderService {
 	private orderRepo = new OrderRepository();
 	private cartService = new CartService();
 	private customerService = new CustomerService();
-	private dataSource = AppDataSource; // to be used for typeorm transactions
+	// private dataSource = AppDataSource; // to be used for typeorm transactions
 	private restaurantService = new RestaurantService();
 
-	async checkout(payload: {
-		customerId: number;
-		restaurantId: number;
-		// cartId: number;
-		addressId: number;
-		paymentMethod: PaymentMethodEnum;
-	}): Promise<PlaceOrderResponse> {
-		const { customerId, addressId, restaurantId, paymentMethod } = payload;
+	async checkout(payload: CheckoutPayload): Promise<PlaceOrderResponse> {
+		const handler = new ValidateRestaurantHandler(this.restaurantService);
+		handler
+			.setNext(new ValidateCustomerHandler(this.customerService))
+			.setNext(new ValidateCustomerAddressHandler(this.customerService))
+			.setNext(new ValidateCartHandler(this.cartService))
+			.setNext(new CalculateAmountsHandler())
+			.setNext(new CreateOrderHandler(this.orderRepo))
+			.setNext(new ProcessPaymentHandler());
 
-		// * get restaurant
-		const restaurant = await this.restaurantService.getRestaurantOrFail({ restaurantId });
+		const context: CheckoutContext = { payload };
+		const result = await handler.handle(context);
 
-		// * get customer with address from customer service
-		const customer = await this.customerService.getCustomerByIdOrFail({
-			customerId,
-			relations: ['user', 'addresses']
+		return this.handlePaymentResult({
+			processPaymentResult: result.processPaymentResult,
+			order: result.order!,
+			customer: result.customer!,
+			restaurant: result.restaurant!,
+			paymentMethod: result.payload.paymentMethod
 		});
-
-		// * validate delivery address belong to user
-		this.customerService.validateCustomerAddress(customer, addressId);
-
-		// * get cart with items
-		const cart = await this.cartService.getAndValidateCart(customerId, restaurantId);
-
-		// const totalItems = calculateTotalItems(cart.cartItems);
-		// const totalCartItemsAmounts = 100; // todo: get from helper
-		const serviceFees = 10; // todo: get from helper
-		const deliveryFees = 30; // todo: get from helper
-		const totalAmount = calculateTotalPrice(cart.cartItems, serviceFees, deliveryFees);
-
-		// create order and order items
-		const order = await this.orderRepo.createOrder({
-			restaurantId,
-			customerId,
-			deliveryAddressId: addressId,
-			deliveryFees,
-			serviceFees,
-			totalAmount
-			// placedAt: new Date()
-		});
-
-		const paymentService = new PaymentService(paymentMethod);
-		const processPaymentResult = await paymentService.processPayment(totalAmount, {
-			items: cart.cartItems,
-			order
-		});
-
-		return this.handlePaymentResult({ processPaymentResult, order, customer, restaurant, paymentMethod });
 	}
 
 	private async sendingPlaceOrderNotifications(order: Order, customer: Customer, restaurant: Restaurant) {
@@ -292,6 +274,15 @@ export class OrderService {
 		// check if client cancel order within 5 min
 		if (newStatus === OrderStatusEnum.canceled && actor === OrderStatusChangeBy.system) {
 			this.validateCancelTime(pendingStatusLogDate!);
+		} else if (
+			newStatus === OrderStatusEnum.canceled &&
+			actor === OrderStatusChangeBy.restaurant &&
+			currentStatus !== OrderStatusEnum.confirmed
+		) {
+			throw new ApplicationError(
+				`'${actor}' is not allowed to cancel an order in '${currentStatus}' status`,
+				HttpStatusCode.BAD_REQUEST
+			);
 		}
 	}
 
