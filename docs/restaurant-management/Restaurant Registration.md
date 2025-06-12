@@ -10,7 +10,7 @@ System creates restaurant profile with pending approval status
 
 ## Constraint
 
--
+- Restaurant owner can own only 1 restaurant.
 
 ## API Design
 
@@ -29,26 +29,20 @@ System creates restaurant profile with pending approval status
 	"email": "string",
 	"commercialRegistrationNumber": "string",
 	"vatNumber": "string",
-	"cuisineTypes": ["string"],
-	"address": {
-		"street": "string",
-		"building": "string",
-		"city": "string",
-		"area": "string",
-		"coordinates": {
-			"lat": "number",
-			"lng": "number"
-		}
-	},
-	"operatingHours": {
-		"monday": { "open": "09:00", "close": "22:00", "isOpen": true },
-		"tuesday": { "open": "09:00", "close": "22:00", "isOpen": true },
-		"wednesday": { "open": "09:00", "close": "22:00", "isOpen": true },
-		"thursday": { "open": "09:00", "close": "22:00", "isOpen": true },
-		"friday": { "open": "09:00", "close": "22:00", "isOpen": true },
-		"saturday": { "open": "09:00", "close": "22:00", "isOpen": true },
-		"sunday": { "open": "09:00", "close": "22:00", "isOpen": false }
+	"cuisineTypes": ["string"], // save on many to many table
+	"coordinates": {
+		"lat": "number",
+		"lng": "number"
 	}
+	// "operatingHours": {
+	// 	"monday": { "open": "09:00", "close": "22:00", "isOpen": true },
+	// 	"tuesday": { "open": "09:00", "close": "22:00", "isOpen": true },
+	// 	"wednesday": { "open": "09:00", "close": "22:00", "isOpen": true },
+	// 	"thursday": { "open": "09:00", "close": "22:00", "isOpen": true },
+	// 	"friday": { "open": "09:00", "close": "22:00", "isOpen": true },
+	// 	"saturday": { "open": "09:00", "close": "22:00", "isOpen": true },
+	// 	"sunday": { "open": "09:00", "close": "22:00", "isOpen": false }
+	// }
 }
 ```
 

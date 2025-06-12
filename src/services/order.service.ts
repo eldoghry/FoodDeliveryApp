@@ -274,6 +274,15 @@ export class OrderService {
 		// check if client cancel order within 5 min
 		if (newStatus === OrderStatusEnum.canceled && actor === OrderStatusChangeBy.system) {
 			this.validateCancelTime(pendingStatusLogDate!);
+		} else if (
+			newStatus === OrderStatusEnum.canceled &&
+			actor === OrderStatusChangeBy.restaurant &&
+			currentStatus !== OrderStatusEnum.confirmed
+		) {
+			throw new ApplicationError(
+				`'${actor}' is not allowed to cancel an order in '${currentStatus}' status`,
+				HttpStatusCode.BAD_REQUEST
+			);
 		}
 	}
 

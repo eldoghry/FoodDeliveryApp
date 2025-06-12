@@ -1,4 +1,4 @@
-# Sub-Feature: Get Restaurant Recommendations
+<!-- # Sub-Feature: Get Restaurant Recommendations
 
 ## Description
 
@@ -14,7 +14,7 @@ get list of Restaurant Recommendations
 
 ## API Design
 
-#### GET /api/v1/restaurants/top-rated
+#### GET /api/v1/restaurants/recommended
 
 - Authorization: Bearer {token}
 
@@ -46,4 +46,4 @@ get list of Restaurant Recommendations
     "similar": [...]
   }
 }
-```
+``` -->

@@ -24,7 +24,7 @@ get list of top rated restaurant
 
   - limit: number (default: 10)
   - cuisine: string (optional)
-  - location: string (optional)
+  <!-- - location: string (optional) -->
 
 - Response: 200 OK
 

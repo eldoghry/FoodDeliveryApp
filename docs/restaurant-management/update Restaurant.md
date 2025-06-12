@@ -10,7 +10,7 @@ System creates restaurant profile with pending approval status
 
 ## Constraint
 
--
+- restaurant owner can do this use case
 
 ## API Design
 
@@ -28,10 +28,10 @@ System creates restaurant profile with pending approval status
 	"phone": "string",
 	"logoUrl": "string",
 	"bannerUrl": "string",
-	"cuisineTypes": ["string"],
-	"operatingHours": {
-		"monday": { "open": "09:00", "close": "22:00", "isOpen": true }
-	}
+	"cuisineTypes": ["string"]
+	// "operatingHours": {
+	// 	"monday": { "open": "09:00", "close": "22:00", "isOpen": true }
+	// }
 }
 ```
 

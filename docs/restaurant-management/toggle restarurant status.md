@@ -10,7 +10,8 @@ update restaurant status
 
 ## Constraint
 
--
+- restaurant owner can do this use case.
+- restaurant can only be active if it have at least 1 active menu.
 
 ## API Design
 

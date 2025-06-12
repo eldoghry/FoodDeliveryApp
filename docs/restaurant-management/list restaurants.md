@@ -29,6 +29,7 @@ get list of restaurants
   - location: string (optional)
   - rating: number (optional)
   - status: string (optional)
+  - radius: number (optional)
   - sort: string (name|rating|distance|created_at)
   - order: string (asc|desc)
 
