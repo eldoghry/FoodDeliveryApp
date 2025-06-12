@@ -12,8 +12,6 @@ import {
 	updateOrderStatusBodySchema
 } from '../validators/order.validator';
 import { verifyActor } from '../middlewares/verifyActor.middleware';
-import { isCustomer } from '../middlewares/isCustomer.middleware';
-import { isRestaurant } from '../middlewares/isRestaurant.middleware';
 
 const OrderRouter = Router();
 const controller = new OrderController();
@@ -437,6 +435,7 @@ OrderRouter.get(
 OrderRouter.get(
 	'/:orderId',
 	isAuthenticated,
+	verifyActor({ allowedActorTypes: ['customer'] }),
 	validateRequest({ params: getOrderDetailsParamsSchema }),
 	controller.getOrderDetails.bind(controller)
 );

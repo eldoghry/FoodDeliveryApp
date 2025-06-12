@@ -194,17 +194,9 @@ export class OrderService {
 		return true;
 	}
 
-	private async validateOrder(orderId: number) {
-		const order = await this.orderRepo.getOrderById(orderId);
-		if (!order) {
-			throw new ApplicationError(ErrMessages.order.OrderNotFound, HttpStatusCode.NOT_FOUND);
-		}
-		return order;
-	}
-
 	// validate order status transition
 	private async validateOrderStatus(orderId: number, newStatus: OrderStatusEnum, actor: OrderStatusChangeBy) {
-		const order = await this.validateOrder(orderId);
+		const order = await this.getOrderOrFailBy({ orderId, relations: ['orderStatusLogs'] });
 
 		const validStatuses = Object.values(OrderStatusEnum);
 		if (!validStatuses.includes(newStatus)) {
@@ -308,10 +300,7 @@ export class OrderService {
 
 	@Transactional()
 	async updateOrderStatus(orderId: number, payload: Partial<Order>, actor: OrderStatusChangeBy) {
-		if (!payload.status)
-			throw new ApplicationError('Order status is required to update order status', HttpStatusCode.BAD_REQUEST);
-
-		await this.addOrderStatusLog(orderId, payload.status, actor);
+		await this.addOrderStatusLog(orderId, payload.status!, actor);
 		return await this.orderRepo.updateOrderStatus(orderId, payload);
 	}
 
@@ -335,7 +324,7 @@ export class OrderService {
 	}
 
 	async getOrderSummary(orderId: number) {
-		const order = await this.validateOrder(orderId);
+		const order = await this.getOrderOrFailBy({ orderId, relations: ['orderItems'] }); 
 		const orderSummary = await this.orderRepo.getOrderSummary(orderId);
 		const totalItemsPrice = calculateTotalPrice(order.orderItems).toFixed(2);
 		const totalAmount = calculateTotalPrice(order.orderItems, order.serviceFees, order.deliveryFees).toFixed(2);
