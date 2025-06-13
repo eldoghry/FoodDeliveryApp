@@ -133,7 +133,7 @@ const restaurantSeedData: SeedData<Restaurant> = {
 			type: 'Point',
 			coordinates: [parseFloat(faker.location.longitude().toString()), parseFloat(faker.location.latitude().toString())]
 		},
-		status: faker.helpers.arrayElement(Object.values(RestaurantStatus)),
+		status: index < 3 ? RestaurantStatus.open : faker.helpers.arrayElement(Object.values(RestaurantStatus)),
 		commercialRegistrationNumber: faker.string.alphanumeric(10),
 		vatNumber: faker.string.alphanumeric(12),
 		isActive: faker.datatype.boolean(),
@@ -220,7 +220,7 @@ const settingSeedData: SeedData<Setting> = {
 			description: 'Default food preparation time in minutes'
 		},
 
-		{ key: SettingKey.SERVICE_FEE_PERCENT, value: 25, description: 'Service fee percentage added to orders' },
+		{ key: SettingKey.SERVICE_BASE_FEE, value: 25, description: 'Service fee percentage added to orders' },
 		{ key: SettingKey.TAX_RATE_PERCENT, value: 0.14, description: 'Tax rate applied to orders' },
 		{ key: SettingKey.ENABLE_CASH_ON_DELIVERY, value: true, description: 'Is cash on delivery allowed?' },
 
