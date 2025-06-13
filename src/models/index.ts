@@ -27,11 +27,10 @@ export * from './customer/customer.entity';
 export * from './customer/address.entity';
 
 // Payment related entities
-export * from './payment/payment-method.entity';
-export * from './payment/payment-method-config.entity';
-export * from './payment/payment-status.entity';
-export * from './payment/transaction.entity';
-export * from './payment/transaction-detail.entity';
+export * from './payment_method/payment-method.entity';
+export * from './payment_method/payment-method-config.entity';
+export * from './transaction/transaction.entity';
+export * from './transaction/transaction-detail.entity';
 
 // Auditing related entities
 export * from './auditing/auditing.entity';
