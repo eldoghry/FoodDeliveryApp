@@ -1,7 +1,7 @@
 import { AppDataSource } from '../config/data-source';
 import { Transaction, TransactionRelations } from '../models/transaction/transaction.entity';
 import { TransactionDetail } from '../models/transaction/transaction-detail.entity';
-import { PaymentMethod } from '../models/payment_method/payment-method.entity';
+import { PaymentMethod, PaymentMethodEnum } from '../models/payment_method/payment-method.entity';
 import { Repository } from 'typeorm';
 import { PaymentMethodStatus } from '../enums/payment_method.enum';
 import { TransactionStatusLog } from '../models/transaction/transaction-status_log.entity';
@@ -123,7 +123,7 @@ export class TransactionRepository {
 
 	async getManyTransactionBy(filter: {
 		customerId?: number;
-		paymentMethodCode?: number;
+		paymentMethodCode?: PaymentMethodEnum;
 		relations?: TransactionRelations[];
 	}): Promise<Transaction[] | null> {
 		const { relations, ...other } = filter;
