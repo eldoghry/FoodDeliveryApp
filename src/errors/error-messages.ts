@@ -93,6 +93,10 @@ const ErrMessages = {
 
 	payment: {
 		PaymentFailed: 'Payment failed'
+	},
+
+	setting: {
+		SettingNotFound: 'Setting Not Found'
 	}
 };
 

@@ -35,3 +35,6 @@ export * from './payment/transaction-detail.entity';
 
 // Auditing related entities
 export * from './auditing/auditing.entity';
+
+// Setting entity
+export * from './setting/setting.entity';
