@@ -14,6 +14,7 @@ import {
 	Restaurant,
 	RestaurantStatus,
 	Role,
+	Setting,
 	User,
 	UserRole,
 	UserType
@@ -21,6 +22,7 @@ import {
 import { SeedData } from '.';
 import { faker } from '@faker-js/faker';
 import { Category } from '../../models/menu/category.entity';
+import { SettingKey } from '../../enums/setting.enum';
 
 //
 const ITEMS_COUNT = 100;
@@ -182,6 +184,95 @@ const menuCategorySeedData: SeedData<MenuCategory> = {
 	}))
 };
 
+const settingSeedData: SeedData<Setting> = {
+	entity: Setting,
+	data: [
+		{ key: SettingKey.SITE_NAME, value: faker.company.name(), description: 'App name shown in UI' },
+		{ key: SettingKey.SITE_LOGO_URL, value: faker.image.url(), description: 'Logo image URL' },
+		{ key: SettingKey.PRIMARY_COLOR, value: faker.color.rgb(), description: 'Primary brand color' },
+
+		{ key: SettingKey.DEFAULT_LANGUAGE, value: 'en', description: 'Default language code' },
+		{ key: SettingKey.SUPPORTED_LANGUAGES, value: ['en', 'ar', 'fr'], description: 'Languages supported in the app' },
+		{ key: SettingKey.DEFAULT_CURRENCY, value: 'USD', description: 'Default currency used for transactions' },
+		{
+			key: SettingKey.LOCALE_FORMAT_OPTIONS,
+			value: { date: 'DD/MM/YYYY', time: 'HH:mm' },
+			description: 'Format for date and time display'
+		},
+
+		{ key: SettingKey.MAINTENANCE_MODE, value: false, description: 'Is the site in maintenance mode?' },
+		{
+			key: SettingKey.MAINTENANCE_MESSAGE,
+			value: 'Scheduled maintenance from 2 AM to 4 AM UTC.',
+			description: 'Maintenance mode message'
+		},
+
+		{ key: SettingKey.MIN_ORDER_AMOUNT, value: 5, description: 'Minimum amount required to place an order' },
+		{ key: SettingKey.MAX_ORDER_ITEMS, value: 50, description: 'Maximum number of items per order' },
+		{ key: SettingKey.ORDER_CANCELLATION_WINDOW_MIN, value: 10, description: 'Minutes allowed to cancel an order' },
+
+		{ key: SettingKey.DELIVERY_BASE_FEE, value: 30, description: 'Base fee for delivery orders' },
+		{ key: SettingKey.DELIVERY_PER_KM_FEE, value: 2.5, description: 'Delivery fee per kilometer' },
+		{ key: SettingKey.DELIVERY_RADIUS_KM, value: 30, description: 'Max delivery radius in kilometers' },
+		{
+			key: SettingKey.DEFAULT_PREPARATION_TIME_MIN,
+			value: 20,
+			description: 'Default food preparation time in minutes'
+		},
+
+		{ key: SettingKey.SERVICE_FEE_PERCENT, value: 25, description: 'Service fee percentage added to orders' },
+		{ key: SettingKey.TAX_RATE_PERCENT, value: 0.14, description: 'Tax rate applied to orders' },
+		{ key: SettingKey.ENABLE_CASH_ON_DELIVERY, value: true, description: 'Is cash on delivery allowed?' },
+
+		{ key: SettingKey.PUSH_NOTIFICATIONS_ENABLED, value: true, description: 'Are push notifications enabled?' },
+		{
+			key: SettingKey.ORDER_STATUS_TEMPLATES,
+			value: {
+				placed: 'Your order has been placed!',
+				on_route: 'Your food is on the way!',
+				delivered: 'Enjoy your meal!'
+			},
+			description: 'Notification messages for order statuses'
+		},
+
+		{ key: SettingKey.SUPPORT_EMAIL, value: faker.internet.email(), description: 'Customer support email' },
+		{
+			key: SettingKey.SUPPORT_PHONE,
+			value: faker.phone.number(),
+			description: 'Customer support phone number'
+		},
+		{
+			key: SettingKey.BUSINESS_HOURS,
+			value: {
+				mon_fri: '09:00-18:00',
+				sat: '10:00-14:00',
+				sun: 'Closed'
+			},
+			description: 'Working hours for support or operations'
+		},
+
+		{ key: SettingKey.PASSWORD_MIN_LENGTH, value: 8, description: 'Minimum password length for users' },
+		{ key: SettingKey.JWT_EXPIRATION_MIN, value: 60, description: 'JWT token expiry duration in minutes' },
+		{ key: SettingKey.RATE_LIMIT_PER_MIN, value: 100, description: 'API rate limit per minute per user' },
+
+		{
+			key: SettingKey.MAPS_API_CONFIG,
+			value: {
+				provider: 'google',
+				key: faker.string.alphanumeric(32)
+			},
+			description: 'Google Maps API configuration'
+		},
+		{
+			key: SettingKey.FIREBASE_CONFIG,
+			value: {
+				projectId: faker.string.uuid()
+			},
+			description: 'Firebase project configuration'
+		}
+	]
+};
+
 const seedData = [
 	// users
 	userTypesData,
@@ -203,7 +294,10 @@ const seedData = [
 
 	// category
 	categorySeedData,
-	menuCategorySeedData
+	menuCategorySeedData,
+
+	// settings
+	settingSeedData
 ];
 
 export default seedData;
