@@ -21,9 +21,6 @@ export class PaymentMethodConfig extends AbstractEntity {
 	@Column({ type: 'jsonb', nullable: false })
 	gatewayConfig!: Record<string, any>;
 
-	@Column({ type: 'boolean', default: true, nullable: false })
-	isActive!: boolean;
-
 	@CreateDateColumn()
 	createdAt!: Date;
 
