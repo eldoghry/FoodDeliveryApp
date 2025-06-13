@@ -5,6 +5,7 @@ import CartRouter from './cart.routes';
 import AuthRouter from './auth.routes';
 import OrderRouter from './order.routes';
 import PaymentRouter from './payment.routes';
+import SettingRouter from './setting.routes';
 
 const ApiRouter = Router();
 
@@ -14,5 +15,6 @@ ApiRouter.use('/user', UserRouter);
 ApiRouter.use('/cart', CartRouter);
 ApiRouter.use('/orders', OrderRouter);
 ApiRouter.use('/payment', PaymentRouter);
+ApiRouter.use('/setting', SettingRouter);
 
 export default ApiRouter;

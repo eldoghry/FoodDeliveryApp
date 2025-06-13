@@ -5,12 +5,13 @@ import ErrMessages from '../errors/error-messages';
 import { SettingRepository } from '../repositories';
 import { Setting } from '../models';
 import { redisService } from '../shared/redis';
+import { SettingKey } from '../enums/setting.enum';
 
 export class SettingService {
 	private static settingRepo = new SettingRepository();
 	static REDIS_PREFIX = 'settings';
 
-	static async get(key: string): Promise<any> {
+	static async get(key: SettingKey): Promise<any> {
 		const sanitizedKey = this.sanitizeKey(key);
 		// get from redis first
 
@@ -33,7 +34,7 @@ export class SettingService {
 		return await this.settingRepo.findAll();
 	}
 
-	static async set(key: string, value: any, description?: string): Promise<Setting> {
+	static async set(key: SettingKey, value: any, description?: string): Promise<Setting> {
 		const sanitizedKey = this.sanitizeKey(key);
 		const updated = await this.settingRepo.upsertByKey(sanitizedKey, value, description);
 		const cachedKey = redisService.generateKey(this.REDIS_PREFIX, sanitizedKey);
@@ -41,14 +42,14 @@ export class SettingService {
 		return updated;
 	}
 
-	static async delete(key: string): Promise<void> {
+	static async delete(key: SettingKey): Promise<void> {
 		const sanitizedKey = this.sanitizeKey(key);
 		await this.settingRepo.delete(sanitizedKey);
 		const cachedKey = redisService.generateKey(this.REDIS_PREFIX, sanitizedKey);
 		await redisService.del(cachedKey);
 	}
 
-	private static sanitizeKey(key: string): string {
+	private static sanitizeKey(key: SettingKey): string {
 		return key.trim().toUpperCase();
 	}
 }
