@@ -34,7 +34,7 @@ export class OrderRepository {
 		const whereCondition = actorType === 'customer' ? { customerId: actorId } : { restaurantId: actorId };
 		return await this.orderRepo.find({
 			where: whereCondition,
-			relations: ['restaurant', 'customer.user', 'deliveryAddress', 'orderItems.item', 'transactions.paymentMethod'],
+			relations: ['restaurant', 'customer.user', 'deliveryAddress', 'orderItems.item', 'transaction.paymentMethod'],
 			order: { createdAt: 'DESC' }
 		});
 	}
