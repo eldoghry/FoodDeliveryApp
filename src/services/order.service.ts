@@ -41,6 +41,7 @@ export class OrderService {
 	// private dataSource = AppDataSource; // to be used for typeorm transactions
 	private restaurantService = new RestaurantService();
 
+	@Transactional()
 	async checkout(payload: CheckoutPayload): Promise<PlaceOrderResponse> {
 		const handler = new ValidateRestaurantHandler(this.restaurantService);
 		handler
@@ -84,6 +85,7 @@ export class OrderService {
 		return order;
 	}
 
+	@Transactional()
 	private async handlePaymentResult(params: {
 		processPaymentResult: PaymentResult;
 		order: Order;
@@ -129,6 +131,7 @@ export class OrderService {
 		};
 	}
 
+	@Transactional()
 	async finalizeOrderCOD(order: Order, customer: Customer, restaurant: Restaurant) {
 		// todo: use update status & log method
 		// order.status = OrderStatusEnum.pending;
@@ -142,6 +145,7 @@ export class OrderService {
 		await this.sendingPlaceOrderNotifications(order, customer, restaurant);
 	}
 
+	@Transactional()
 	async processPaypalPaymentCallback(orderId: number, isPaymentSuccess: boolean) {
 		const order = await this.getOrderOrFailBy({ orderId, relations: ['restaurant'] });
 
@@ -324,7 +328,7 @@ export class OrderService {
 	}
 
 	async getOrderSummary(orderId: number) {
-		const order = await this.getOrderOrFailBy({ orderId, relations: ['orderItems'] }); 
+		const order = await this.getOrderOrFailBy({ orderId, relations: ['orderItems'] });
 		const orderSummary = await this.orderRepo.getOrderSummary(orderId);
 		const totalItemsPrice = calculateTotalPrice(order.orderItems).toFixed(2);
 		const totalAmount = calculateTotalPrice(order.orderItems, order.serviceFees, order.deliveryFees).toFixed(2);
