@@ -55,7 +55,7 @@ export class MenuRepository {
 		return await this.categoryRepo.find({
 			where: { categoryId },
 			relations: ['items', 'menuCategories']
-		}); 
+		});
 	}
 
 	async getCategoryById(categoryId: number): Promise<Category | null> {
@@ -116,10 +116,10 @@ export class MenuRepository {
 			where: { categoryId },
 			relations: ['items']
 		});
-         
+
 		return category?.items || [];
 	}
- 
+
 	async getItemsByMenu(menuId: number): Promise<Item[]> {
 		const menu = await this.menuRepo.findOne({
 			where: { menuId },

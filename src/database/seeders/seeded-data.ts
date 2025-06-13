@@ -9,8 +9,7 @@ import {
 	MenuItem,
 	PaymentMethod,
 	PaymentMethodConfig,
-	PaymentStatus,
-	PaymentStatusEnum,
+	PaymentMethodEnum,
 	Restaurant,
 	RestaurantStatus,
 	Role,
@@ -23,6 +22,7 @@ import { SeedData } from '.';
 import { faker } from '@faker-js/faker';
 import { Category } from '../../models/menu/category.entity';
 import { SettingKey } from '../../enums/setting.enum';
+import { PaymentMethodStatus } from '../../enums/payment_method.enum';
 
 //
 const ITEMS_COUNT = 100;
@@ -152,19 +152,22 @@ const menuItemSeedData: SeedData<MenuItem> = {
 // Seed data for PaymentMethod
 const paymentMethodSeedData: SeedData<PaymentMethod> = {
 	entity: PaymentMethod,
-	data: Array.from({ length: 4 }).map((_, i) => ({
-		methodName: faker.finance.transactionType() + `_${i}`,
-		description: faker.lorem.sentence(),
-		iconUrl: faker.image.url({ width: 50, height: 50 }),
-		order: i,
-		isActive: true
-	}))
-};
-
-// Seed data for PaymentStatus
-const paymentStatusSeedData: SeedData<PaymentStatus> = {
-	entity: PaymentStatus,
-	data: Object.values(PaymentStatusEnum).map((status) => ({ statusName: status, isActive: true }))
+	data: [
+		{
+			code: PaymentMethodEnum.CARD,
+			description: 'Paypal Card',
+			iconUrl: faker.image.url(),
+			order: 1,
+			status: PaymentMethodStatus.ACTIVE
+		},
+		{
+			code: PaymentMethodEnum.COD,
+			description: 'Cash on delivery',
+			iconUrl: faker.image.url(),
+			order: 2,
+			status: PaymentMethodStatus.ACTIVE
+		}
+	]
 };
 
 // category
@@ -290,7 +293,6 @@ const seedData = [
 
 	// payment methods
 	paymentMethodSeedData,
-	paymentStatusSeedData,
 
 	// category
 	categorySeedData,

@@ -1,5 +1,3 @@
-import { CartService } from './cart.service';
-import { PaymentMethodEnum } from './../models/payment/payment-method.entity';
 import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';

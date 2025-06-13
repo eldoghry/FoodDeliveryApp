@@ -382,7 +382,8 @@ export class OrderService {
 			totalAmount: order.totalAmount,
 			customerInstructions: order.customerInstructions,
 			...statusRelatedData,
-			paymentMethod: order.transactions[0]?.paymentMethod.methodName,
+			// paymentMethod: order.transactions[0]?.paymentMethod.methodName,
+			paymentMethod: order.transaction?.paymentMethod.code,
 			createdAt: order.createdAt,
 			updatedAt: order.updatedAt
 		};
