@@ -12,7 +12,7 @@ async function startServer() {
 	await initiateDataSource();
 
 	// Start Redis connection
-	// await startRedis();
+	await startRedis();
 
 	app.listen(config.port, () => {
 		logger.info(`Server running on http://localhost:${config.port} | ENV:(${config.env})`);

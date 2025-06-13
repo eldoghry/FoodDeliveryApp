@@ -12,7 +12,7 @@ class RedisService {
 
 	async get<T = any>(key: string, log = false): Promise<T | null> {
 		const data = await this.redis.get(key);
-		if (log) logger.debug(`Redis GET ${key} => ${!!data ? 'HIT' : 'MISS'}`);
+		if (log) logger.info(`Redis GET ${key} => ${!!data ? 'HIT' : 'MISS'}`);
 		return data ? JSON.parse(data) : null;
 	}
 
