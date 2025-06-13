@@ -9,8 +9,13 @@ export class CalculateAmountsHandler extends CheckoutHandler {
 	}
 
 	async handleRequest(context: CheckoutContext) {
-		context.serviceFees = (await SettingService.get(SettingKey.SERVICE_BASE_FEE)) as number;
-		context.deliveryFees = (await SettingService.get(SettingKey.DELIVERY_BASE_FEE)) as number;
+		const [serviceFees, deliveryFees] = await Promise.all([
+			(await SettingService.get(SettingKey.SERVICE_BASE_FEE)) as number,
+			(await SettingService.get(SettingKey.DELIVERY_BASE_FEE)) as number
+		]);
+
+		context.serviceFees = serviceFees;
+		context.deliveryFees = deliveryFees;
 		context.totalAmount = calculateTotalPrice(context.cart!.cartItems, context.serviceFees, context.deliveryFees);
 
 		return context;
