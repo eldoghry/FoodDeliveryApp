@@ -19,10 +19,15 @@ export class CustomerRepository {
 	}
 
 	async getCustomerById(filter: { customerId: number; relations?: CustomerRelations[] }): Promise<Customer | null> {
-		return await this.customerRepo.findOne({
-			where: { customerId: filter.customerId },
-			relations: filter?.relations
-		});
+		const query = this.customerRepo.createQueryBuilder('customer');
+
+		if (filter?.relations) {
+			filter.relations.forEach((relation) => query.leftJoinAndSelect(`customer.${relation}`, relation));
+		}
+
+		query.where('customer.customerId = :customerId', { customerId: filter.customerId });
+
+		return query.getOne();
 	}
 
 	async getCustomerByUserId(userId: number): Promise<Customer | null> {
