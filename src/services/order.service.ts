@@ -78,6 +78,7 @@ export class OrderService {
 		});
 	}
 
+
 	async getOrderOrFailBy(filter: { orderId: number; relations?: OrderRelations[] }) {
 		const order = await this.orderRepo.getOrderBy(filter);
 
@@ -85,6 +86,7 @@ export class OrderService {
 		return order;
 	}
 
+	@Transactional()
 	private async handlePaymentResult(params: {
 		processPaymentResult: PaymentResult;
 		order: Order;
@@ -130,6 +132,7 @@ export class OrderService {
 		};
 	}
 
+	@Transactional()
 	async finalizeOrderCOD(order: Order, customer: Customer, restaurant: Restaurant) {
 		// todo: use update status & log method
 		// order.status = OrderStatusEnum.pending;
@@ -143,6 +146,7 @@ export class OrderService {
 		await this.sendingPlaceOrderNotifications(order, customer, restaurant);
 	}
 
+	@Transactional()
 	async processPaypalPaymentCallback(orderId: number, isPaymentSuccess: boolean) {
 		const order = await this.getOrderOrFailBy({ orderId, relations: ['restaurant'] });
 
