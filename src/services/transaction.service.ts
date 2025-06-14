@@ -60,8 +60,8 @@ export class TransactionService {
 
 		transaction.status = status;
 		await this.addTransactionStatusLogByTrx(transaction, status);
+		await transaction.save();
 		await transaction.reload();
-
 		return transaction;
 	}
 
