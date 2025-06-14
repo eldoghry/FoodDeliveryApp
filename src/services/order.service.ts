@@ -41,6 +41,7 @@ export class OrderService {
 	// private dataSource = AppDataSource; // to be used for typeorm transactions
 	private restaurantService = new RestaurantService();
 
+	@Transactional()
 	async checkout(payload: CheckoutPayload): Promise<PlaceOrderResponse> {
 		const handler = new ValidateRestaurantHandler(this.restaurantService);
 		handler
@@ -287,6 +288,7 @@ export class OrderService {
 	}
 
 	// update status log table
+	@Transactional()
 	async addOrderStatusLog(orderId: number, newStatus: OrderStatusEnum, actor: OrderStatusChangeBy) {
 		this.isValidActor(actor);
 		await this.validateOrderStatus(orderId, newStatus, actor);
