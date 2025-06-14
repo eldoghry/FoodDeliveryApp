@@ -304,6 +304,7 @@ export class OrderService {
 		return await this.orderRepo.updateOrderStatus(orderId, payload);
 	}
 
+	@Transactional()
 	async cancelOrder(orderId: number, actorType: string, payload: { reason: string }) {
 		let actor: OrderStatusChangeBy;
 		if (actorType === 'customer') {
@@ -384,15 +385,19 @@ export class OrderService {
 		};
 	}
 	// get orders history for customer or restaurant
-	async getOrdersHistory(actorType: string, actorId: number) {
+	async getOrdersHistory(actorType: 'customer' | 'restaurant', actorId: number, limit: number, cursor?: string) {
 		if (!actorId) {
 			throw new ApplicationError(`Actor id is required`, HttpStatusCode.BAD_REQUEST);
 		}
 		if (!(actorType == 'customer' || actorType.includes('restaurant'))) {
 			throw new ApplicationError(`${actorType} is not allowed to get orders history`, HttpStatusCode.BAD_REQUEST);
 		}
-		const orders = await this.orderRepo.getOrdersByActorId(actorId, actorType as 'customer' | 'restaurant');
-		return orders.map((order) => this.orderHistoryData(order, actorType));
+		const orders = await this.orderRepo.getOrdersByActorId(actorId, actorType ,limit,cursor);
+		return {
+			orders: orders.data.map((order) => this.orderHistoryData(order, actorType)),
+			nextCursor: orders.nextCursor,
+			hasNextPage: orders.hasNextPage
+		};
 	}
 
 	async addOrderItems(orderId: number, cart: Cart) {

@@ -13,6 +13,30 @@ export function calculateTotalPrice(items: CartItem[] | OrderItem[], serviceFees
 	return result;
 }
 
+// Cursor pagination
+export interface CursorPaginatedResult<T> {
+	data: T[];
+	nextCursor: string | null;
+	hasNextPage: boolean;
+  }
+  
+  export function cursorPaginate<T>(
+	items: T[],
+	limit: number,
+	cursorField: keyof T
+  ): CursorPaginatedResult<T> {
+	const hasNextPage = items.length > limit;
+	const data = hasNextPage ? items.slice(0, -1) : items;
+	const lastItem = data[data.length - 1];
+	const nextCursor = hasNextPage && lastItem ? lastItem[cursorField] : null;
+  
+	return {
+	  data,
+	  nextCursor: nextCursor ? new Date(nextCursor as any).toISOString() : null,
+	  hasNextPage,
+	};
+  }
+
 /**
  * Converts a given number of seconds to milliseconds.
  *

@@ -47,11 +47,11 @@ export class OrderController {
 		sendResponse(res, StatusCodes.OK, 'Order summary retrieved successfully', data);
 	}
 
-	async getOrders(req: Request, res: Response) {
+	async getOrdersHistory(req: Request, res: Response) {
 		const { actorType, actorId } = req?.user as AuthorizedUser;
-		const { page, perPage } = req?.validated?.query;
-		const data = await this.orderService.getOrdersHistory(actorType, actorId);
-		sendPaginatedResponse(res, StatusCodes.OK, 'Orders retrieved successfully', data, page, perPage);
+		const { page, perPage ,cursor} = req?.validated?.query;
+		const data = await this.orderService.getOrdersHistory(actorType as 'customer' | 'restaurant', actorId, perPage, cursor);
+		sendPaginatedResponse(res, StatusCodes.OK, 'Orders retrieved successfully', data.orders, perPage, {nextCursor: data.nextCursor, hasNextPage: data.hasNextPage});
 	}
 
 	async getOrderDetails(req: Request, res: Response) {

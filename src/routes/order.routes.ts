@@ -222,7 +222,7 @@ OrderRouter.get(
 	isAuthenticated,
 	verifyActor({ allowedActorTypes: ['customer', 'restaurant_user'] }),
 	validateRequest({ query: getOrdersQuerySchema }),
-	controller.getOrders.bind(controller)
+	controller.getOrdersHistory.bind(controller)
 );
 
 /**

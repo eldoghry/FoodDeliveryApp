@@ -1,9 +1,10 @@
-import { Repository } from 'typeorm';
+import { LessThan, Repository } from 'typeorm';
 import { AppDataSource } from '../config/data-source';
 import { OrderStatusChangeBy } from '../models';
 import { OrderItem } from '../models/order/order-item.entity';
 import { OrderStatusEnum, OrderStatusLog } from '../models/order/order-status_log.entity';
 import { Order, OrderRelations } from '../models/order/order.entity';
+import { cursorPaginate } from '../utils/helper';
 
 export class OrderRepository {
 	private orderRepo: Repository<Order>;
@@ -30,13 +31,34 @@ export class OrderRepository {
 		});
 	}
 
-	async getOrdersByActorId(actorId: number, actorType: 'customer' | 'restaurant'): Promise<Order[]> {
-		const whereCondition = actorType === 'customer' ? { customerId: actorId } : { restaurantId: actorId };
-		return await this.orderRepo.find({
-			where: whereCondition,
-			relations: ['restaurant', 'customer.user', 'deliveryAddress', 'orderItems.item', 'transactions.paymentMethod'],
-			order: { createdAt: 'DESC' }
+	async getOrdersByActorId(actorId: number, actorType: 'customer' | 'restaurant', limit: number, cursor?: string): Promise<{ data: Order[]; nextCursor: string | null; hasNextPage: boolean }> {
+		const whereCondition =
+			actorType === 'customer'
+				? { customerId: actorId }
+				: { restaurantId: actorId };
+
+		// Build base where clause
+		const whereClause: any = { ...whereCondition };
+
+		// If cursor is provided, add condition to paginate
+		if (cursor) {
+			whereClause.createdAt = LessThan(new Date(cursor));
+		}
+
+		const orders = await this.orderRepo.find({
+			where: whereClause,
+			relations: [
+				'restaurant',
+				'customer.user',
+				'deliveryAddress',
+				'orderItems.item',
+				'transactions.paymentMethod',
+			],
+			order: { createdAt: 'DESC' },
+			take: limit + 1, // One extra to check for next page
 		});
+		
+		return cursorPaginate(orders, limit, 'createdAt');
 	}
 
 	async updateOrder(orderId: number, data: Partial<Order>): Promise<Order | null> {
