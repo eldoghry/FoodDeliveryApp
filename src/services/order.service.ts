@@ -5,7 +5,6 @@ import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { OrderRepository } from '../repositories';
 import { CustomerService } from './customer.service';
-import { PaymentService } from './payment/payment.service';
 import { calculateTotalPrice } from '../utils/helper';
 import {
 	Customer,
@@ -15,7 +14,8 @@ import {
 	OrderStatusChangeBy,
 	Cart,
 	PaymentMethodEnum,
-	Restaurant
+	Restaurant,
+	Transaction
 } from '../models';
 import { Notify } from '../shared/notify';
 import { RestaurantService } from './restaurant.service';
@@ -33,6 +33,8 @@ import {
 	ValidateCustomerHandler,
 	ValidateRestaurantHandler
 } from '../handlers/checkout';
+import { TransactionService } from './transaction.service';
+import { TransactionPaymentStatus } from '../enums/transaction.enum';
 
 export class OrderService {
 	private orderRepo = new OrderRepository();
@@ -40,6 +42,7 @@ export class OrderService {
 	private customerService = new CustomerService();
 	// private dataSource = AppDataSource; // to be used for typeorm transactions
 	private restaurantService = new RestaurantService();
+	private transactionService = new TransactionService();
 
 	@Transactional()
 	async checkout(payload: CheckoutPayload): Promise<PlaceOrderResponse> {
@@ -60,7 +63,8 @@ export class OrderService {
 			order: result.order!,
 			customer: result.customer!,
 			restaurant: result.restaurant!,
-			paymentMethod: result.payload.paymentMethod
+			paymentMethod: result.payload.paymentMethod,
+			transaction: result.transaction!
 		});
 	}
 
@@ -92,8 +96,9 @@ export class OrderService {
 		paymentMethod: PaymentMethodEnum;
 		customer: Customer;
 		restaurant: Restaurant;
+		transaction: Transaction;
 	}): Promise<PlaceOrderResponse> {
-		const { processPaymentResult, order, paymentMethod, customer, restaurant } = params;
+		const { processPaymentResult, order, paymentMethod, customer, restaurant, transaction } = params;
 
 		if (!processPaymentResult.success) {
 			// todo: use update status & log method
@@ -101,6 +106,10 @@ export class OrderService {
 			// await order.save();
 
 			await this.updateOrderStatus(order.orderId, { status: OrderStatusEnum.failed }, OrderStatusChangeBy.payment);
+			await this.transactionService.updateTransactionStatus({
+				transactionId: transaction.transactionId,
+				status: TransactionPaymentStatus.FAILED
+			});
 			await order.reload();
 
 			return { success: false, error: processPaymentResult?.error, order };
@@ -108,6 +117,11 @@ export class OrderService {
 
 		// 3. Handle gateway redirects
 		if (processPaymentResult?.redirectUrl) {
+			await this.transactionService.updateTransactionStatus({
+				transactionId: transaction.transactionId,
+				status: TransactionPaymentStatus.PENDING
+			});
+
 			return {
 				success: true,
 				paymentReference: processPaymentResult.paymentId,
@@ -118,7 +132,7 @@ export class OrderService {
 
 		if (paymentMethod === PaymentMethodEnum.COD) {
 			// todo: use update status & log method
-			await this.finalizeOrderCOD(order, customer, restaurant);
+			await this.finalizeOrderCOD(order, customer, restaurant, transaction);
 			return { success: true, paymentReference: processPaymentResult.paymentId, order };
 		}
 
@@ -132,13 +146,19 @@ export class OrderService {
 	}
 
 	@Transactional()
-	async finalizeOrderCOD(order: Order, customer: Customer, restaurant: Restaurant) {
+	async finalizeOrderCOD(order: Order, customer: Customer, restaurant: Restaurant, transaction: Transaction) {
 		// todo: use update status & log method
 		// order.status = OrderStatusEnum.pending;
 		order.placedAt = new Date(); // set placedAt to current date
 		await order.save();
 		await this.updateOrderStatus(order.orderId, { status: OrderStatusEnum.pending }, OrderStatusChangeBy.payment);
 		await order.reload();
+
+		await this.transactionService.updateTransactionStatus({
+			transactionId: transaction.transactionId,
+			status: TransactionPaymentStatus.PAID
+		});
+
 		const cart = await this.cartService.getCartWithItems({ customerId: customer.customerId, relations: ['cartItems'] });
 		await this.addOrderItems(order.orderId, cart);
 		await this.cartService.clearCart(customer.customerId);
@@ -179,6 +199,12 @@ export class OrderService {
 			await this.cartService.clearCart(customer.customerId);
 			await this.sendingPlaceOrderNotifications(order, customer, order.restaurant);
 			logger.info('Order payment confirmed', order.orderId);
+
+			// TODO: update transaction status
+			// await this.transactionService.updateTransactionStatus({
+			// 	transactionId: transaction.transactionId,
+			// 	status: TransactionPaymentStatus.SUCCESS
+			// });
 		} else {
 			logger.info('Order payment failed', order.orderId);
 		}
