@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { sendResponse } from '../utils/sendResponse';
 import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
-import { PaymentService } from '../services/payment/payment.service';
+import { PaymentHandler } from '../services/payment/payment.handler';
 import { PaymentMethodEnum } from '../models';
 import ApplicationError from '../errors/application.error';
 import { PaypalCaptureResponse, PayPalWebhookEvent } from '../services/payment/paypal/paypal.interface';
@@ -17,11 +17,11 @@ export class PaymentController {
 
 		logger.info('Received PayPal event:', event.event_type);
 
-		const paymentService = new PaymentService(PaymentMethodEnum.CARD);
+		const paymentHandler = new PaymentHandler(PaymentMethodEnum.CARD);
 
 		if (event.event_type === 'CHECKOUT.ORDER.APPROVED') {
 			const paypalOrderId = event.resource.id;
-			const result = (await paymentService.verifyPayment(paypalOrderId)) as PaypalCaptureResponse;
+			const result = (await paymentHandler.verifyPayment(paypalOrderId)) as PaypalCaptureResponse;
 
 			// console.log(result);
 			// console.dir(result.purchase_units[0].payments, { depth: null });

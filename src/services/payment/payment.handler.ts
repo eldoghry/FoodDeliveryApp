@@ -4,7 +4,7 @@ import { PaymentMethodEnum } from '../../models';
 import { PaymentFactory } from './payment.factory';
 import { IPaymentStrategy } from './paymentStrategy.interface';
 
-export class PaymentService {
+export class PaymentHandler {
 	private strategy: IPaymentStrategy;
 
 	constructor(paymentMethod: PaymentMethodEnum) {
