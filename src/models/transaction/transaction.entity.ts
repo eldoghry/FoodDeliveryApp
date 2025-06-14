@@ -63,7 +63,11 @@ export class Transaction extends AbstractEntity {
 	customer!: Customer;
 
 	@ManyToOne(() => PaymentMethod, (paymentMethod) => paymentMethod.transactions)
-	@JoinColumn({ name: 'payment_method_id' })
+	@JoinColumn({
+		name: 'payment_method_code',
+		referencedColumnName: 'code',
+		foreignKeyConstraintName: 'fk_payment_method_code'
+	})
 	paymentMethod!: PaymentMethod;
 
 	@OneToOne(() => Order, (order) => order.transaction)
