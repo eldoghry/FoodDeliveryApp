@@ -67,7 +67,7 @@ export class CartItem extends AbstractEntity {
 	 * @param quantity - Quantity of the menu item
 	 * @returns A new CartItem instance
 	 */
-	static buildCartItem(dto: { cartId: number; restaurantId: number; itemId: number; quantity: number; price: number; }) {
+	static buildCartItem(dto: { cartId: number; restaurantId: number; itemId: number; quantity: number; price: number }) {
 		const cartItem = new CartItem();
 		cartItem.cartId = dto.cartId;
 		cartItem.restaurantId = dto.restaurantId;
@@ -75,7 +75,7 @@ export class CartItem extends AbstractEntity {
 		cartItem.price = dto.price;
 		cartItem.quantity = dto.quantity;
 
-		cartItem.calculateTotalPrice();
+		cartItem.calculateCartItemTotalPrice();
 
 		return cartItem;
 	}
@@ -83,7 +83,7 @@ export class CartItem extends AbstractEntity {
 	/**
 	 * Recalculates the total price based on current quantity, price, and discount
 	 */
-	calculateTotalPrice() {
+	calculateCartItemTotalPrice() {
 		this.totalPrice = Number((this.quantity * this.price).toFixed(2));
 		return this.totalPrice;
 	}
@@ -96,7 +96,7 @@ export class CartItem extends AbstractEntity {
 	 */
 	updateQuantity(quantity: number): CartItem {
 		this.quantity = quantity;
-		this.calculateTotalPrice();
+		this.calculateCartItemTotalPrice();
 		return this;
 	}
 }

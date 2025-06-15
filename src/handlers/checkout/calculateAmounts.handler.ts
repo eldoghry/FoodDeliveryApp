@@ -1,7 +1,7 @@
 import { SettingService } from './../../services/setting.service';
-import { calculateTotalPrice } from '../../utils/helper';
 import { CheckoutContext, CheckoutHandler } from './checkout.handler';
 import { SettingKey } from '../../enums/setting.enum';
+import { Cart } from '../../models';
 
 export class CalculateAmountsHandler extends CheckoutHandler {
 	constructor() {
@@ -16,8 +16,7 @@ export class CalculateAmountsHandler extends CheckoutHandler {
 
 		context.serviceFees = serviceFees;
 		context.deliveryFees = deliveryFees;
-		context.totalAmount = calculateTotalPrice(context.cart!.cartItems, context.serviceFees, context.deliveryFees);
-
+		context.totalAmount = Cart.calculateTotalPrice(context.cart!.cartItems, serviceFees, deliveryFees);
 		return context;
 	}
 }

@@ -152,8 +152,9 @@ export class CartService {
 	}
 
 	private cartResponse(cart: Cart, restaurant: RestaurantCart | null, items: CartItemResponse[]): CartResponse {
-		const totalItems = items.reduce((total, item) => Number(total) + Number(item.quantity), 0);
-		const totalPrice = items.reduce((total, item) => Number(total) + Number(item.totalPrice), 0);
+		const totalItems = Cart.calculateTotalItems(items as any);
+		const totalPrice = Cart.calculateTotalPrice(items as any);
+
 		return {
 			id: cart.cartId,
 			customerId: cart.customerId,

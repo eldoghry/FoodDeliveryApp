@@ -4,7 +4,7 @@ import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { OrderRepository } from '../repositories';
 import { CustomerService } from './customer.service';
-import { calculateTotalPrice, isWithinTimeLimit as isWithinCancelTimeLimit } from '../utils/helper';
+import { isWithinTimeLimit as isWithinCancelTimeLimit } from '../utils/helper';
 import {
 	Customer,
 	Order,
@@ -477,8 +477,8 @@ export class OrderService {
 	async getOrderSummary(orderId: number) {
 		const order = await this.getOrderOrFailBy({ orderId, relations: ['orderItems'] });
 		const orderSummary = await this.orderRepo.getOrderSummary(orderId);
-		const totalItemsPrice = calculateTotalPrice(order.orderItems).toFixed(2);
-		const totalAmount = calculateTotalPrice(order.orderItems, order.serviceFees, order.deliveryFees).toFixed(2);
+		const totalItemsPrice = Cart.calculateTotalPrice(order.orderItems).toFixed(2);
+		const totalAmount = Cart.calculateTotalPrice(order.orderItems, order.serviceFees, order.deliveryFees).toFixed(2);
 		return { ...orderSummary, totalItemsPrice, totalAmount };
 	}
 

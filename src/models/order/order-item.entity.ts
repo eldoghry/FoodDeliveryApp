@@ -3,7 +3,6 @@ import { AbstractEntity } from '../base.entity';
 import { Order } from './order.entity';
 import { Item } from '../menu/item.entity';
 
-
 @Check(`"price" >= 0.00`)
 @Check(`"total_price" >= 0.00`)
 @Check(`"quantity" > 0`)
@@ -46,14 +45,14 @@ export class OrderItem extends AbstractEntity {
 	 * @param quantity - Quantity of the item
 	 * @returns A new OrderItem instance
 	 */
-	static buildOrderItem(dto: { orderId: number; itemId: number; quantity: number; price: number; }) {
+	static buildOrderItem(dto: { orderId: number; itemId: number; quantity: number; price: number }) {
 		const orderItem = new OrderItem();
 		orderItem.orderId = dto.orderId;
 		orderItem.itemId = dto.itemId;
 		orderItem.price = dto.price;
 		orderItem.quantity = dto.quantity;
 
-		orderItem.calculateTotalPrice();
+		orderItem.calculateOrderItemTotalPrice();
 
 		return orderItem;
 	}
@@ -61,9 +60,8 @@ export class OrderItem extends AbstractEntity {
 	/**
 	 * calculates the total price based on current quantity, price
 	 */
-	calculateTotalPrice() {
+	calculateOrderItemTotalPrice() {
 		this.totalPrice = Number((this.quantity * this.price).toFixed(2));
 		return this.totalPrice;
 	}
-
 }
