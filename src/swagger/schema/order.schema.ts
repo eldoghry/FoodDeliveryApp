@@ -134,7 +134,7 @@ const swaggerSchema = {
             deliveredAt: { type: 'string', description: 'The timestamp when the order was delivered.', example: '2022-01-01T00:00:00.000Z' }
         }
     },
-    OrderHistory: {
+    OrderData: {
         type: 'object',
         properties: {
             orderId: { type: 'integer', description: 'The ID of the order.', example: 1 },
@@ -168,11 +168,44 @@ const swaggerSchema = {
     pagination: {
         type: 'object',
         properties: {
-            page: { type: 'integer', description: 'The page number.', example: 1 },
             perPage: { type: 'integer', description: 'The number of items per page.', example: 10 },
-            totalPages: { type: 'integer', description: 'The total number of pages.', example: 1 },
-            total: { type: 'integer', description: 'The total number of items.', example: 10 },
+            nextCursor: { type: 'string', description: 'The cursor for the next page.', example: 'nextCursor' },
+            hasNextPage: { type: 'boolean', description: 'Whether there is a next page.', example: true },
         }
+    },
+    CustomerOrderData: {
+        allOf: [{ $ref: '#/components/schemas/OrderData' }, {
+            type: 'object', properties: {
+                restaurant: {
+                    type: 'object',
+                    properties: {
+                        id: { type: 'integer', description: 'The ID of the restaurant.', example: 1 },
+                        name: { type: 'string', description: 'The name of the restaurant.', example: 'John Doe' },
+                        location: {
+                            type: 'object', properties: {
+                                latitude: { type: 'number', description: 'The latitude of the restaurant.', example: 123.456 },
+                                longitude: { type: 'number', description: 'The longitude of the restaurant.', example: 123.456 },
+                            }
+                        },
+                        email: { type: 'string', description: 'The email of the restaurant.', example: 'john.doe@example.com' },
+                    }
+                },
+            }
+        }]
+    },
+    RestaurantOrderData: {
+        allOf: [{ $ref: '#/components/schemas/OrderData' }, {
+            type: 'object', properties: {
+                customer: {
+                    type: 'object',
+                    properties: {
+                        id: { type: 'integer', description: 'The ID of the customer.', example: 1 },
+                        name: { type: 'string', description: 'The name of the customer.', example: 'John Doe' },
+                        phone: { type: 'string', description: 'The phone number of the customer.', example: '1234567890' },
+                    }
+                },
+            }
+        }]
     },
     CustomerOrdersHistory: {
         title: 'Customer Orders History',
@@ -181,19 +214,7 @@ const swaggerSchema = {
             data: {
                 type: 'array',
                 description: 'The orders of the customer.',
-                items: {
-                    allOf: [{ $ref: '#/components/schemas/OrderHistory' }, {
-                        type: 'object', properties: {
-                            restaurant: {
-                                type: 'object',
-                                properties: {
-                                    id: { type: 'integer', description: 'The ID of the restaurant.', example: 1 },
-                                    name: { type: 'string', description: 'The name of the restaurant.', example: 'John Doe' },
-                                }
-                            },
-                        }
-                    }],
-                }
+                items: { $ref: '#/components/schemas/CustomerOrderData' }
             },
             pagination: { $ref: '#/components/schemas/pagination' },
         }
@@ -205,24 +226,26 @@ const swaggerSchema = {
             data: {
                 type: 'array',
                 description: 'The orders of the restaurant.',
-                items: {
-                    allOf: [{ $ref: '#/components/schemas/OrderHistory' }, {
-                        type: 'object', properties: {
-                            customer: {
-                                type: 'object',
-                                properties: {
-                                    id: { type: 'integer', description: 'The ID of the customer.', example: 1 },
-                                    name: { type: 'string', description: 'The name of the customer.', example: 'John Doe' },
-                                    phone: { type: 'string', description: 'The phone number of the customer.', example: '1234567890' },
-                                }
-                            },
-                        }
-                    }]
-                }
+                items: { $ref: '#/components/schemas/RestaurantOrderData' }
             },
             pagination: { $ref: '#/components/schemas/pagination' },
         }
+    },
+    CustomerOrderDetails: {
+        title: 'Customer Order Details',
+        type: 'object',
+        properties: {
+            data: { $ref: '#/components/schemas/CustomerOrderData' },
+        }
+    },
+    RestaurantOrderDetails: {
+        title: 'Restaurant Order Details',
+        type: 'object',
+        properties: {
+            data: { $ref: '#/components/schemas/RestaurantOrderData' },
+        }
     }
+
 }
 
 export default swaggerSchema;

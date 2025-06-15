@@ -13,6 +13,52 @@ export function calculateTotalPrice(items: CartItem[] | OrderItem[], serviceFees
 	return result;
 }
 
+export interface CursorPaginatedResult<T> {
+	data: T[];
+	nextCursor: string | null;
+	hasNextPage: boolean;
+  }
+  
+  /**
+   * Paginates an array of items using cursor-based pagination.
+   *
+   * @param items The array of items to paginate.
+   * @param limit The maximum number of items per page.
+   * @param cursorField The field to use as the cursor for pagination.
+   * @returns A CursorPaginatedResult object containing the paginated data.
+   */
+  export function cursorPaginate<T>(
+	items: T[],
+	limit: number,
+	cursorField: keyof T
+  ): CursorPaginatedResult<T> {
+	const hasNextPage = items.length > limit;
+	const data = hasNextPage ? items.slice(0, -1) : items;
+	const lastItem = data[data.length - 1];
+	const nextCursor = hasNextPage && lastItem ? lastItem[cursorField] : null;
+  
+	return {
+	  data,
+	  nextCursor: nextCursor ? new Date(nextCursor as any).toISOString() : null,
+	  hasNextPage,
+	};
+  }
+
+/**
+ * Checks if a given date is within a specified time limit.
+ *
+ * @param date The date to check.
+ * @param limitMinutes The time limit in minutes.
+ * @returns True if the date is within the time limit, false otherwise.
+ */
+export function isWithinTimeLimit(date: Date, limitMinutes: number): boolean {
+    const now = new Date();
+    const targetDate = new Date(date);
+    const minutesSince = (now.getTime() - targetDate.getTime()) / (1000 * 60);
+	console.log('isWithinTimeLimit', minutesSince <= limitMinutes);
+    return minutesSince <= limitMinutes;
+}
+
 /**
  * Converts a given number of seconds to milliseconds.
  *

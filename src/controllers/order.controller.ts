@@ -34,8 +34,8 @@ export class OrderController {
 	}
 
 	async cancelOrder(req: Request, res: Response) {
+		const { actorType } = req?.user as AuthorizedUser;
 		const orderId = req?.validated?.params?.orderId;
-		const actorType = req?.user?.actorType;
 		const payload = req?.validated?.body;
 		const data = await this.orderService.cancelOrder(orderId, actorType!, payload);
 		sendResponse(res, StatusCodes.OK, 'Order cancelled successfully', data);
@@ -47,21 +47,17 @@ export class OrderController {
 		sendResponse(res, StatusCodes.OK, 'Order summary retrieved successfully', data);
 	}
 
-	async getOrders(req: Request, res: Response) {
+	async getOrdersHistory(req: Request, res: Response) {
 		const { actorType, actorId } = req?.user as AuthorizedUser;
-		const { page, perPage } = req?.validated?.query;
-		const data = await this.orderService.getOrdersHistory(actorType, actorId);
-		sendPaginatedResponse(res, StatusCodes.OK, 'Orders retrieved successfully', data, page, perPage);
+		const { perPage, cursor } = req?.validated?.query;
+		const data = await this.orderService.getOrdersHistory(actorType, actorId, perPage, cursor);
+		sendPaginatedResponse(res, StatusCodes.OK, 'Orders retrieved successfully', data.orders, { perPage, nextCursor: data.nextCursor, hasNextPage: data.hasNextPage });
 	}
 
 	async getOrderDetails(req: Request, res: Response) {
+		const { actorType } = req?.user as AuthorizedUser;
 		const orderId = req?.validated?.params?.orderId;
-
-		const data = await this.orderService.getOrderDetails(orderId, req?.user?.actorId as number);
-
-		console.log(data);
-		if (!data) throw new ApplicationError(`Order not found`, StatusCodes.NOT_FOUND, true, 'Order not found');
-
+		const data = await this.orderService.getOrderDetails(orderId, actorType);
 		sendResponse(res, StatusCodes.OK, 'Order details retrieved successfully', data);
 	}
 }

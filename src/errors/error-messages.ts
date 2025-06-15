@@ -68,7 +68,9 @@ const ErrMessages = {
 	order: {
 		InvalidOrderStatus: 'Invalid Order Status',
 		OrderNotFound: 'Order Not Found',
-		CannotCancelOrderAfter5Minutes: 'Cannot cancel order after 5 minutes of placing it'
+		CannotCancelOrderAfter5Minutes: 'Cannot cancel order after 5 minutes of placing it',
+		FailedToUpdateOrderStatus: 'Failed to update order status',
+		FailedToAddOrderStatusLog: 'Failed to add order status log'
 	},
 	customer: {
 		CustomerNotFound: 'Customer not found',

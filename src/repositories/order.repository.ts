@@ -1,9 +1,10 @@
-import { Repository } from 'typeorm';
+import { LessThan, Repository } from 'typeorm';
 import { AppDataSource } from '../config/data-source';
 import { OrderStatusChangeBy } from '../models';
 import { OrderItem } from '../models/order/order-item.entity';
 import { OrderStatusEnum, OrderStatusLog } from '../models/order/order-status_log.entity';
 import { Order, OrderRelations } from '../models/order/order.entity';
+import { cursorPaginate } from '../utils/helper';
 
 export class OrderRepository {
 	private orderRepo: Repository<Order>;
@@ -23,25 +24,34 @@ export class OrderRepository {
 		return order;
 	}
 
-	async getOrderById(orderId: number): Promise<Order | null> {
-		return await this.orderRepo.findOne({
-			where: { orderId },
-			relations: ['orderStatusLogs', 'restaurant', 'customer', 'deliveryAddress', 'orderItems']
-		});
-	}
+	async getOrdersByActorId(actorId: number, actorType: string, limit: number, cursor?: string): Promise<{ data: Order[]; nextCursor: string | null; hasNextPage: boolean }> {
+		const whereCondition =
+			actorType === 'customer'
+				? { customerId: actorId }
+				: { restaurantId: actorId };
 
-	async getOrdersByActorId(actorId: number, actorType: 'customer' | 'restaurant'): Promise<Order[]> {
-		const whereCondition = actorType === 'customer' ? { customerId: actorId } : { restaurantId: actorId };
-		return await this.orderRepo.find({
-			where: whereCondition,
-			relations: ['restaurant', 'customer.user', 'deliveryAddress', 'orderItems.item', 'transactions.paymentMethod'],
-			order: { createdAt: 'DESC' }
-		});
-	}
+		// Build base where clause
+		const whereClause: any = { ...whereCondition };
 
-	async updateOrder(orderId: number, data: Partial<Order>): Promise<Order | null> {
-		await this.orderRepo.update(orderId, data);
-		return await this.getOrderById(orderId);
+		// If cursor is provided, add condition to paginate
+		if (cursor) {
+			whereClause.createdAt = LessThan(new Date(cursor));
+		}
+
+		const orders = await this.orderRepo.find({
+			where: whereClause,
+			relations: [
+				'restaurant',
+				'customer.user',
+				'deliveryAddress',
+				'orderItems.item',
+				'transactions.paymentMethod',
+			],
+			order: { createdAt: 'DESC' },
+			take: limit + 1, // One extra to check for next page
+		});
+
+		return cursorPaginate(orders, limit, 'createdAt');
 	}
 
 	async updateOrderStatus(orderId: number, data: Partial<Order>): Promise<Partial<Order> | undefined> {
@@ -90,7 +100,7 @@ export class OrderRepository {
 		});
 	}
 
-	async getOrderBy(filter: { orderId: number; relations?: OrderRelations[] }) {
+	async getOrderById(filter: { orderId: number; relations?: OrderRelations[] }) {
 		if (Object.keys(filter).length === 0) return null;
 
 		const { relations, ...whereCondition } = filter;
@@ -110,68 +120,15 @@ export class OrderRepository {
 				.createQueryBuilder('o')
 				.select([
 					'o.order_id AS "orderId"',
-					// 'o.restaurant_id AS "restaurantId"',
 					'o.status AS "orderStatus"',
-					// 'o.customer_instructions AS "customerInstructions"',
 					'o.placed_at AS "placedAt"',
-					// 'o.service_fees AS "serviceFees"',
-					// 'o.delivery_fees AS "deliveryFees"',
 					'o.total_amount AS "totalAmount"',
 					'restaurant.name'
-					// 'pm.method_name AS "paymentMethod"'
 				])
 				.leftJoin('o.restaurant', 'restaurant')
-				// .leftJoin('tr.paymentMethod', 'pm')
 				.where('o.order_id = :orderId', { orderId })
 				.getRawOne()
 		);
-
-		// console.log(query.getSql());
-		// return query.getRawOne();
 	}
 
-	async getOrderDetails(orderId: number, customerId: number) {
-		console.log({ customerId });
-		const order = await this.orderRepo.findOne({
-			where: { orderId, customerId },
-			relations: ['restaurant', 'customer', 'deliveryAddress', 'orderStatusLogs', 'orderItems.item']
-		});
-
-		if (!order) return null;
-
-		// const orderItems = await this.orderItemRepo.find({
-		// 	where: { orderId },
-		// 	relations: ['item']
-		// });
-
-		return {
-			orderId: order.orderId,
-			restaurantId: order.restaurantId,
-			deliveryAddressId: order.deliveryAddressId,
-			status: order.status,
-			customerInstructions: order.customerInstructions,
-			deliveryFees: order.deliveryFees,
-			serviceFees: order.serviceFees,
-			totalAmount: order.totalAmount,
-			placedAt: order.placedAt,
-			deliveredAt: order.deliveredAt,
-			cancellationInfo: order.cancellationInfo,
-			customerId: order.customerId,
-			orderItems: order.orderItems,
-			orderStatusLogs: order.orderStatusLogs,
-			restaurant: {
-				id: order.restaurant?.restaurantId,
-				name: order.restaurant?.name,
-				logoUrl: order.restaurant?.logoUrl,
-				bannerUrl: order.restaurant?.bannerUrl
-			},
-			deliveryAddress: {
-				id: order.deliveryAddress?.addressId,
-				addressLine1: order.deliveryAddress?.addressLine1,
-				addressLine2: order.deliveryAddress?.addressId
-			},
-			createdAt: order.createdAt,
-			updatedAt: order.updatedAt
-		};
-	}
 }

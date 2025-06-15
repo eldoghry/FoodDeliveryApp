@@ -16,7 +16,6 @@ export const verifyActor =
     ({ allowedActorTypes }: actorTypeOptions) =>
         async (req: Request, _res: Response, next: NextFunction) => {
             const { actorId, actorType } = req?.user || {};
-            console.log('actorType', actorType,actorId);
 
             if (!actorId || !actorType || !allowedActorTypes.includes(actorType as actorType)) {
                 throw new ApplicationError(ErrMessages.auth.forbidden, StatusCodes.FORBIDDEN);

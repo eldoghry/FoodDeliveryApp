@@ -35,16 +35,7 @@ export function sendPaginatedResponse<T>(
 	statusCode: number,
 	message: string,
 	data: T[],
-	page: number,
-	perPage: number,
+	meta?: { perPage: number, nextCursor: string | null, hasNextPage: boolean }
 ): Response<ApiResponse<T[]>> {
-	const startIndex = (page - 1) * perPage;
-	const paginatedData = data.slice(startIndex, startIndex + perPage); 
-	const pagination = {
-		total: data.length,
-		page: page || 1,
-		perPage: perPage || 10,
-		totalPages: Math.ceil(data.length / perPage),
-	}
-	return sendResponse(res, statusCode, message, paginatedData, pagination);
+	return sendResponse(res, statusCode, message, data, { meta });
 }
