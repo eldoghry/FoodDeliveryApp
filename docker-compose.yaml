@@ -14,6 +14,8 @@ services:
 
   redis-srv:
     image: redis
+    ports:
+      - 6701:6379
     networks:
       - app_network
 
