@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { AbstractEntity } from '../../abstract/base.entity';
+import { AbstractEntity } from '../base.entity';
 import { UserRole } from './user-role.entity';
 
 @Entity()
@@ -7,7 +7,7 @@ export class Role extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	roleId!: number;
 
-	@Column({ type: 'varchar', length: 100, unique: true })
+	@Column({ type: 'varchar', length: 100, unique: true, nullable: false })
 	name!: string;
 
 	@CreateDateColumn()

@@ -6,37 +6,27 @@ import {
 	UpdateDateColumn,
 	ManyToOne,
 	JoinColumn,
-	OneToMany
+	OneToMany,
+	OneToOne
 } from 'typeorm';
-import { AbstractEntity } from '../../abstract/base.entity';
+import { AbstractEntity } from '../base.entity';
 import { Customer } from '../customer/customer.entity';
-import { Restaurant } from '../restaurant/restaurant.entity';
 import { CartItem } from './cart-item.entity';
+import { OrderItem } from '../order/order-item.entity';
+
+export type CartRelations = 'customer' | 'cartItems';
 
 @Entity()
 export class Cart extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	cartId!: number;
 
-	@Column()
+	@Column({ nullable: false })
 	customerId!: number;
 
-	@ManyToOne(() => Customer)
+	@OneToOne(() => Customer)
 	@JoinColumn({ name: 'customer_id' })
 	customer!: Customer;
-
-	@Column()
-	restaurantId!: number;
-
-	@ManyToOne(() => Restaurant)
-	@JoinColumn({ name: 'restaurant_id' })
-	restaurant!: Restaurant;
-
-	@Column({ default: 0 })
-	totalItems!: number;
-
-	@Column({ default: true })
-	isActive!: boolean;
 
 	@CreateDateColumn()
 	createdAt!: Date;
@@ -45,5 +35,23 @@ export class Cart extends AbstractEntity {
 	updatedAt!: Date;
 
 	@OneToMany(() => CartItem, (cartItem) => cartItem.cart)
-	items!: CartItem[];
+	cartItems!: CartItem[];
+
+	buildCart(customerId: number) {
+		this.customerId = customerId;
+	}
+
+	static calculateTotalPrice(items: CartItem[] | OrderItem[], customServiceFees?: number, customDeliveryFees?: number) {
+		const finalServiceFees = Number(customServiceFees) || 0;
+		const finaldeliveryFees = Number(customDeliveryFees) || 0;
+
+		const result =
+			items.reduce((total, item) => Number(total) + Number(item.totalPrice), 0) + finalServiceFees + finaldeliveryFees;
+		return result;
+	}
+
+	static calculateTotalItems(items: CartItem[] | OrderItem[]) {
+		const result = items.reduce((total, item) => Number(total) + Number(item.quantity), 0);
+		return result;
+	}
 }

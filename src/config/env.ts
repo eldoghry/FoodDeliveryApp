@@ -21,7 +21,15 @@ const envSchema = Joi.object({
 	DATABASE_SYNCHRONIZE: Joi.boolean().default(false),
 	REDIS_HOST: Joi.string().required(),
 	REDIS_PORT: Joi.number().default(6379),
-	REDIS_DEFAULT_TTL: Joi.number().default(3600)
+	REDIS_DEFAULT_TTL: Joi.number().default(3600),
+	JWT_SECRET: Joi.string().required(),
+	JWT_ACCESS_EXPIRE_IN: Joi.string().required(),
+	JWT_REFRESH_EXPIRE_IN: Joi.string().required(),
+	PAYPAL_BASE_URL: Joi.string().required(),
+	PAYPAL_CLIENT_ID: Joi.string().required(),
+	PAYPAL_SECRET_KEY: Joi.string().required(),
+	PAYPAL_REDIRECT_URL: Joi.string().required(),
+	PAYPAL_CANCEL_URL: Joi.string().required()
 	// TODO: add more env variable here
 }).unknown(true);
 
@@ -38,6 +46,7 @@ if (error) {
 
 // Export validated environment variables
 export const config = {
+	isProduction: envVars.NODE_ENV === 'production',
 	env: envVars.NODE_ENV,
 	port: envVars.PORT,
 	database: {
@@ -53,5 +62,19 @@ export const config = {
 		host: envVars.REDIS_HOST,
 		port: envVars.REDIS_PORT,
 		ttl: envVars.REDIS_DEFAULT_TTL
+	},
+	jwt: {
+		secret: envVars.JWT_SECRET,
+		accessTTL: envVars.JWT_ACCESS_EXPIRE_IN, // '1y'
+		refreshTTL: envVars.JWT_REFRESH_EXPIRE_IN
+	},
+	payment: {
+		paypal: {
+			baseUrl: envVars.PAYPAL_BASE_URL,
+			clientId: envVars.PAYPAL_CLIENT_ID,
+			secretKey: envVars.PAYPAL_SECRET_KEY,
+			redirectUrl: envVars.PAYPAL_REDIRECT_URL,
+			cancelUrl: envVars.PAYPAL_CANCEL_URL
+		}
 	}
 };

@@ -1,66 +1,62 @@
+import { LessThan, Repository } from 'typeorm';
 import { AppDataSource } from '../config/data-source';
-import { Order } from '../models/order/order.entity';
+import { OrderStatusChangeBy } from '../models';
 import { OrderItem } from '../models/order/order-item.entity';
-import { OrderStatus } from '../models/order/order-status.entity';
-import { Repository } from 'typeorm';
+import { OrderStatusEnum, OrderStatusLog } from '../models/order/order-status_log.entity';
+import { Order, OrderRelations } from '../models/order/order.entity';
+import { cursorPaginate } from '../utils/helper';
 
 export class OrderRepository {
 	private orderRepo: Repository<Order>;
 	private orderItemRepo: Repository<OrderItem>;
-	private orderStatusRepo: Repository<OrderStatus>;
+	private orderStatusLogRepo: Repository<OrderStatusLog>;
 
 	constructor() {
 		this.orderRepo = AppDataSource.getRepository(Order);
 		this.orderItemRepo = AppDataSource.getRepository(OrderItem);
-		this.orderStatusRepo = AppDataSource.getRepository(OrderStatus);
+		this.orderStatusLogRepo = AppDataSource.getRepository(OrderStatusLog);
 	}
 
 	// Order operations
 	async createOrder(data: Partial<Order>): Promise<Order> {
-		const order = this.orderRepo.create(data);
-		return await this.orderRepo.save(order);
+		const order = await this.orderRepo.create(data).save();
+		await this.createOrderStatusLog({ orderId: order.orderId, status: OrderStatusEnum.initiated });
+		return order;
 	}
 
-	async getOrderById(orderId: number): Promise<Order | null> {
-		return await this.orderRepo.findOne({
-			where: { orderId },
-			relations: ['orderStatus', 'branch', 'cart', 'customer', 'deliveryAddress']
+	async getOrdersByActorId(
+		actorId: number,
+		actorType: string,
+		limit: number,
+		cursor?: string
+	): Promise<{ data: Order[]; nextCursor: string | null; hasNextPage: boolean }> {
+		const whereCondition = actorType === 'customer' ? { customerId: actorId } : { restaurantId: actorId };
+
+		// Build base where clause
+		const whereClause: any = { ...whereCondition };
+
+		// If cursor is provided, add condition to paginate
+		if (cursor) {
+			whereClause.createdAt = LessThan(new Date(cursor));
+		}
+
+		const orders = await this.orderRepo.find({
+			where: whereClause,
+			relations: ['restaurant', 'customer.user', 'deliveryAddress', 'orderItems.item', 'transaction.paymentMethod'],
+			order: { createdAt: 'DESC' },
+			take: limit + 1 // One extra to check for next page
 		});
+
+		return cursorPaginate(orders, limit, 'createdAt');
 	}
 
-	async getOrdersByCustomerId(customerId: number): Promise<Order[]> {
-		return await this.orderRepo.find({
-			where: { customerId },
-			relations: ['orderStatus', 'branch', 'cart', 'customer', 'deliveryAddress'],
-			order: { createdAt: 'DESC' }
-		});
-	}
-
-	async updateOrder(orderId: number, data: Partial<Order>): Promise<Order | null> {
+	async updateOrderStatus(orderId: number, data: Partial<Order>): Promise<Partial<Order> | undefined> {
 		await this.orderRepo.update(orderId, data);
-		return await this.getOrderById(orderId);
-	}
-
-	async updateOrderStatus(orderId: number, orderStatusId: number): Promise<Order | null> {
-		await this.orderRepo.update(orderId, { orderStatusId });
-		return await this.getOrderById(orderId);
-	}
-
-	async cancelOrder(
-		orderId: number,
-		cancelledBy: 'customer' | 'restaurant' | 'system' | 'driver',
-		reason: string
-	): Promise<Order | null> {
-		const order = await this.getOrderById(orderId);
-		if (!order) return null;
-
-		order.cancellationInfo = {
-			cancelledBy,
-			reason,
-			cancelledAt: new Date()
-		};
-
-		return await this.orderRepo.save(order);
+		return await this.orderRepo
+			.createQueryBuilder('o')
+			.select(['o.order_id AS "orderId"', 'o.status AS "status"'])
+			.where('o.order_id = :orderId', { orderId })
+			.getRawOne();
 	}
 
 	// Order Item operations
@@ -83,26 +79,91 @@ export class OrderRepository {
 		});
 	}
 
-	// Order Status operations
-	async getAllOrderStatuses(): Promise<OrderStatus[]> {
-		return await this.orderStatusRepo.find();
+	// Order Status Log operations
+
+	async createOrderStatusLog(data: Partial<OrderStatusLog>): Promise<OrderStatusLog> {
+		const orderStatusLog = this.orderStatusLogRepo.create(data);
+		return await this.orderStatusLogRepo.save(orderStatusLog);
 	}
 
-	async getOrderStatusById(orderStatusId: number): Promise<OrderStatus | null> {
-		return await this.orderStatusRepo.findOne({
-			where: { orderStatusId }
+	async getAllOrderStatusLogs(): Promise<OrderStatusLog[]> {
+		return await this.orderStatusLogRepo.find();
+	}
+
+	async getOrderStatusLogById(orderStatusLogId: number): Promise<OrderStatusLog | null> {
+		return await this.orderStatusLogRepo.findOne({
+			where: { orderStatusLogId }
 		});
 	}
 
-	// Helper methods
-	async calculateOrderTotal(orderId: number): Promise<number> {
-		const orderItems = await this.getOrderItems(orderId);
-		return orderItems.reduce((total, item) => total + item.totalPrice, 0);
+	async getOrderById(filter: { orderId: number; relations?: OrderRelations[] }) {
+		if (Object.keys(filter).length === 0) return null;
+
+		const query = this.orderRepo.createQueryBuilder('order');
+
+		if (filter?.relations) {
+			filter.relations.forEach((relation) => query.leftJoinAndSelect(`order.${relation}`, relation));
+		}
+
+		query.where('order.orderId = :orderId', { orderId: filter.orderId });
+
+		return query.getOne();
 	}
 
-	async updateOrderTotalItems(orderId: number): Promise<void> {
-		const orderItems = await this.getOrderItems(orderId);
-		const totalItems = orderItems.reduce((total, item) => total + item.quantity, 0);
-		await this.updateOrder(orderId, { totalItems });
+	async getOrderStatusLogByOrderId(orderId: number): Promise<OrderStatusLog[]> {
+		return await this.orderStatusLogRepo.find({
+			where: { orderId }
+		});
+	}
+
+	async getOrderSummary(orderId: number): Promise<any> {
+		return this.orderRepo
+			.createQueryBuilder('o')
+			.select([
+				'o.order_id AS "orderId"',
+				'o.status AS "orderStatus"',
+				'o.placed_at AS "placedAt"',
+				'o.total_amount AS "totalAmount"',
+				'restaurant.name'
+			])
+			.leftJoin('o.restaurant', 'restaurant')
+			.where('o.order_id = :orderId', { orderId })
+			.getRawOne();
+	}
+
+	async getManyOrdersBy(filter: {
+		status?: OrderStatusEnum;
+		restaurantId?: number;
+		customerId?: number;
+		createdBefore?: Date;
+		relations?: OrderRelations[];
+	}): Promise<Order[] | null> {
+		const { relations, ...other } = filter;
+
+		if (Object.keys(other).length === 0) return null;
+
+		const query = this.orderRepo.createQueryBuilder('order');
+
+		if (filter?.relations) {
+			filter?.relations.forEach((relation) => query.leftJoinAndSelect(`order.${relation}`, relation));
+		}
+
+		if (other.customerId) {
+			query.andWhere('order.customerId = :customerId', { customerId: other.customerId });
+		}
+
+		if (other.status) {
+			query.andWhere('order.status = :status', { status: other.status });
+		}
+
+		if (other.restaurantId) {
+			query.andWhere('order.restaurantId = :restaurantId', { restaurantId: other.restaurantId });
+		}
+
+		if (other.createdBefore) {
+			query.andWhere('order.createdAt <= :createdBefore', { createdBefore: other.createdBefore });
+		}
+
+		return query.getMany();
 	}
 }

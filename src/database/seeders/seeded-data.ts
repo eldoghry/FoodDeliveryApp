@@ -1,23 +1,35 @@
 // import { AbstractEntity } from '../../abstract/base.entity';
 import {
 	Address,
-	Branch,
 	Customer,
+	Gender,
 	Item,
 	Menu,
+	MenuCategory,
 	MenuItem,
 	PaymentMethod,
 	PaymentMethodConfig,
-	PaymentStatus,
+	PaymentMethodEnum,
 	Restaurant,
-	RestaurantMenu,
+	RestaurantStatus,
 	Role,
+	Setting,
 	User,
 	UserRole,
 	UserType
 } from '../../models';
 import { SeedData } from '.';
 import { faker } from '@faker-js/faker';
+import { Category } from '../../models/menu/category.entity';
+import { SettingKey } from '../../enums/setting.enum';
+import { PaymentMethodStatus } from '../../enums/payment_method.enum';
+
+//
+const ITEMS_COUNT = 100;
+const RESTAURANTS_COUNT = 100;
+const MENUS_COUNT = 10;
+const USERS_COUNT = 100;
+const ADDRESSES_COUNT = 10;
 
 // * Users
 const userTypesData: SeedData<UserType> = {
@@ -66,11 +78,12 @@ const userRoleSeedData: SeedData<UserRole> = {
 
 const addressSeedData: SeedData<Address> = {
 	entity: Address,
-	data: Array.from({ length: 10 }).map(() => ({
-		userId: faker.number.int({ min: 1, max: 100 }), // assuming userId 1-100 exists
+	data: Array.from({ length: 10 }).map((_, index) => ({
+		customerId: index + 1, // assuming customerId 1-100 exists
 		addressLine1: faker.location.streetAddress(),
 		addressLine2: faker.location.secondaryAddress(),
-		city: faker.location.city()
+		city: faker.location.city(),
+		isDefault: true
 	}))
 };
 
@@ -79,7 +92,7 @@ const customerSeedData: SeedData<Customer> = {
 	data: Array.from({ length: 100 }).map((_, index) => ({
 		userId: index + 1, // assuming userId starts from 1
 		birthDate: faker.date.birthdate({ min: 18, max: 65, mode: 'age' }),
-		gender: faker.helpers.arrayElement(['male', 'female'])
+		gender: faker.helpers.arrayElement(Object.values(Gender))
 	}))
 };
 
@@ -87,18 +100,19 @@ const customerSeedData: SeedData<Customer> = {
 
 const menuSeedData: SeedData<Menu> = {
 	entity: Menu,
-	data: Array.from({ length: 10 }).map(() => ({
-		menuTitle: faker.commerce.department(),
-		isActive: true
+	data: Array.from({ length: 10 }).map((_, index) => ({
+		menuTitle: faker.food.spice() + `${index + 1}`,
+		isActive: index === 0,
+		restaurantId: index < 3 ? 1 : index + 1
 	}))
 };
 
 const itemSeedData: SeedData<Item> = {
 	entity: Item,
-	data: Array.from({ length: 20 }).map(() => ({
+	data: Array.from({ length: ITEMS_COUNT }).map((_, index) => ({
 		imagePath: faker.image.url(),
-		name: faker.commerce.productName(),
-		description: faker.commerce.productDescription(),
+		name: faker.food.dish() + `${index + 1}`,
+		description: faker.food.description(),
 		price: parseFloat(faker.commerce.price({ min: 5, max: 50 })),
 		energyValCal: parseFloat(faker.number.float({ min: 50, max: 500 }).toFixed(2)),
 		notes: faker.lorem.sentence(),
@@ -110,7 +124,7 @@ const itemSeedData: SeedData<Item> = {
 
 const restaurantSeedData: SeedData<Restaurant> = {
 	entity: Restaurant,
-	data: Array.from({ length: 10 }).map((_, index) => ({
+	data: Array.from({ length: RESTAURANTS_COUNT }).map((_, index) => ({
 		userId: index + 1,
 		name: faker.company.name(),
 		logoUrl: faker.image.url(),
@@ -119,40 +133,18 @@ const restaurantSeedData: SeedData<Restaurant> = {
 			type: 'Point',
 			coordinates: [parseFloat(faker.location.longitude().toString()), parseFloat(faker.location.latitude().toString())]
 		},
-		status: faker.helpers.arrayElement(['open', 'busy', 'pause', 'closed']),
+		status: index < 3 ? RestaurantStatus.open : faker.helpers.arrayElement(Object.values(RestaurantStatus)),
 		commercialRegistrationNumber: faker.string.alphanumeric(10),
 		vatNumber: faker.string.alphanumeric(12),
-		isActive: faker.datatype.boolean()
-	}))
-};
-
-const restaurantMenuSeedData: SeedData<RestaurantMenu> = {
-	entity: RestaurantMenu,
-	data: Array.from({ length: 10 }).map((_, i) => ({
-		restaurantId: i + 1,
-		menuId: (i % 10) + 1,
-		displayOrder: faker.number.int({ min: 0, max: 5 })
-	}))
-};
-
-const branchSeedData: SeedData<Branch> = {
-	entity: Branch,
-	data: Array.from({ length: 10 }).map((_, i) => ({
-		restaurantId: i + 1,
-		name: `${faker.location.city()} Branch`,
-		address: faker.location.streetAddress(),
-		location: {
-			type: 'Point',
-			coordinates: [parseFloat(faker.location.longitude().toString()), parseFloat(faker.location.latitude().toString())]
-		},
-		isActive: faker.datatype.boolean()
+		isActive: faker.datatype.boolean(),
+		email: `orders@restaurant${index + 1}.com`
 	}))
 };
 
 const menuItemSeedData: SeedData<MenuItem> = {
 	entity: MenuItem,
-	data: Array.from({ length: 20 }).map((_, index) => ({
-		menuId: 1,
+	data: Array.from({ length: 10 }).map((_, index) => ({
+		menuId: index <= 3 ? 1 : faker.number.int({ min: 1, max: 9 }), // assuming menuId 1-10 exists
 		itemId: index + 1
 	}))
 };
@@ -160,23 +152,128 @@ const menuItemSeedData: SeedData<MenuItem> = {
 // Seed data for PaymentMethod
 const paymentMethodSeedData: SeedData<PaymentMethod> = {
 	entity: PaymentMethod,
-	data: Array.from({ length: 4 }).map((_, i) => ({
-		methodName: faker.finance.transactionType() + `_${i}`,
-		description: faker.lorem.sentence(),
-		iconUrl: faker.image.url({ width: 50, height: 50 }),
-		order: i,
+	data: [
+		{
+			code: PaymentMethodEnum.CARD,
+			description: 'Paypal Card',
+			iconUrl: faker.image.url(),
+			order: 1,
+			status: PaymentMethodStatus.ACTIVE
+		},
+		{
+			code: PaymentMethodEnum.COD,
+			description: 'Cash on delivery',
+			iconUrl: faker.image.url(),
+			order: 2,
+			status: PaymentMethodStatus.ACTIVE
+		}
+	]
+};
+
+// category
+const categorySeedData: SeedData<Category> = {
+	entity: Category,
+	data: Array.from({ length: 10 }).map((_, i) => ({
+		title: faker.food.ethnicCategory() + i,
 		isActive: true
 	}))
 };
 
-// Seed data for PaymentStatus
-const paymentStatusSeedData: SeedData<PaymentStatus> = {
-	entity: PaymentStatus,
+const menuCategorySeedData: SeedData<MenuCategory> = {
+	entity: MenuCategory,
+	data: Array.from({ length: 10 }).map((_, i) => ({
+		menuId: i < 3 ? 1 : faker.number.int({ min: 1, max: 9 }),
+		categoryId: i + 1
+	}))
+};
+
+const settingSeedData: SeedData<Setting> = {
+	entity: Setting,
 	data: [
-		{ statusName: 'pending', isActive: true },
-		{ statusName: 'paid', isActive: true },
-		{ statusName: 'failed', isActive: true },
-		{ statusName: 'refunded', isActive: true }
+		{ key: SettingKey.SITE_NAME, value: faker.company.name(), description: 'App name shown in UI' },
+		{ key: SettingKey.SITE_LOGO_URL, value: faker.image.url(), description: 'Logo image URL' },
+		{ key: SettingKey.PRIMARY_COLOR, value: faker.color.rgb(), description: 'Primary brand color' },
+
+		{ key: SettingKey.DEFAULT_LANGUAGE, value: 'en', description: 'Default language code' },
+		{ key: SettingKey.SUPPORTED_LANGUAGES, value: ['en', 'ar', 'fr'], description: 'Languages supported in the app' },
+		{ key: SettingKey.DEFAULT_CURRENCY, value: 'USD', description: 'Default currency used for transactions' },
+		{
+			key: SettingKey.LOCALE_FORMAT_OPTIONS,
+			value: { date: 'DD/MM/YYYY', time: 'HH:mm' },
+			description: 'Format for date and time display'
+		},
+
+		{ key: SettingKey.MAINTENANCE_MODE, value: false, description: 'Is the site in maintenance mode?' },
+		{
+			key: SettingKey.MAINTENANCE_MESSAGE,
+			value: 'Scheduled maintenance from 2 AM to 4 AM UTC.',
+			description: 'Maintenance mode message'
+		},
+
+		{ key: SettingKey.MIN_ORDER_AMOUNT, value: 5, description: 'Minimum amount required to place an order' },
+		{ key: SettingKey.MAX_ORDER_ITEMS, value: 50, description: 'Maximum number of items per order' },
+		{ key: SettingKey.ORDER_CANCELLATION_WINDOW_MIN, value: 10, description: 'Minutes allowed to cancel an order' },
+		{ key: SettingKey.ORDER_EXPIRED_AFTER_WINDOW_MIN, value: 120, description: 'Expire an order after minute' },
+
+		{ key: SettingKey.DELIVERY_BASE_FEE, value: 30, description: 'Base fee for delivery orders' },
+		{ key: SettingKey.DELIVERY_PER_KM_FEE, value: 2.5, description: 'Delivery fee per kilometer' },
+		{ key: SettingKey.DELIVERY_RADIUS_KM, value: 30, description: 'Max delivery radius in kilometers' },
+		{
+			key: SettingKey.DEFAULT_PREPARATION_TIME_MIN,
+			value: 20,
+			description: 'Default food preparation time in minutes'
+		},
+
+		{ key: SettingKey.SERVICE_BASE_FEE, value: 25, description: 'Service fee percentage added to orders' },
+		{ key: SettingKey.TAX_RATE_PERCENT, value: 0.14, description: 'Tax rate applied to orders' },
+		{ key: SettingKey.ENABLE_CASH_ON_DELIVERY, value: true, description: 'Is cash on delivery allowed?' },
+
+		{ key: SettingKey.PUSH_NOTIFICATIONS_ENABLED, value: true, description: 'Are push notifications enabled?' },
+		{
+			key: SettingKey.ORDER_STATUS_TEMPLATES,
+			value: {
+				placed: 'Your order has been placed!',
+				on_route: 'Your food is on the way!',
+				delivered: 'Enjoy your meal!'
+			},
+			description: 'Notification messages for order statuses'
+		},
+
+		{ key: SettingKey.SUPPORT_EMAIL, value: faker.internet.email(), description: 'Customer support email' },
+		{
+			key: SettingKey.SUPPORT_PHONE,
+			value: faker.phone.number(),
+			description: 'Customer support phone number'
+		},
+		{
+			key: SettingKey.BUSINESS_HOURS,
+			value: {
+				mon_fri: '09:00-18:00',
+				sat: '10:00-14:00',
+				sun: 'Closed'
+			},
+			description: 'Working hours for support or operations'
+		},
+
+		{ key: SettingKey.PASSWORD_MIN_LENGTH, value: 8, description: 'Minimum password length for users' },
+		{ key: SettingKey.JWT_EXPIRATION_MIN, value: 60, description: 'JWT token expiry duration in minutes' },
+		{ key: SettingKey.RATE_LIMIT_PER_MIN, value: 100, description: 'API rate limit per minute per user' },
+
+		{
+			key: SettingKey.MAPS_API_CONFIG,
+			value: {
+				provider: 'google',
+				key: faker.string.alphanumeric(32)
+			},
+			description: 'Google Maps API configuration'
+		},
+		{
+			key: SettingKey.FIREBASE_CONFIG,
+			value: {
+				projectId: faker.string.uuid()
+			},
+			description: 'Firebase project configuration'
+		}
 	]
 };
 
@@ -189,19 +286,21 @@ const seedData = [
 	addressSeedData,
 	userRoleSeedData,
 
-	// menu
+	// restaurant & menu
+	restaurantSeedData,
 	menuSeedData,
 	itemSeedData,
-
-	// restaurant
-	restaurantSeedData,
-	branchSeedData,
-	restaurantMenuSeedData,
 	menuItemSeedData,
 
 	// payment methods
 	paymentMethodSeedData,
-	paymentStatusSeedData
+
+	// category
+	categorySeedData,
+	menuCategorySeedData,
+
+	// settings
+	settingSeedData
 ];
 
 export default seedData;

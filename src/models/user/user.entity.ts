@@ -9,12 +9,14 @@ import {
 	OneToMany,
 	OneToOne
 } from 'typeorm';
-import { AbstractEntity } from '../../abstract/base.entity';
+import { AbstractEntity } from '../base.entity';
 import { UserType } from './user-type.entity';
 import { UserRole } from './user-role.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
+import { Customer } from '../customer/customer.entity';
+import { Auditing } from '../auditing/auditing.entity';
 
-@Entity()
+@Entity({ name: 'user' })
 export class User extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	userId!: number;
@@ -28,13 +30,13 @@ export class User extends AbstractEntity {
 	@Column({ type: 'varchar', length: 30, nullable: true, unique: true })
 	phone!: string;
 
-	@Column({ type: 'varchar', length: 250 })
+	@Column({ type: 'varchar', length: 250, select: false })
 	password!: string;
 
-	@Column({ type: 'boolean', default: true })
+	@Column({ type: 'boolean', default: true, nullable: false })
 	isActive!: boolean;
 
-	@Column()
+	@Column({ nullable: false })
 	userTypeId!: number;
 
 	@CreateDateColumn()
@@ -52,4 +54,10 @@ export class User extends AbstractEntity {
 
 	@OneToOne(() => Restaurant, (restaurant) => restaurant.user)
 	restaurant!: Restaurant;
+
+	@OneToOne(() => Customer, (customer) => customer.user)
+	customer!: Customer;
+
+	@OneToMany(() => Auditing, (auditing) => auditing.user)
+	audits!: Auditing[];
 }

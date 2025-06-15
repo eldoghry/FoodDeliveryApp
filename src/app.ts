@@ -7,12 +7,17 @@ import { addRequestTimeMiddleware, ErrorHandler, NotFoundHandler } from './middl
 import { defaultRateLimiter } from './config/ratelimiter';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsDocSpecs from './swagger/swagger';
+import { initializeTransactionalContext } from 'typeorm-transactional';
 
 export const createApp = (): Application => {
+	initializeTransactionalContext();
 	const app = express();
+
+	// process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 	// register middlewares
 	app.use(addRequestTimeMiddleware); // add request time
+	app.set('trust proxy', '127.0.0.1');
 	app.use(express.json());
 	app.use(express.urlencoded({ extended: true }));
 	app.use(cors());
@@ -25,6 +30,11 @@ export const createApp = (): Application => {
 
 	// swagger
 	app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerJsDocSpecs));
+
+	// health check
+	app.get('/', (req, res) => {
+		res.json({ message: 'OK' });
+	});
 
 	// error handler
 	app.use(NotFoundHandler);

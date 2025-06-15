@@ -8,7 +8,7 @@ import {
 	JoinColumn,
 	Unique
 } from 'typeorm';
-import { AbstractEntity } from '../../abstract/base.entity';
+import { AbstractEntity } from '../base.entity';
 import { User } from './user.entity';
 import { Role } from './role.entity';
 
@@ -18,14 +18,14 @@ export class UserRole extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	userRoleId!: number;
 
-	@Column()
+	@Column({ nullable: false })
 	userId!: number;
 
 	@ManyToOne(() => User, (user) => user.userRoles)
 	@JoinColumn({ name: 'user_id' })
 	user!: User;
 
-	@Column()
+	@Column({ nullable: false })
 	roleId!: number;
 
 	@ManyToOne(() => Role, (role) => role.userRoles)
