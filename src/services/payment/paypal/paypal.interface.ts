@@ -40,7 +40,7 @@ interface PurchaseUnit {
 	reference_id: string;
 	amount: Amount;
 	payments?: Record<string, any>;
-	// items: Item[];
+	custom_id: string; // The API caller-provided external ID will be used as our order id.
 }
 
 interface PaymentOrder {
@@ -58,6 +58,21 @@ export interface CreateOrderBodyRequest {
 	application_context: ApplicationContext;
 }
 
+interface PayPalWebhookEventResource {
+	id: string; // paypal order id
+	purchase_units: {
+		custom_id: string; // order id that send by our system
+		reference_id: string; // transaction reference number that send by our system
+		amount: { currency_code: 'USD'; value: string; breakdown: Record<string, any> };
+	}[];
+	payment_source: Record<string, any>;
+	links: Array<{
+		href: string;
+		rel: string;
+		method: string;
+	}>;
+	status: string;
+}
 export interface PayPalWebhookEvent {
 	id: string;
 	event_version: string;
@@ -65,12 +80,7 @@ export interface PayPalWebhookEvent {
 	resource_type: string;
 	event_type: string;
 	summary: string;
-	resource: any;
-	links: Array<{
-		href: string;
-		rel: string;
-		method: string;
-	}>;
+	resource: PayPalWebhookEventResource;
 }
 
 export interface PaypalCaptureResponse {

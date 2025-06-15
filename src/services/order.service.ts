@@ -166,7 +166,7 @@ export class OrderService {
 	}
 
 	@Transactional()
-	async processPaypalPaymentCallback(orderId: number, isPaymentSuccess: boolean) {
+	async processPaypalPaymentCallback(orderId: number, paymentReference: string, isPaymentSuccess: boolean) {
 		const order = await this.getOrderOrFailBy({ orderId, relations: ['restaurant'] });
 
 		const customer = await this.customerService.getCustomerByIdOrFail({
@@ -176,7 +176,7 @@ export class OrderService {
 
 		// todo: use update status & log method
 		const orderStatus = isPaymentSuccess ? OrderStatusEnum.pending : OrderStatusEnum.failed;
-
+		const trxStatus = isPaymentSuccess ? TransactionPaymentStatus.PAID : TransactionPaymentStatus.FAILED;
 		// await order.save();
 
 		await this.updateOrderStatus(
@@ -188,6 +188,13 @@ export class OrderService {
 		// order.status = orderStatus;
 		// await order.save();
 		await order.reload();
+
+		// update transaction
+		const transaction = await this.transactionService.getOneTransactionOrFailBy({ paymentReference });
+		await this.transactionService.updateTransactionStatus({
+			transactionId: transaction.transactionId,
+			status: trxStatus
+		});
 
 		if (isPaymentSuccess) {
 			const cart = await this.cartService.getCartWithItems({
