@@ -2,11 +2,12 @@ import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
-import { Transaction, TransactionRelations } from '../models';
+import { Transaction, TransactionDetail, TransactionRelations } from '../models';
 import { TransactionRepository } from '../repositories/transaction.repository';
 import { Transactional } from 'typeorm-transactional';
 import { TransactionPaymentStatus } from '../enums/transaction.enum';
 import { generatePaymentReference } from '../utils/helper';
+import { CreateTransactionDetailDto } from '../dtos/transaction.dto';
 
 export class TransactionService {
 	private transactionRepo = new TransactionRepository();
@@ -83,5 +84,13 @@ export class TransactionService {
 	): Promise<void> {
 		await this.transactionRepo.addTransactionStatusLog(transaction.transactionId, status);
 		logger.info(`Transaction status log created for transaction ID ${transaction.transactionId} with status ${status}`);
+	}
+
+	async createTransactionDetail(detail: CreateTransactionDetailDto): Promise<TransactionDetail> {
+		return this.transactionRepo.createTransactionDetail(detail);
+	}
+
+	async updateTransactionPaymentReference(transactionId: number, paymentReference: string) {
+		return this.transactionRepo.updateTransaction(transactionId, { paymentReference });
 	}
 }

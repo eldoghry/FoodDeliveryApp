@@ -148,4 +148,9 @@ export class TransactionRepository {
 
 		return query.getMany();
 	}
+
+	async createTransactionDetail(detail: Partial<TransactionDetail>): Promise<TransactionDetail> {
+		const transactionDetail = this.transactionDetailRepo.create(detail);
+		return transactionDetail.save();
+	}
 }
