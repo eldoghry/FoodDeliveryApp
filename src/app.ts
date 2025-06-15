@@ -13,7 +13,7 @@ export const createApp = (): Application => {
 	initializeTransactionalContext();
 	const app = express();
 
-	// process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+	// process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; //
 
 	// register middlewares
 	app.use(addRequestTimeMiddleware); // add request time
