@@ -93,9 +93,15 @@ export class OrderRepository {
 	async getOrderBy(filter: { orderId: number; relations?: OrderRelations[] }) {
 		if (Object.keys(filter).length === 0) return null;
 
-		const { relations, ...whereCondition } = filter;
+		const query = this.orderRepo.createQueryBuilder('order');
 
-		return await this.orderRepo.findOne({ where: whereCondition, relations });
+		if (filter?.relations) {
+			filter.relations.forEach((relation) => query.leftJoinAndSelect(`order.${relation}`, relation));
+		}
+
+		query.where('order.orderId = :orderId', { orderId: filter.orderId });
+
+		return query.getOne();
 	}
 
 	async getOrderStatusLogByOrderId(orderId: number): Promise<OrderStatusLog[]> {
@@ -173,5 +179,41 @@ export class OrderRepository {
 			createdAt: order.createdAt,
 			updatedAt: order.updatedAt
 		};
+	}
+
+	async getManyOrdersBy(filter: {
+		status?: OrderStatusEnum;
+		restaurantId?: number;
+		customerId?: number;
+		createdBefore?: Date;
+		relations?: OrderRelations[];
+	}): Promise<Order[] | null> {
+		const { relations, ...other } = filter;
+
+		if (Object.keys(other).length === 0) return null;
+
+		const query = this.orderRepo.createQueryBuilder('order');
+
+		if (filter?.relations) {
+			filter?.relations.forEach((relation) => query.leftJoinAndSelect(`order.${relation}`, relation));
+		}
+
+		if (other.customerId) {
+			query.andWhere('order.customerId = :customerId', { customerId: other.customerId });
+		}
+
+		if (other.status) {
+			query.andWhere('order.status = :status', { status: other.status });
+		}
+
+		if (other.restaurantId) {
+			query.andWhere('order.restaurantId = :restaurantId', { restaurantId: other.restaurantId });
+		}
+
+		if (other.createdBefore) {
+			query.andWhere('order.createdAt <= :createdBefore', { createdBefore: other.createdBefore });
+		}
+
+		return query.getMany();
 	}
 }

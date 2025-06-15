@@ -169,6 +169,12 @@ export class OrderService {
 	async processPaypalPaymentCallback(orderId: number, paymentReference: string, isPaymentSuccess: boolean) {
 		const order = await this.getOrderOrFailBy({ orderId, relations: ['restaurant'] });
 
+		if (order.status !== OrderStatusEnum.initiated)
+			throw new ApplicationError(ErrMessages.order.InvalidOrderStatus, HttpStatusCode.BAD_REQUEST);
+
+		if (order.status !== OrderStatusEnum.initiated)
+			throw new ApplicationError(ErrMessages.order.InvalidOrderStatus, HttpStatusCode.BAD_REQUEST);
+
 		const customer = await this.customerService.getCustomerByIdOrFail({
 			customerId: order.customerId,
 			relations: ['user']

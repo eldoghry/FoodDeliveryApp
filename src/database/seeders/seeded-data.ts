@@ -213,6 +213,7 @@ const settingSeedData: SeedData<Setting> = {
 		{ key: SettingKey.MIN_ORDER_AMOUNT, value: 5, description: 'Minimum amount required to place an order' },
 		{ key: SettingKey.MAX_ORDER_ITEMS, value: 50, description: 'Maximum number of items per order' },
 		{ key: SettingKey.ORDER_CANCELLATION_WINDOW_MIN, value: 10, description: 'Minutes allowed to cancel an order' },
+		{ key: SettingKey.ORDER_EXPIRED_AFTER_WINDOW_MIN, value: 120, description: 'Expire an order after minute' },
 
 		{ key: SettingKey.DELIVERY_BASE_FEE, value: 30, description: 'Base fee for delivery orders' },
 		{ key: SettingKey.DELIVERY_PER_KM_FEE, value: 2.5, description: 'Delivery fee per kilometer' },
