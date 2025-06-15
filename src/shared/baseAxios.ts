@@ -52,10 +52,17 @@ export abstract class BaseAxios {
 		return response.data;
 	}
 	private _handleError(error: any) {
-		const errMsg = error instanceof Error ? error.message : String(error);
-		const errData = (error as any)?.response?.data;
+		const logData = {
+			service: this.NAME,
+			message: error?.message || 'Unknown error',
+			status: error?.response?.status,
+			data: error?.response?.data,
+			headers: error?.response?.headers,
+			url: error?.config?.url,
+			method: error?.config?.method
+		};
 
-		logger.error(`${this.NAME} axios login error`, { message: errMsg, data: errData });
-		throw new ApplicationError(`${this.NAME} login is down`, StatusCodes.SERVICE_UNAVAILABLE, false, errData);
+		logger.error(`${this.NAME} axios login error`, logData);
+		throw new ApplicationError(`${this.NAME} login is down`, StatusCodes.SERVICE_UNAVAILABLE, false, logData);
 	}
 }

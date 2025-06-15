@@ -7,7 +7,8 @@ import {
 	ManyToOne,
 	JoinColumn,
 	OneToMany,
-	Check
+	Check,
+	OneToOne
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { OrderStatusEnum, OrderStatusLog } from './order-status_log.entity';
@@ -15,7 +16,7 @@ import { Customer } from '../customer/customer.entity';
 import { Address } from '../customer/address.entity';
 import { OrderItem } from './order-item.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
-import { Transaction } from '../payment/transaction.entity';
+import { Transaction } from '../transaction/transaction.entity';
 
 export type OrderRelations = 'orderStatusLogs' | 'orderItems' | 'deliveryAddress' | 'restaurant' | 'customer' | 'transactions'| 'customer.user' | 'orderItems.item' | 'transactions.paymentMethod';
 
@@ -84,6 +85,6 @@ export class Order extends AbstractEntity {
 	@OneToMany(() => OrderStatusLog, (orderStatusLog) => orderStatusLog.order)
 	orderStatusLogs!: OrderStatusLog[];
 
-	@OneToMany(() => Transaction, (transaction) => transaction.order)
-	transactions!: Transaction[];
+	@OneToOne(() => Transaction, (transaction) => transaction.order)
+	transaction!: Transaction;
 }

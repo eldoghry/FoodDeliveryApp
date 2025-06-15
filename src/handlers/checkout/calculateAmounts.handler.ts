@@ -1,5 +1,7 @@
+import { SettingService } from './../../services/setting.service';
 import { calculateTotalPrice } from '../../utils/helper';
 import { CheckoutContext, CheckoutHandler } from './checkout.handler';
+import { SettingKey } from '../../enums/setting.enum';
 
 export class CalculateAmountsHandler extends CheckoutHandler {
 	constructor() {
@@ -7,8 +9,13 @@ export class CalculateAmountsHandler extends CheckoutHandler {
 	}
 
 	async handleRequest(context: CheckoutContext) {
-		context.serviceFees = 10; // Replace with helper logic
-		context.deliveryFees = 30; // Replace with helper logic
+		const [serviceFees, deliveryFees] = await Promise.all([
+			(await SettingService.get(SettingKey.SERVICE_BASE_FEE)) as number,
+			(await SettingService.get(SettingKey.DELIVERY_BASE_FEE)) as number
+		]);
+
+		context.serviceFees = serviceFees;
+		context.deliveryFees = deliveryFees;
 		context.totalAmount = calculateTotalPrice(context.cart!.cartItems, context.serviceFees, context.deliveryFees);
 
 		return context;

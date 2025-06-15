@@ -95,6 +95,16 @@ const ErrMessages = {
 
 	payment: {
 		PaymentFailed: 'Payment failed'
+	},
+
+	setting: {
+		SettingNotFound: 'Setting Not Found'
+	},
+
+	transaction: {
+		TransactionNotFound: 'Transaction Not Found',
+		TransactionCreationFailed: 'Transaction Creation Failed',
+		TransactionIdOrReferenceRequired: 'Transaction Id or Reference is Required'
 	}
 };
 

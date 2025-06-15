@@ -8,10 +8,12 @@ export class ValidateCustomerHandler extends CheckoutHandler {
 
 	async handleRequest(context: CheckoutContext) {
 		const { customerId } = context.payload;
+
 		context.customer = await this.customerService.getCustomerByIdOrFail({
 			customerId,
 			relations: ['user', 'addresses']
 		});
+
 		return context;
 	}
 }

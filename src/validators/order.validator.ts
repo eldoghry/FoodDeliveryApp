@@ -15,11 +15,14 @@ export const orderParamsSchema = Joi.object({
 }).required();
 
 export const updateOrderStatusBodySchema = Joi.object({
-	status: Joi.string().required().valid(...Object.values(OrderStatusEnum)).messages({
-		'any.required': 'Status is required',
-		'any.string': 'Status must be a string',
-		'any.only': 'Invalid status'
-	})
+	status: Joi.string()
+		.required()
+		.valid(...Object.values(OrderStatusEnum))
+		.messages({
+			'any.required': 'Status is required',
+			'any.string': 'Status must be a string',
+			'any.only': 'Invalid status'
+		})
 }).required();
 
 export const cancelOrderBodySchema = Joi.object({

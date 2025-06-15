@@ -14,11 +14,23 @@ export class TransactionDetail extends AbstractEntity {
 	@JoinColumn({ name: 'transaction_id' })
 	transaction!: Transaction;
 
-	@Column({ type: 'jsonb', nullable: false })
-	detailKey!: Record<string, any>;
+	@Column({ type: 'varchar', length: 100 })
+	provider!: string; // e.g., 'Fawry', 'Stripe'
 
-	@Column({ type: 'jsonb', nullable: false })
-	detailValue!: Record<string, any>;
+	@Column({ type: 'varchar', length: 50 })
+	action!: string; // e.g., 'charge', 'verify', 'refund'
+
+	@Column({ type: 'jsonb', nullable: true })
+	requestPayload?: Record<string, any>;
+
+	@Column({ type: 'jsonb', nullable: true })
+	responsePayload?: Record<string, any>;
+
+	@Column({ default: true })
+	success!: boolean;
+
+	@Column({ type: 'jsonb', nullable: true })
+	errorStack?: Record<string, any>;
 
 	@CreateDateColumn()
 	createdAt!: Date;

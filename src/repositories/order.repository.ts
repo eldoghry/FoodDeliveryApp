@@ -24,11 +24,13 @@ export class OrderRepository {
 		return order;
 	}
 
-	async getOrdersByActorId(actorId: number, actorType: string, limit: number, cursor?: string): Promise<{ data: Order[]; nextCursor: string | null; hasNextPage: boolean }> {
-		const whereCondition =
-			actorType === 'customer'
-				? { customerId: actorId }
-				: { restaurantId: actorId };
+	async getOrdersByActorId(
+		actorId: number,
+		actorType: string,
+		limit: number,
+		cursor?: string
+	): Promise<{ data: Order[]; nextCursor: string | null; hasNextPage: boolean }> {
+		const whereCondition = actorType === 'customer' ? { customerId: actorId } : { restaurantId: actorId };
 
 		// Build base where clause
 		const whereClause: any = { ...whereCondition };
@@ -40,15 +42,9 @@ export class OrderRepository {
 
 		const orders = await this.orderRepo.find({
 			where: whereClause,
-			relations: [
-				'restaurant',
-				'customer.user',
-				'deliveryAddress',
-				'orderItems.item',
-				'transactions.paymentMethod',
-			],
+			relations: ['restaurant', 'customer.user', 'deliveryAddress', 'orderItems.item', 'transaction.paymentMethod'],
 			order: { createdAt: 'DESC' },
-			take: limit + 1, // One extra to check for next page
+			take: limit + 1 // One extra to check for next page
 		});
 
 		return cursorPaginate(orders, limit, 'createdAt');
@@ -103,9 +99,15 @@ export class OrderRepository {
 	async getOrderById(filter: { orderId: number; relations?: OrderRelations[] }) {
 		if (Object.keys(filter).length === 0) return null;
 
-		const { relations, ...whereCondition } = filter;
+		const query = this.orderRepo.createQueryBuilder('order');
 
-		return await this.orderRepo.findOne({ where: whereCondition, relations });
+		if (filter?.relations) {
+			filter.relations.forEach((relation) => query.leftJoinAndSelect(`order.${relation}`, relation));
+		}
+
+		query.where('order.orderId = :orderId', { orderId: filter.orderId });
+
+		return query.getOne();
 	}
 
 	async getOrderStatusLogByOrderId(orderId: number): Promise<OrderStatusLog[]> {
@@ -115,20 +117,53 @@ export class OrderRepository {
 	}
 
 	async getOrderSummary(orderId: number): Promise<any> {
-		return (
-			this.orderRepo
-				.createQueryBuilder('o')
-				.select([
-					'o.order_id AS "orderId"',
-					'o.status AS "orderStatus"',
-					'o.placed_at AS "placedAt"',
-					'o.total_amount AS "totalAmount"',
-					'restaurant.name'
-				])
-				.leftJoin('o.restaurant', 'restaurant')
-				.where('o.order_id = :orderId', { orderId })
-				.getRawOne()
-		);
+		return this.orderRepo
+			.createQueryBuilder('o')
+			.select([
+				'o.order_id AS "orderId"',
+				'o.status AS "orderStatus"',
+				'o.placed_at AS "placedAt"',
+				'o.total_amount AS "totalAmount"',
+				'restaurant.name'
+			])
+			.leftJoin('o.restaurant', 'restaurant')
+			.where('o.order_id = :orderId', { orderId })
+			.getRawOne();
 	}
 
+	async getManyOrdersBy(filter: {
+		status?: OrderStatusEnum;
+		restaurantId?: number;
+		customerId?: number;
+		createdBefore?: Date;
+		relations?: OrderRelations[];
+	}): Promise<Order[] | null> {
+		const { relations, ...other } = filter;
+
+		if (Object.keys(other).length === 0) return null;
+
+		const query = this.orderRepo.createQueryBuilder('order');
+
+		if (filter?.relations) {
+			filter?.relations.forEach((relation) => query.leftJoinAndSelect(`order.${relation}`, relation));
+		}
+
+		if (other.customerId) {
+			query.andWhere('order.customerId = :customerId', { customerId: other.customerId });
+		}
+
+		if (other.status) {
+			query.andWhere('order.status = :status', { status: other.status });
+		}
+
+		if (other.restaurantId) {
+			query.andWhere('order.restaurantId = :restaurantId', { restaurantId: other.restaurantId });
+		}
+
+		if (other.createdBefore) {
+			query.andWhere('order.createdAt <= :createdBefore', { createdBefore: other.createdBefore });
+		}
+
+		return query.getMany();
+	}
 }

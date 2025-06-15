@@ -128,14 +128,18 @@ export class CartRepository {
 		relations?: CartRelations[];
 	}): Promise<Cart | null> {
 		if (Object.keys(filter).length === 0) return null;
-		const { cartId, customerId } = filter;
-		const whereCondition: any = {};
-		if (cartId) whereCondition.cartId = cartId;
-		if (customerId) whereCondition.customerId = customerId;
 
-		return await this.cartRepo.findOne({
-			where: whereCondition,
-			relations: filter?.relations
-		});
+		const { cartId, customerId } = filter;
+
+		const query = this.cartRepo.createQueryBuilder('cart');
+
+		if (cartId) query.andWhere('cart.cartId = :cartId', { cartId });
+		if (customerId) query.andWhere('cart.customerId = :customerId', { customerId });
+
+		if (filter?.relations) {
+			filter.relations.forEach((relation) => query.leftJoinAndSelect(`cart.${relation}`, relation));
+		}
+
+		return query.getOne();
 	}
 }
