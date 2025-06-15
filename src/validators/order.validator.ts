@@ -15,10 +15,10 @@ export const orderParamsSchema = Joi.object({
 }).required();
 
 export const updateOrderStatusBodySchema = Joi.object({
-	status: Joi.string().required().messages({
+	status: Joi.string().required().valid(...Object.values(OrderStatusEnum)).messages({
 		'any.required': 'Status is required',
-		'any.string': 'Status must be a string'
-
+		'any.string': 'Status must be a string',
+		'any.only': 'Invalid status'
 	})
 }).required();
 

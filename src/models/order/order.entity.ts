@@ -17,7 +17,7 @@ import { OrderItem } from './order-item.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
 import { Transaction } from '../payment/transaction.entity';
 
-export type OrderRelations = 'orderStatusLogs' | 'orderItems' | 'deliveryAddress' | 'restaurant' | 'customer';
+export type OrderRelations = 'orderStatusLogs' | 'orderItems' | 'deliveryAddress' | 'restaurant' | 'customer' | 'transactions'| 'customer.user' | 'orderItems.item' | 'transactions.paymentMethod';
 
 @Check(`"delivery_fees" >= 0.00`)
 @Check(`"service_fees" >= 0.00`)

@@ -227,7 +227,7 @@ OrderRouter.get(
 
 /**
  * @swagger
- * /api/orders/{order_id}:
+ * /orders/{order_id}:
  *   get:
  *     summary: Get order details by ID
  *     tags:
@@ -435,7 +435,7 @@ OrderRouter.get(
 OrderRouter.get(
 	'/:orderId',
 	isAuthenticated,
-	verifyActor({ allowedActorTypes: ['customer'] }),
+	verifyActor({ allowedActorTypes: ['customer', 'restaurant_user'] }),
 	validateRequest({ params: getOrderDetailsParamsSchema }),
 	controller.getOrderDetails.bind(controller)
 );

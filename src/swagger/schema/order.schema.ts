@@ -168,10 +168,9 @@ const swaggerSchema = {
     pagination: {
         type: 'object',
         properties: {
-            page: { type: 'integer', description: 'The page number.', example: 1 },
             perPage: { type: 'integer', description: 'The number of items per page.', example: 10 },
-            totalPages: { type: 'integer', description: 'The total number of pages.', example: 1 },
-            total: { type: 'integer', description: 'The total number of items.', example: 10 },
+            nextCursor: { type: 'string', description: 'The cursor for the next page.', example: 'nextCursor' },
+            hasNextPage: { type: 'boolean', description: 'Whether there is a next page.', example: true },
         }
     },
     CustomerOrdersHistory: {

@@ -1,12 +1,10 @@
 import { StatusCodes as HttpStatusCode } from 'http-status-codes';
-import { AppDataSource } from '../config/data-source';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { OrderRepository } from '../repositories';
 import { CustomerService } from './customer.service';
-import { PaymentService } from './payment/payment.service';
-import { calculateTotalPrice } from '../utils/helper';
+import { calculateTotalPrice, isWithinTimeLimit as isWithinCancelTimeLimit } from '../utils/helper';
 import {
 	Customer,
 	Order,
@@ -15,7 +13,8 @@ import {
 	OrderStatusChangeBy,
 	Cart,
 	PaymentMethodEnum,
-	Restaurant
+	Restaurant,
+	OrderItem
 } from '../models';
 import { Notify } from '../shared/notify';
 import { RestaurantService } from './restaurant.service';
@@ -33,6 +32,8 @@ import {
 	ValidateCustomerHandler,
 	ValidateRestaurantHandler
 } from '../handlers/checkout';
+import { CancellationInfo, OrderData, OrderHistoryResult, OrderItemResult } from '../dtos/order.dto';
+
 
 export class OrderService {
 	private orderRepo = new OrderRepository();
@@ -41,6 +42,7 @@ export class OrderService {
 	// private dataSource = AppDataSource; // to be used for typeorm transactions
 	private restaurantService = new RestaurantService();
 
+	// === Checkout Methods ===
 	@Transactional()
 	async checkout(payload: CheckoutPayload): Promise<PlaceOrderResponse> {
 		const handler = new ValidateRestaurantHandler(this.restaurantService);
@@ -80,7 +82,7 @@ export class OrderService {
 
 
 	async getOrderOrFailBy(filter: { orderId: number; relations?: OrderRelations[] }) {
-		const order = await this.orderRepo.getOrderBy(filter);
+		const order = await this.orderRepo.getOrderById(filter);
 
 		if (!order) throw new ApplicationError(ErrMessages.order.OrderNotFound, HttpStatusCode.NOT_FOUND);
 		return order;
@@ -130,6 +132,22 @@ export class OrderService {
 			paymentUrl: processPaymentResult.redirectUrl,
 			order
 		};
+	}
+
+	async addOrderItems(orderId: number, cart: Cart) {
+		const items = cart.cartItems;
+		if (!items.length) throw new ApplicationError('no items on cart', HttpStatusCode.BAD_REQUEST);
+		await Promise.all(
+			items.map((item) =>
+				this.orderRepo.addOrderItem({
+					orderId: orderId,
+					itemId: item.itemId,
+					quantity: item.quantity,
+					price: item.price,
+					totalPrice: item.totalPrice
+				})
+			)
+		);
 	}
 
 	@Transactional()
@@ -185,97 +203,103 @@ export class OrderService {
 		}
 	}
 
-	private isWithin5Minutes(date: Date) {
-		const now = new Date();
-		const createdAt = new Date(date);
-		const minutesSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60);
-		return minutesSinceCreation <= 5;
-	}
 
-	private validateCancelTime(date: Date) {
-		if (!this.isWithin5Minutes(date)) {
-			throw new ApplicationError(ErrMessages.order.CannotCancelOrderAfter5Minutes, HttpStatusCode.BAD_REQUEST);
-		}
-		return true;
-	}
 
-	// validate order status transition
-	private async validateOrderStatus(orderId: number, newStatus: OrderStatusEnum, actor: OrderStatusChangeBy) {
-		const order = await this.getOrderOrFailBy({ orderId, relations: ['orderStatusLogs'] });
+	// === Status Validation Methods ===
 
-		const validStatuses = Object.values(OrderStatusEnum);
-		if (!validStatuses.includes(newStatus)) {
-			throw new ApplicationError(`Invalid status: ${newStatus}`, HttpStatusCode.BAD_REQUEST);
-		}
-
-		const currentStatus = order.status;
-
-		// Define valid status transitions & valid actors for each status
-		const orderStatusTransitionsByActors: Record<
-			OrderStatusEnum,
-			{ transitions: OrderStatusEnum[]; actors: OrderStatusChangeBy[] }
-		> = {
-			initiated: {
+	private getOrderStatusTransitions(): Record<OrderStatusEnum, {
+		transitions: OrderStatusEnum[];
+		actors: OrderStatusChangeBy[];
+	}> {
+		return {
+			[OrderStatusEnum.initiated]: {
 				transitions: [OrderStatusEnum.pending, OrderStatusEnum.failed],
 				actors: [OrderStatusChangeBy.system]
 			},
-			pending: {
+			[OrderStatusEnum.pending]: {
 				transitions: [OrderStatusEnum.confirmed, OrderStatusEnum.canceled],
 				actors: [OrderStatusChangeBy.payment, OrderStatusChangeBy.system]
 			},
-			confirmed: {
+			[OrderStatusEnum.confirmed]: {
 				transitions: [OrderStatusEnum.onTheWay, OrderStatusEnum.canceled, OrderStatusEnum.delivered],
 				actors: [OrderStatusChangeBy.restaurant]
 			},
-			onTheWay: { transitions: [OrderStatusEnum.delivered], actors: [OrderStatusChangeBy.restaurant] },
-			canceled: { transitions: [], actors: [OrderStatusChangeBy.system, OrderStatusChangeBy.restaurant] },
-			delivered: { transitions: [], actors: [OrderStatusChangeBy.restaurant] },
-			failed: { transitions: [], actors: [OrderStatusChangeBy.payment] }
+			[OrderStatusEnum.onTheWay]: {
+				transitions: [OrderStatusEnum.delivered],
+				actors: [OrderStatusChangeBy.restaurant]
+			},
+			[OrderStatusEnum.canceled]: {
+				transitions: [],
+				actors: [OrderStatusChangeBy.system, OrderStatusChangeBy.restaurant]
+			},
+			[OrderStatusEnum.delivered]: {
+				transitions: [],
+				actors: [OrderStatusChangeBy.restaurant]
+			},
+			[OrderStatusEnum.failed]: {
+				transitions: [],
+				actors: [OrderStatusChangeBy.payment]
+			}
 		};
+	}
 
-		// Check if the transition is valid & actor is allowed to perform this transition
-		const allowedStatuses = orderStatusTransitionsByActors[currentStatus].transitions || [];
-		const allowedActors = orderStatusTransitionsByActors[newStatus].actors || [];
+
+	private validateStatusTransition(
+		currentStatus: OrderStatusEnum,
+		newStatus: OrderStatusEnum
+	): void {
+		const transitions = this.getOrderStatusTransitions();
+		const allowedStatuses = transitions[currentStatus]?.transitions || [];
+
 		if (!allowedStatuses.includes(newStatus)) {
 			throw new ApplicationError(
 				`Invalid order status transition from ${currentStatus} to ${newStatus}`,
 				HttpStatusCode.BAD_REQUEST
 			);
 		}
-		// check if actor is allowed to perform this transition
+	}
+
+	private validateActorPermission(
+		newStatus: OrderStatusEnum,
+		actor: OrderStatusChangeBy
+	): void {
+		const transitions = this.getOrderStatusTransitions();
+		const allowedActors = transitions[newStatus]?.actors || [];
+
 		if (!allowedActors.includes(actor)) {
 			throw new ApplicationError(
-				`Invalid actor: ${actor} for order status transition from ${currentStatus} to ${newStatus}`,
+				`${actor} is not allowed to change order status to ${newStatus}`,
 				HttpStatusCode.BAD_REQUEST
 			);
 		}
+	}
 
-		const pendingStatusLogDate = order.orderStatusLogs.find((log) => log.status === OrderStatusEnum.pending)?.createdAt;
+	private validateCancelTime(date: Date): boolean {
+		if (!isWithinCancelTimeLimit(date, 5)) {
+			throw new ApplicationError(ErrMessages.order.CannotCancelOrderAfter5Minutes, HttpStatusCode.BAD_REQUEST);
+		}
+		return true;
+	}
 
-		// Specific checks for cancelation based on current status & actor
-		// if (
-		// 	allowedStatuses.includes(OrderStatusEnum.canceled) &&
-		// 	!(
-		// 		(currentStatus === OrderStatusEnum.pending &&
-		// 			actor === OrderStatusChangeBy.system &&
-		// 			this.validateCancelTime(pendingStatusLogDate!)) ||
-		// 		(currentStatus === OrderStatusEnum.confirmed && actor === OrderStatusChangeBy.restaurant)
-		// 	)
-		// ) {
-		// 	throw new ApplicationError(
-		// 		`'${actor}' is not allowed to cancel an order in '${currentStatus}' status`,
-		// 		HttpStatusCode.BAD_REQUEST
-		// 	);
-		// }
+	private validateCancellationRules(
+		order: Order,
+		currentStatus: OrderStatusEnum,
+		actor: OrderStatusChangeBy
+	): void {
+		const pendingStatusLog = order.orderStatusLogs.find(
+			log => log.status === OrderStatusEnum.pending
+		);
 
-		// check if client cancel order within 5 min
-		if (newStatus === OrderStatusEnum.canceled && actor === OrderStatusChangeBy.system) {
-			this.validateCancelTime(pendingStatusLogDate!);
-		} else if (
-			newStatus === OrderStatusEnum.canceled &&
-			actor === OrderStatusChangeBy.restaurant &&
-			currentStatus !== OrderStatusEnum.confirmed
-		) {
+		const canSystemCancelPending =
+			currentStatus === OrderStatusEnum.pending &&
+			actor === OrderStatusChangeBy.system &&
+			this.validateCancelTime(pendingStatusLog?.createdAt!);
+
+		const canRestaurantCancelConfirmed =
+			currentStatus === OrderStatusEnum.confirmed &&
+			actor === OrderStatusChangeBy.restaurant;
+
+			if (!(canSystemCancelPending || canRestaurantCancelConfirmed)) {
 			throw new ApplicationError(
 				`'${actor}' is not allowed to cancel an order in '${currentStatus}' status`,
 				HttpStatusCode.BAD_REQUEST
@@ -283,146 +307,186 @@ export class OrderService {
 		}
 	}
 
-	private isValidActor(actor: any): actor is OrderStatusChangeBy {
+	// validate order status transition
+	private async validateOrderStatus(orderId: number, newStatus: OrderStatusEnum, actor: OrderStatusChangeBy) {
+		const order = await this.getOrderOrFailBy({ orderId, relations: ['orderStatusLogs'] });
+		const currentStatus = order.status;
+
+		// Check if the transition is valid & actor is allowed to perform this transition
+		this.validateStatusTransition(currentStatus, newStatus);
+		this.validateActorPermission(newStatus, actor);
+
+		// Specific checks for cancelation
+		if (newStatus === OrderStatusEnum.canceled) {
+			this.validateCancellationRules(order, currentStatus, actor);
+		}
+	}
+
+	// === Update Order Status Methods ===
+
+	private isValidActor(actor: OrderStatusChangeBy): asserts actor is OrderStatusChangeBy {
 		const validActors = Object.values(OrderStatusChangeBy);
 		if (!validActors.includes(actor)) {
 			throw new ApplicationError(`Invalid actor: ${actor}`, HttpStatusCode.BAD_REQUEST);
 		}
-		return true;
 	}
 
-	// update status log table
 	@Transactional()
 	async addOrderStatusLog(orderId: number, newStatus: OrderStatusEnum, actor: OrderStatusChangeBy) {
-		this.isValidActor(actor);
-		await this.validateOrderStatus(orderId, newStatus, actor);
-
-		await this.orderRepo.createOrderStatusLog({
+		const orderStatusLog = await this.orderRepo.createOrderStatusLog({
 			orderId,
 			status: newStatus,
 			changeBy: actor
 		});
+		if (!orderStatusLog) throw new ApplicationError(ErrMessages.order.FailedToAddOrderStatusLog, HttpStatusCode.INTERNAL_SERVER_ERROR);
+		return orderStatusLog;
 	}
 
 	@Transactional()
 	async updateOrderStatus(orderId: number, payload: Partial<Order>, actor: OrderStatusChangeBy) {
+		this.isValidActor(actor);
+		await this.validateOrderStatus(orderId, payload.status!, actor);
 		await this.addOrderStatusLog(orderId, payload.status!, actor);
-		return await this.orderRepo.updateOrderStatus(orderId, payload);
+		const updatedOrder = await this.orderRepo.updateOrderStatus(orderId, payload);
+		if (!updatedOrder) throw new ApplicationError(ErrMessages.order.FailedToUpdateOrderStatus, HttpStatusCode.INTERNAL_SERVER_ERROR);
+		return updatedOrder;
+	}
+
+	// === Cancelation Methods ===
+
+	private determineActorFromType(actorType: string): OrderStatusChangeBy {
+		if (actorType.includes('customer')) {
+			return OrderStatusChangeBy.system;
+		} else if (actorType.includes('restaurant')) {
+			return OrderStatusChangeBy.restaurant;
+		}
+
+		throw new ApplicationError(
+			`${actorType} is not allowed to cancel an order`,
+			HttpStatusCode.BAD_REQUEST
+		);
 	}
 
 	@Transactional()
 	async cancelOrder(orderId: number, actorType: string, payload: { reason: string }) {
-		let actor: OrderStatusChangeBy;
-		if (actorType === 'customer') {
-			actor = OrderStatusChangeBy.system;
-		} else if (actorType.includes('restaurant')) {
-			actor = OrderStatusChangeBy.restaurant;
-		} else {
-			throw new ApplicationError(`${actorType} is not allowed to cancel an order`, HttpStatusCode.BAD_REQUEST);
-		}
+		const actor = this.determineActorFromType(actorType);
+		const cancellationInfo: CancellationInfo = {
+			cancelledBy: actor,
+			reason: payload.reason,
+			cancelledAt: new Date()
+		};
 		return await this.updateOrderStatus(
 			orderId,
 			{
 				status: OrderStatusEnum.canceled,
-				cancellationInfo: { cancelledBy: actor, reason: payload.reason, cancelledAt: new Date() }
+				cancellationInfo
 			},
 			actor
 		);
 	}
 
-	async getOrderSummary(orderId: number) {
-		const order = await this.getOrderOrFailBy({ orderId, relations: ['orderItems'] }); 
-		const orderSummary = await this.orderRepo.getOrderSummary(orderId);
-		const totalItemsPrice = calculateTotalPrice(order.orderItems).toFixed(2);
-		const totalAmount = calculateTotalPrice(order.orderItems, order.serviceFees, order.deliveryFees).toFixed(2);
-		return { ...orderSummary, totalItemsPrice, totalAmount };
+
+	// === Order History Methods ===
+
+	private getActorSpecificData(order: Order, actorType: string): Record<string, any> {
+		if (actorType === 'customer') {
+			return {
+				restaurant: {
+					id: order.restaurantId,
+					name: order.restaurant.name,
+					email: order.restaurant.email,
+					location: order.restaurant.location,
+				}
+			};
+		}
+
+		return {
+			customer: {
+				id: order.customerId,
+				name: order.customer.user.name,
+				phone: order.customer.user.phone
+			}
+		};
 	}
 
-	private orderHistoryData(order: Order, actorType: string) {
-		const isCustomer = actorType === 'customer';
-		let actorResult: Record<string, any> = {};
-		let statusRelatedData: Record<string, any> = {};
-
-		if (isCustomer) {
-			actorResult = { restaurant: { id: order.restaurantId, name: order.restaurant.name } };
-		} else {
-			actorResult = {
-				customer: { id: order.customerId, name: order.customer.user.name, phone: order.customer.user.phone }
-			};
+	private getStatusRelatedData(order: Order): Record<string, any> {
+		switch (order.status) {
+			case OrderStatusEnum.canceled:
+				return {
+					placedAt: order.placedAt,
+					cancellationInfo: order.cancellationInfo
+				};
+			case OrderStatusEnum.delivered:
+				return {
+					placedAt: order.placedAt,
+					deliveredAt: order.deliveredAt
+				};
+			default:
+				return {};
 		}
-		// Status-specific fields
-		if (order.status === OrderStatusEnum.canceled) {
-			statusRelatedData = {
-				placedAt: order.placedAt,
-				cancellationInfo: order.cancellationInfo
-			};
-		} else if (order.status === OrderStatusEnum.delivered) {
-			statusRelatedData = {
-				placedAt: order.placedAt,
-				deliveredAt: order.deliveredAt
-			};
-		}
+	}
 
-		const items = order.orderItems.map((item) => {
-			return {
-				orderId: item.orderId,
-				itemId: item.itemId,
-				imagePath: item.item.imagePath,
-				name: item.item.name,
-				quantity: item.quantity,
-				price: item.price,
-				totalPrice: item.totalPrice
-			};
-		});
+	private mapOrderItems(orderItems: OrderItem[]): OrderItemResult[] {
+		return orderItems.map(item => ({
+			orderId: item.orderId,
+			itemId: item.itemId,
+			imagePath: item.item.imagePath,
+			name: item.item.name,
+			quantity: item.quantity,
+			price: item.price,
+			totalPrice: item.totalPrice
+		}));
+	}
+
+	private formatOrderData(order: Order, actorType: string): OrderData {
+		const actorData = this.getActorSpecificData(order, actorType);
+		const statusData = this.getStatusRelatedData(order);
+		const items = this.mapOrderItems(order.orderItems);
+
 		return {
 			orderId: order.orderId,
 			status: order.status,
-			...actorResult,
+			...actorData,
 			items,
 			deliveryAddress: order.deliveryAddress,
 			deliveryFees: order.deliveryFees,
 			serviceFees: order.serviceFees,
 			totalAmount: order.totalAmount,
 			customerInstructions: order.customerInstructions,
-			...statusRelatedData,
-			paymentMethod: order.transactions[0]?.paymentMethod.methodName,
+			...statusData,
+			paymentMethod: order.transactions[0]?.paymentMethod.methodName as PaymentMethodEnum,
 			createdAt: order.createdAt,
 			updatedAt: order.updatedAt
 		};
 	}
-	// get orders history for customer or restaurant
-	async getOrdersHistory(actorType: 'customer' | 'restaurant', actorId: number, limit: number, cursor?: string) {
-		if (!actorId) {
-			throw new ApplicationError(`Actor id is required`, HttpStatusCode.BAD_REQUEST);
-		}
-		if (!(actorType == 'customer' || actorType.includes('restaurant'))) {
-			throw new ApplicationError(`${actorType} is not allowed to get orders history`, HttpStatusCode.BAD_REQUEST);
-		}
-		const orders = await this.orderRepo.getOrdersByActorId(actorId, actorType ,limit,cursor);
+
+	async getOrdersHistory(actorType: string, actorId: number, limit: number, cursor?: string): Promise<OrderHistoryResult> {
+		const orders = await this.orderRepo.getOrdersByActorId(actorId, actorType, limit, cursor);
 		return {
-			orders: orders.data.map((order) => this.orderHistoryData(order, actorType)),
+			orders: orders.data.map((order) => this.formatOrderData(order, actorType)),
 			nextCursor: orders.nextCursor,
 			hasNextPage: orders.hasNextPage
 		};
 	}
 
-	async addOrderItems(orderId: number, cart: Cart) {
-		const items = cart.cartItems;
-		if (!items.length) throw new ApplicationError('no items on cart', HttpStatusCode.BAD_REQUEST);
-		await Promise.all(
-			items.map((item) =>
-				this.orderRepo.addOrderItem({
-					orderId: orderId,
-					itemId: item.itemId,
-					quantity: item.quantity,
-					price: item.price,
-					totalPrice: item.totalPrice
-				})
-			)
-		);
+	// === Order Summary and Details ===
+	async getOrderSummary(orderId: number) {
+		const order = await this.getOrderOrFailBy({ orderId, relations: ['orderItems'] });
+		const orderSummary = await this.orderRepo.getOrderSummary(orderId);
+		const totalItemsPrice = calculateTotalPrice(order.orderItems).toFixed(2);
+		const totalAmount = calculateTotalPrice(order.orderItems, order.serviceFees, order.deliveryFees).toFixed(2);
+		return { ...orderSummary, totalItemsPrice, totalAmount };
 	}
 
-	async getOrderDetails(orderId: number, customerId: number) {
-		return await this.orderRepo.getOrderDetails(orderId, customerId);
+	async getOrderDetails(orderId: number, actorType: string): Promise<OrderData> {
+		const order = await this.getOrderOrFailBy({
+			orderId, relations: ['restaurant',
+				'customer.user',
+				'deliveryAddress',
+				'orderItems.item',
+				'transactions.paymentMethod']
+		});
+		return this.formatOrderData(order, actorType);
 	}
 }
+ 
