@@ -3,6 +3,6 @@ CREATE TABLE auditing (
     user_id INT NOT NULL REFERENCES "user"(user_id),
     audit_event JSONB NOT NULL DEFAULT '{}',
     audit_data JSONB NOT NULL DEFAULT '{}',
-    audit_date TIMESTAMP NOT NULL,
+    audit_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

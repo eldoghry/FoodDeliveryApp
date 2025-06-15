@@ -1,18 +1,21 @@
 import { AppDataSource } from '../config/data-source';
 import { Menu } from '../models/menu/menu.entity';
-import { MenuItem } from '../models/menu/menu-item.entity';
+import { MenuCategory } from '../models/menu/menu-category.entity';
+import { Category } from '../models/menu/category.entity';
 import { Item } from '../models/menu/item.entity';
 import { Repository } from 'typeorm';
 
 export class MenuRepository {
 	private menuRepo: Repository<Menu>;
-	private menuItemRepo: Repository<MenuItem>;
+	private categoryRepo: Repository<Category>;
+	private menuCategoryRepo: Repository<MenuCategory>;
 	private itemRepo: Repository<Item>;
 
 	constructor() {
 		this.menuRepo = AppDataSource.getRepository(Menu);
-		this.menuItemRepo = AppDataSource.getRepository(MenuItem);
+		this.menuCategoryRepo = AppDataSource.getRepository(MenuCategory);
 		this.itemRepo = AppDataSource.getRepository(Item);
+		this.categoryRepo = AppDataSource.getRepository(Category);
 	}
 
 	// Menu operations
@@ -42,28 +45,35 @@ export class MenuRepository {
 		await this.menuRepo.update(menuId, { isActive: false });
 	}
 
-	// Menu Item operations
-	async addMenuItem(data: Partial<MenuItem>): Promise<MenuItem> {
-		const menuItem = this.menuItemRepo.create(data);
-		return await this.menuItemRepo.save(menuItem);
+	// Menu Category operations
+	async addCategory(data: Partial<Category>): Promise<Category> {
+		const category = this.categoryRepo.create(data);
+		return await this.categoryRepo.save(category);
 	}
 
-	async getMenuItems(menuId: number): Promise<MenuItem[]> {
-		return await this.menuItemRepo.find({
-			where: { menuId },
-			relations: ['item']
+	async getCategories(categoryId: number): Promise<Category[]> {
+		return await this.categoryRepo.find({
+			where: { categoryId },
+			relations: ['items', 'menuCategories']
 		});
 	}
 
-	async getMenuItemById(menuItemId: number): Promise<any> {
-		return await this.menuItemRepo.find({
-			where: { menuItemId },
-			relations: ['item']
+	async getCategoryById(categoryId: number): Promise<Category | null> {
+		return await this.categoryRepo.findOne({
+			where: { categoryId },
+			relations: ['menuCategories', 'items']
 		});
 	}
 
-	async removeMenuItem(menuId: number, itemId: number): Promise<void> {
-		await this.menuItemRepo.delete({ menuId, itemId });
+	async getMenuCategoryById(menuCategoryId: number): Promise<MenuCategory | null> {
+		return await this.menuCategoryRepo.findOne({
+			where: { menuCategoryId },
+			relations: ['menu', 'category']
+		});
+	}
+
+	async removeMenuCategory(menuCategoryId: number): Promise<void> {
+		await this.menuCategoryRepo.delete(menuCategoryId);
 	}
 
 	// Item operations
@@ -101,13 +111,21 @@ export class MenuRepository {
 		});
 	}
 
-	// Helper methods
-	async getItemsByMenu(menuId: number): Promise<Item[]> {
-		const menuItems = await this.menuItemRepo.find({
-			where: { menuId },
-			relations: ['item']
+	async getItemsByCategory(categoryId: number): Promise<Item[]> {
+		const category = await this.categoryRepo.findOne({
+			where: { categoryId },
+			relations: ['items']
 		});
-		return menuItems.map((mi) => mi.item);
+
+		return category?.items || [];
+	}
+
+	async getItemsByMenu(menuId: number): Promise<Item[]> {
+		const menu = await this.menuRepo.findOne({
+			where: { menuId },
+			relations: ['menuCategories', 'menuCategories.category']
+		});
+		return menu?.menuCategories.flatMap((menuCategory) => menuCategory.category.items) || [];
 	}
 
 	async getActiveMenuWithItems(restaurantId: number): Promise<Menu | null> {
@@ -116,7 +134,7 @@ export class MenuRepository {
 				restaurantId,
 				isActive: true
 			},
-			relations: ['menuItems', 'menuItems.item']
+			relations: ['menuCategories', 'menuCategories.item']
 		});
 	}
 }

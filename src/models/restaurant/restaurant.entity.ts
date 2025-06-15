@@ -14,16 +14,23 @@ import { AbstractEntity } from '../base.entity';
 import { Menu } from '../menu/menu.entity';
 import { Order } from '../order/order.entity';
 
-// Restaurant entity
+export enum RestaurantStatus {
+	open = 'open',
+	busy = 'busy',
+	pause = 'pause',
+	closed = 'closed'
+}
+
+export type RestaurantRelations = 'user' | 'menus' | 'cartItems' | 'orders';
 @Entity()
 export class Restaurant extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	restaurantId!: number;
 
-	@Column({ unique: true })
+	@Column({ unique: true, nullable: false })
 	userId!: number;
 
-	@Column({ type: 'varchar', length: 255 })
+	@Column({ type: 'varchar', length: 255, nullable: false })
 	name!: string;
 
 	@Column({ type: 'varchar', length: 512, default: '' })
@@ -32,20 +39,23 @@ export class Restaurant extends AbstractEntity {
 	@Column({ type: 'varchar', length: 512, default: '' })
 	bannerUrl!: string;
 
-	@Column({ type: 'jsonb' })
+	@Column({ type: 'jsonb', nullable: false })
 	location!: Record<string, any>;
 
-	@Column({ type: 'varchar', length: 6 })
-	status!: 'open' | 'busy' | 'pause' | 'closed';
+	@Column({ type: 'enum', enum: RestaurantStatus, nullable: false })
+	status!: RestaurantStatus;
 
-	@Column({ type: 'varchar', length: 20, unique: true })
+	@Column({ type: 'varchar', length: 20, unique: true, nullable: false })
 	commercialRegistrationNumber!: string;
 
-	@Column({ type: 'varchar', length: 15, unique: true })
+	@Column({ type: 'varchar', length: 15, unique: true, nullable: false })
 	vatNumber!: string;
 
-	@Column({ default: true })
+	@Column({ type: 'boolean', default: true, nullable: false })
 	isActive!: boolean;
+
+	@Column({ type: 'varchar', length: 100, unique: true })
+	email!: string;
 
 	@CreateDateColumn()
 	createdAt!: Date;

@@ -1,3 +1,5 @@
+import { forbidden } from 'joi';
+
 const ErrMessages = {
 	// Common Errors
 	http: {
@@ -18,7 +20,8 @@ const ErrMessages = {
 		InvalidCredentials: 'Invalid Credentials',
 		TokenExpired: 'Token Expired',
 		TokenInvalid: 'Token Invalid',
-		AccessDenied: 'Access Denied'
+		AccessDenied: 'Access Denied',
+		forbidden: 'You do not have permission to access this resource.'
 	},
 
 	database: {
@@ -62,8 +65,16 @@ const ErrMessages = {
 		FailedToClearCart: 'Failed to clear cart',
 		FailedToDeleteCartItem: 'Failed to delete cart item'
 	},
+	order: {
+		InvalidOrderStatus: 'Invalid Order Status',
+		OrderNotFound: 'Order Not Found',
+		CannotCancelOrderAfter5Minutes: 'Cannot cancel order after 5 minutes of placing it',
+		FailedToUpdateOrderStatus: 'Failed to update order status',
+		FailedToAddOrderStatusLog: 'Failed to add order status log'
+	},
 	customer: {
-		CustomerNotFound: 'Customer not found'
+		CustomerNotFound: 'Customer not found',
+		AddressNotFound: 'Customer Address not found'
 	},
 
 	restaurant: {
@@ -80,6 +91,20 @@ const ErrMessages = {
 	menu: {
 		NoActiveMenuFound: 'Sorry there is no active menu for current restaurant',
 		ItemNotBelongToActiveMenu: 'Item does not belong to an active menu of this restaurant'
+	},
+
+	payment: {
+		PaymentFailed: 'Payment failed'
+	},
+
+	setting: {
+		SettingNotFound: 'Setting Not Found'
+	},
+
+	transaction: {
+		TransactionNotFound: 'Transaction Not Found',
+		TransactionCreationFailed: 'Transaction Creation Failed',
+		TransactionIdOrReferenceRequired: 'Transaction Id or Reference is Required'
 	}
 };
 

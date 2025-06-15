@@ -1,8 +1,23 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+	Entity,
+	PrimaryGeneratedColumn,
+	Column,
+	CreateDateColumn,
+	UpdateDateColumn,
+	OneToMany,
+	ManyToOne,
+	JoinColumn,
+	Check,
+	ManyToMany
+} from 'typeorm';
 import { AbstractEntity } from '../base.entity';
-import { MenuItem } from './menu-item.entity';
 import { CartItem } from '../cart/cart-item.entity';
+import { OrderItem } from '../order/order-item.entity';
+import { Category } from './category.entity';
+import { MenuItem } from './menu-item.entity';
 
+@Check(`"price" >= 0.00`)
+@Check(`"energy_val_cal" >= 0.00`)
 @Entity()
 export class Item extends AbstractEntity {
 	@PrimaryGeneratedColumn()
@@ -11,22 +26,22 @@ export class Item extends AbstractEntity {
 	@Column({ type: 'varchar', length: 512, default: '' })
 	imagePath!: string;
 
-	@Column({ type: 'varchar', length: 100 })
+	@Column({ type: 'varchar', length: 100, nullable: false, unique: true })
 	name!: string;
 
 	@Column({ type: 'text', default: '' })
 	description!: string;
 
-	@Column({ type: 'decimal', precision: 10, scale: 2 })
+	@Column({ type: 'decimal', precision: 10, scale: 2, nullable: false })
 	price!: number;
 
-	@Column({ type: 'decimal', precision: 10, scale: 2, default: 0.0 })
+	@Column({ type: 'decimal', precision: 10, scale: 2, default: 0.0, nullable: false })
 	energyValCal!: number;
 
 	@Column({ type: 'text', default: '' })
 	notes!: string;
 
-	@Column({ default: true })
+	@Column({ type: 'boolean', default: true, nullable: false })
 	isAvailable!: boolean;
 
 	@CreateDateColumn()
@@ -35,9 +50,15 @@ export class Item extends AbstractEntity {
 	@UpdateDateColumn()
 	updatedAt!: Date;
 
-	@OneToMany(() => MenuItem, (menuItem) => menuItem.item)
-	menuItems!: MenuItem[];
+	@ManyToMany(() => Category, (category) => category.items)
+	categories!: Category[];
 
 	@OneToMany(() => CartItem, (cartItem) => cartItem.item)
 	cartItems!: CartItem[];
+
+	@OneToMany(() => OrderItem, (orderItem) => orderItem.item)
+	ordersItem!: OrderItem[];
+
+	@OneToMany(() => MenuItem, (menuItem) => menuItem.item)
+	menuItems!: MenuItem[];
 }

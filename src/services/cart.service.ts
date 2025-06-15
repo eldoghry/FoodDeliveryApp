@@ -2,7 +2,7 @@ import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
-import { Cart, CartItem, Customer, Item, MenuItem } from '../models';
+import { Cart, CartItem, CartRelations, Customer, Item, MenuItem } from '../models';
 import { MenuRepository, CartRepository, CustomerRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
 import { CartAddItemDto, CartItemResponse, CartResponse, FindCartItemFilter, RestaurantCart } from '../dtos/cart.dto';
@@ -48,7 +48,6 @@ export class CartService {
 	// async addCartItem(cartItem: Partial<CartItem>) {
 	// 	return this.cartRepo.addCartItem(cartItem);
 	// }
-
 
 	async deleteAllCartItems(cartId: number, manager?: EntityManager) {
 		const deleted = await this.cartRepo.deleteAllCartItems(cartId, manager);
@@ -153,8 +152,9 @@ export class CartService {
 	}
 
 	private cartResponse(cart: Cart, restaurant: RestaurantCart | null, items: CartItemResponse[]): CartResponse {
-		const totalItems = items.reduce((total, item) => Number(total) + Number(item.quantity), 0);
-		const totalPrice = items.reduce((total, item) => Number(total) + Number(item.totalPrice), 0);
+		const totalItems = Cart.calculateTotalItems(items as any);
+		const totalPrice = Cart.calculateTotalPrice(items as any);
+
 		return {
 			id: cart.cartId,
 			customerId: cart.customerId,
@@ -167,12 +167,12 @@ export class CartService {
 		};
 	}
 
-
 	async viewCart(userId: number): Promise<CartResponse> {
 		const customer = await this.validateCustomer(userId);
 		const cart = await this.validateCart(customer!.customerId);
 		const cartItems = await this.cartRepo.getCartItems(cart.cartId);
-		const restaurant = cartItems.length > 0 ? { id: cartItems[0].restaurantId!, name: cartItems[0].restaurantName! } : null;
+		const restaurant =
+			cartItems.length > 0 ? { id: cartItems[0].restaurantId!, name: cartItems[0].restaurantName! } : null;
 		const items = cartItems.map((item) => this.cartItemReturn(item));
 
 		return this.cartResponse(cart, restaurant, items);
@@ -195,9 +195,7 @@ export class CartService {
 				throw new ApplicationError(ErrMessages.cart.FailedToUpdateCartItem, HttpStatusCodes.INTERNAL_SERVER_ERROR);
 			}
 			return updatedCartItem;
-
 		});
-
 	}
 
 	async deleteCartItem(userId: number, cartItemId: number): Promise<boolean> {
@@ -216,19 +214,18 @@ export class CartService {
 			}
 
 			return deleted;
-		})
+		});
 	}
 
-	async clearCart(userId: number): Promise<boolean> {
+	async clearCart(customerId: number): Promise<boolean> {
 		return await this.dataSource.transaction(async (manager) => {
-			const customer = await this.validateCustomer(userId);
+			const customer = await this.validateCustomer(customerId);
 			const cart = await this.validateCart(customer!.customerId);
 
 			const deleted = await this.deleteAllCartItems(cart.cartId, manager);
 			return deleted;
-		})
+		});
 	}
-
 
 	async isItemInActiveMenuOfRestaurant(restaurantId: number, itemId: number) {
 		const item = await this.dataSource
@@ -256,5 +253,27 @@ export class CartService {
 		if (cartItems) return cartItems.restaurantId;
 
 		return null;
+	}
+
+	async getCartWithItems(filter: { cartId?: number; customerId?: number; relations?: CartRelations[] }): Promise<Cart> {
+		const cart = await this.cartRepo.getCartWithItems(filter);
+
+		if (!cart) throw new ApplicationError(ErrMessages.cart.CartNotFound, HttpStatusCodes.NOT_FOUND);
+
+		return cart;
+	}
+
+	async getAndValidateCart(customerId: number, restaurantId: number) {
+		const cart = await this.getCartWithItems({ customerId, relations: ['cartItems'] });
+
+		// * validate cart not empty and cart items belong to restaurant
+		if (!cart.cartItems.length) throw new ApplicationError(ErrMessages.cart.CartIsEmpty, HttpStatusCodes.BAD_REQUEST);
+
+		const itemsNotBelongToRestaurant = cart.cartItems.filter((item) => item.restaurantId !== restaurantId);
+
+		if (itemsNotBelongToRestaurant.length)
+			throw new ApplicationError(ErrMessages.cart.CartItemDoesNotBelongToTheSpecifiedCart, HttpStatusCodes.BAD_REQUEST);
+
+		return cart;
 	}
 }

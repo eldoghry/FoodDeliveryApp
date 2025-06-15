@@ -7,6 +7,9 @@ import { config } from '../config/env';
 
 export interface AuthorizedUser {
 	userId: number;
+	roles: string[];
+	actorType: string; // e.g., 'customer', 'restaurant_user'
+	actorId: number; // ID of the actor (e.g., customer or restaurant user)
 }
 
 declare module 'express-serve-static-core' {
