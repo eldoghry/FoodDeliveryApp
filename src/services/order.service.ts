@@ -146,22 +146,6 @@ export class OrderService {
 		};
 	}
 
-	async addOrderItems(orderId: number, cart: Cart) {
-		const items = cart.cartItems;
-		if (!items.length) throw new ApplicationError('no items on cart', HttpStatusCode.BAD_REQUEST);
-		await Promise.all(
-			items.map((item) =>
-				this.orderRepo.addOrderItem({
-					orderId: orderId,
-					itemId: item.itemId,
-					quantity: item.quantity,
-					price: item.price,
-					totalPrice: item.totalPrice
-				})
-			)
-		);
-	}
-
 	@Transactional()
 	async finalizeOrderCOD(order: Order, customer: Customer, restaurant: Restaurant, transaction: Transaction) {
 		// todo: use update status & log method
@@ -176,8 +160,6 @@ export class OrderService {
 			status: TransactionPaymentStatus.PAID
 		});
 
-		const cart = await this.cartService.getCartWithItems({ customerId: customer.customerId, relations: ['cartItems'] });
-		await this.addOrderItems(order.orderId, cart);
 		await this.cartService.clearCart(customer.customerId);
 		await this.sendingPlaceOrderNotifications(order, customer, restaurant);
 	}
@@ -220,12 +202,6 @@ export class OrderService {
 		});
 
 		if (isPaymentSuccess) {
-			const cart = await this.cartService.getCartWithItems({
-				customerId: customer.customerId,
-				relations: ['cartItems']
-			});
-			await this.addOrderItems(order.orderId, cart);
-
 			await this.cartService.clearCart(customer.customerId);
 			await this.sendingPlaceOrderNotifications(order, customer, order.restaurant);
 			logger.info('Order payment confirmed', order.orderId);
