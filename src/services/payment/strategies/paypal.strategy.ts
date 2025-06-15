@@ -26,7 +26,7 @@ export class PaypalStrategy implements IPaymentStrategy {
 		const payload = this.createOrderBody(amount.toFixed(), transactionReference, order);
 
 		let response: PaypalCreateOrderResponse | undefined = undefined;
-		let errorMessage: string | undefined = undefined;
+		let errorStack = undefined;
 		let isApiSucess = false;
 
 		try {
@@ -42,7 +42,7 @@ export class PaypalStrategy implements IPaymentStrategy {
 			};
 		} catch (error: any) {
 			logger.error('💥 Error creating Paypal order:', error);
-			errorMessage = error?.message;
+			errorStack = error?.data;
 
 			return {
 				success: isApiSucess,
@@ -57,7 +57,7 @@ export class PaypalStrategy implements IPaymentStrategy {
 				requestPayload: payload,
 				responsePayload: response,
 				success: isApiSucess,
-				errorMessage
+				errorStack
 			});
 		}
 	}
@@ -71,7 +71,7 @@ export class PaypalStrategy implements IPaymentStrategy {
 		const transaction = await this.transactionService.getOneTransactionOrFailBy({ transactionReference });
 
 		let response: PaypalCaptureResponse | undefined = undefined;
-		let errorMessage: string | undefined = undefined;
+		let errorStack = undefined;
 		let isApiSucess = false;
 
 		try {
@@ -81,7 +81,8 @@ export class PaypalStrategy implements IPaymentStrategy {
 			return response;
 		} catch (error: any) {
 			logger.error('💥 Error Paypal payment verification:', error);
-			errorMessage = error?.message;
+			errorStack = error?.data ?? error;
+
 			throw error;
 		} finally {
 			logger.info(`📝 log transaction detail [capture] success:${isApiSucess} | trxId: ${transaction.transactionId}`);
@@ -92,7 +93,7 @@ export class PaypalStrategy implements IPaymentStrategy {
 				requestPayload: { paypalOrderId },
 				responsePayload: response,
 				success: isApiSucess,
-				errorMessage
+				errorStack
 			});
 		}
 	}

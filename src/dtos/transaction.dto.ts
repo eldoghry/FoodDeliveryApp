@@ -5,5 +5,5 @@ export class CreateTransactionDetailDto {
 	requestPayload?: Record<string, any>;
 	responsePayload?: Record<string, any>;
 	success!: boolean;
-	errorMessage?: string;
+	errorStack?: Record<string, any>;
 }

@@ -29,8 +29,8 @@ export class TransactionDetail extends AbstractEntity {
 	@Column({ default: true })
 	success!: boolean;
 
-	@Column({ type: 'text', nullable: true })
-	errorMessage?: string;
+	@Column({ type: 'jsonb', nullable: true })
+	errorStack?: Record<string, any>;
 
 	@CreateDateColumn()
 	createdAt!: Date;
