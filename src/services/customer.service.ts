@@ -5,7 +5,9 @@ import ErrMessages from '../errors/error-messages';
 import { CustomerRepository } from '../repositories';
 import { Customer, CustomerRelations } from '../models';
 import { Transactional } from 'typeorm-transactional';
-
+import { RatingService } from './rating.service';
+import { CreateRatingDto } from '../dtos/rating.dto';
+import { OrderService } from './order.service';
 
 export class CustomerService {
 	private customerRepo = new CustomerRepository();
@@ -31,5 +33,10 @@ export class CustomerService {
 		if (!hasAddress) {
 			throw new ApplicationError(ErrMessages.customer.AddressNotFound, HttpStatusCode.NOT_FOUND);
 		}
+	}
+
+	async rateOrder(dto: CreateRatingDto) {
+		const order = await this.orderService.getAndValidateOrderForRating(dto.orderId, dto.customerId);
+		return this.ratingService.createRating({ ...dto, restaurantId: order.restaurantId });
 	}
 }
