@@ -6,10 +6,10 @@ import { CustomerController } from '../controllers';
 import { verifyActor } from '../middlewares/verifyActor.middleware';
 import { customerAddressBodySchema } from '../validators/customer.validator';
 
-const customerRouter = Router();
+const CustomerRouter = Router();
 const controller = new CustomerController();
 
 
-customerRouter.post('/addresses',isAuthenticated,verifyActor({ allowedActorTypes: ['customer'] }),validateRequest({ body: customerAddressBodySchema }),controller.createCustomerAddress.bind(controller));
+CustomerRouter.post('/addresses',isAuthenticated,verifyActor({ allowedActorTypes: ['customer'] }),validateRequest({ body: customerAddressBodySchema }),controller.createCustomerAddress.bind(controller));
 
-export default customerRouter;
+export default CustomerRouter;
