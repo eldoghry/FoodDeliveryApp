@@ -9,6 +9,15 @@ import { Transactional } from 'typeorm-transactional';
 
 export class CustomerService {
 	private customerRepo = new CustomerRepository();
+	private ratingService = new RatingService();
+	private _orderService: OrderService | undefined = undefined;
+
+	get orderService() {
+		if (!this._orderService) {
+			this._orderService = new OrderService();
+		}
+		return this._orderService;
+	}
 
 	async getCustomerByIdOrFail(filter: { customerId: number; relations?: CustomerRelations[] }) {
 		const customer = await this.customerRepo.getCustomerById(filter);
