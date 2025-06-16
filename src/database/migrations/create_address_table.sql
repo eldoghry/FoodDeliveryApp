@@ -7,7 +7,7 @@ CREATE TABLE address (
     street TEXT NOT NULL,
     building VARCHAR(50) NULL,
     floor VARCHAR(50) NULL,
-    coordinates JSONB Not NULL,
+    coordinates JSONB NOT NULL,
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
