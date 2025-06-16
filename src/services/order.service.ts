@@ -1,4 +1,4 @@
-import { StatusCodes as HttpStatusCode } from 'http-status-codes';
+import { StatusCodes } from 'http-status-codes';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
@@ -86,7 +86,7 @@ export class OrderService {
 	async getOrderOrFailBy(filter: { orderId: number; relations?: OrderRelations[] }) {
 		const order = await this.orderRepo.getOrderById(filter);
 
-		if (!order) throw new ApplicationError(ErrMessages.order.OrderNotFound, HttpStatusCode.NOT_FOUND);
+		if (!order) throw new ApplicationError(ErrMessages.order.OrderNotFound, StatusCodes.NOT_FOUND);
 		return order;
 	}
 
@@ -169,10 +169,10 @@ export class OrderService {
 		const order = await this.getOrderOrFailBy({ orderId, relations: ['restaurant'] });
 
 		if (order.status !== OrderStatusEnum.initiated)
-			throw new ApplicationError(ErrMessages.order.InvalidOrderStatus, HttpStatusCode.BAD_REQUEST);
+			throw new ApplicationError(ErrMessages.order.InvalidOrderStatus, StatusCodes.BAD_REQUEST);
 
 		if (order.status !== OrderStatusEnum.initiated)
-			throw new ApplicationError(ErrMessages.order.InvalidOrderStatus, HttpStatusCode.BAD_REQUEST);
+			throw new ApplicationError(ErrMessages.order.InvalidOrderStatus, StatusCodes.BAD_REQUEST);
 
 		const customer = await this.customerService.getCustomerByIdOrFail({
 			customerId: order.customerId,
@@ -264,7 +264,7 @@ export class OrderService {
 		if (!allowedStatuses.includes(newStatus)) {
 			throw new ApplicationError(
 				`Invalid order status transition from ${currentStatus} to ${newStatus}`,
-				HttpStatusCode.BAD_REQUEST
+				StatusCodes.BAD_REQUEST
 			);
 		}
 	}
@@ -276,14 +276,14 @@ export class OrderService {
 		if (!allowedActors.includes(actor)) {
 			throw new ApplicationError(
 				`${actor} is not allowed to change order status to ${newStatus}`,
-				HttpStatusCode.BAD_REQUEST
+				StatusCodes.BAD_REQUEST
 			);
 		}
 	}
 
 	private validateCancelTime(date: Date): boolean {
 		if (!isWithinCancelTimeLimit(date, 5)) {
-			throw new ApplicationError(ErrMessages.order.CannotCancelOrderAfter5Minutes, HttpStatusCode.BAD_REQUEST);
+			throw new ApplicationError(ErrMessages.order.CannotCancelOrderAfter5Minutes, StatusCodes.BAD_REQUEST);
 		}
 		return true;
 	}
@@ -302,7 +302,7 @@ export class OrderService {
 		if (!(canSystemCancelPending || canRestaurantCancelConfirmed)) {
 			throw new ApplicationError(
 				`'${actor}' is not allowed to cancel an order in '${currentStatus}' status`,
-				HttpStatusCode.BAD_REQUEST
+				StatusCodes.BAD_REQUEST
 			);
 		}
 	}
@@ -327,7 +327,7 @@ export class OrderService {
 	private isValidActor(actor: OrderStatusChangeBy): asserts actor is OrderStatusChangeBy {
 		const validActors = Object.values(OrderStatusChangeBy);
 		if (!validActors.includes(actor)) {
-			throw new ApplicationError(`Invalid actor: ${actor}`, HttpStatusCode.BAD_REQUEST);
+			throw new ApplicationError(`Invalid actor: ${actor}`, StatusCodes.BAD_REQUEST);
 		}
 	}
 
@@ -339,7 +339,7 @@ export class OrderService {
 			changeBy: actor
 		});
 		if (!orderStatusLog)
-			throw new ApplicationError(ErrMessages.order.FailedToAddOrderStatusLog, HttpStatusCode.INTERNAL_SERVER_ERROR);
+			throw new ApplicationError(ErrMessages.order.FailedToAddOrderStatusLog, StatusCodes.INTERNAL_SERVER_ERROR);
 		return orderStatusLog;
 	}
 
@@ -350,7 +350,7 @@ export class OrderService {
 		await this.addOrderStatusLog(orderId, payload.status!, actor);
 		const updatedOrder = await this.orderRepo.updateOrderStatus(orderId, payload);
 		if (!updatedOrder)
-			throw new ApplicationError(ErrMessages.order.FailedToUpdateOrderStatus, HttpStatusCode.INTERNAL_SERVER_ERROR);
+			throw new ApplicationError(ErrMessages.order.FailedToUpdateOrderStatus, StatusCodes.INTERNAL_SERVER_ERROR);
 		return updatedOrder;
 	}
 
@@ -363,7 +363,7 @@ export class OrderService {
 			return OrderStatusChangeBy.restaurant;
 		}
 
-		throw new ApplicationError(`${actorType} is not allowed to cancel an order`, HttpStatusCode.BAD_REQUEST);
+		throw new ApplicationError(`${actorType} is not allowed to cancel an order`, StatusCodes.BAD_REQUEST);
 	}
 
 	@Transactional()
@@ -488,5 +488,26 @@ export class OrderService {
 			relations: ['restaurant', 'customer.user', 'deliveryAddress', 'orderItems.item', 'transactions.paymentMethod']
 		});
 		return this.formatOrderData(order, actorType);
+	}
+
+	async getAndValidateOrderForRating(orderId: number, customerId: number): Promise<Order> {
+		const order = await this.getOrderOrFailBy({ orderId, relations: ['rating'] });
+
+		// 1) Check if order is completed
+		if (order.status !== OrderStatusEnum.delivered) {
+			throw new ApplicationError(ErrMessages.rating.OrderNotCompleted, StatusCodes.BAD_REQUEST);
+		}
+
+		// 2) Check if order is already rated
+		if (order.rating) {
+			throw new ApplicationError(ErrMessages.rating.RatingAlreadyExists, StatusCodes.BAD_REQUEST);
+		}
+
+		// 3) Check if user is authorized to rate this order
+		if (order.customerId !== customerId) {
+			throw new ApplicationError(ErrMessages.order.UnauthorizedOrderAccess, StatusCodes.FORBIDDEN);
+		}
+
+		return order;
 	}
 }
