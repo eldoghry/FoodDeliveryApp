@@ -11,14 +11,26 @@ export class Address extends AbstractEntity {
 	@Column({ nullable: false })
 	customerId!: number;
 
-	@Column({ type: 'text', nullable: false })
-	addressLine1!: string;
-
-	@Column({ type: 'text', nullable: false })
-	addressLine2!: string;
+	@Column({ type: 'varchar', length: 50, nullable: true})
+	label?:string;
 
 	@Column({ type: 'varchar', length: 255, nullable: false  })
 	city!: string;
+
+	@Column({ type: 'varchar', length: 255, nullable: false  })
+	area!: string;
+
+	@Column({ type: 'text', nullable: false })
+	street!: string;
+
+	@Column({type: 'varchar', length: 50, nullable: true})
+	building?:string
+
+	@Column({type: 'varchar', length: 50, nullable: true})
+	floor?:string
+
+	@Column({ type: 'jsonb', nullable: false })
+	coordinates!:{ lat: number; lng: number }
 
 	@Column({ type: 'boolean', default: false, nullable: false })
 	isDefault!: boolean;
