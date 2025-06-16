@@ -223,6 +223,7 @@ const settingSeedData: SeedData<Setting> = {
 		{ key: SettingKey.MAX_ORDER_ITEMS, value: 50, description: 'Maximum number of items per order' },
 		{ key: SettingKey.ORDER_CANCELLATION_WINDOW_MIN, value: 10, description: 'Minutes allowed to cancel an order' },
 		{ key: SettingKey.ORDER_EXPIRED_AFTER_WINDOW_MIN, value: 120, description: 'Expire an order after minute' },
+		{ key: SettingKey.ORDER_RATING_WINDOW_MIN, value: 7 * 24 * 60, description: 'Minutes allowed to rate an order' },
 
 		{ key: SettingKey.DELIVERY_BASE_FEE, value: 30, description: 'Base fee for delivery orders' },
 		{ key: SettingKey.DELIVERY_PER_KM_FEE, value: 2.5, description: 'Delivery fee per kilometer' },
@@ -288,20 +289,26 @@ const settingSeedData: SeedData<Setting> = {
 
 const orderSeedData: SeedData<Order> = {
 	entity: Order,
-	data: Array.from({ length: 10 }, (_, index) => ({
-		orderId: index + 1,
-		customerId: 1,
-		restaurantId: 1,
-		deliveryAddressId: 1,
-		deliveryFees: 20,
-		serviceFees: 30,
-
-		customerInstructions: faker.lorem.sentence(),
-		status: index === 0 ? OrderStatusEnum.delivered : faker.helpers.enumValue(OrderStatusEnum),
-		totalAmount: 50 + index * 10,
-		createdAt: new Date(),
-		updatedAt: new Date()
-	}))
+	data: Array.from({ length: 10 }, (_, index) => {
+		const orderStatus = index === 0 ? OrderStatusEnum.delivered : faker.helpers.enumValue(OrderStatusEnum);
+		const placedAt = orderStatus === OrderStatusEnum.delivered ? faker.date.past() : undefined;
+		const deliveredAt = placedAt ? new Date(new Date(placedAt).getTime() + 360000) : undefined;
+		return {
+			orderId: index + 1,
+			customerId: 1,
+			restaurantId: 1,
+			deliveryAddressId: 1,
+			deliveryFees: 20,
+			serviceFees: 30,
+			deliveredAt,
+			placedAt,
+			customerInstructions: faker.lorem.sentence(),
+			status: orderStatus,
+			totalAmount: 50 + index * 10,
+			createdAt: new Date(),
+			updatedAt: new Date()
+		};
+	})
 };
 
 const seedData = [

@@ -36,6 +36,8 @@ import {
 import { CancellationInfo, OrderData, OrderHistoryResult, OrderItemResult } from '../dtos/order.dto';
 import { TransactionService } from './transaction.service';
 import { TransactionPaymentStatus } from '../enums/transaction.enum';
+import { SettingKey } from '../enums/setting.enum';
+import { SettingService } from './setting.service';
 
 export class OrderService {
 	private orderRepo = new OrderRepository();
@@ -493,21 +495,51 @@ export class OrderService {
 	async getAndValidateOrderForRating(orderId: number, customerId: number): Promise<Order> {
 		const order = await this.getOrderOrFailBy({ orderId, relations: ['rating'] });
 
-		// 1) Check if order is completed
+		await this.validateOrderForRating(order, customerId);
+
+		return order;
+	}
+
+	private async validateOrderForRating(order: Order, customerId: number): Promise<void> {
+		const validators = [
+			() => this.validateOrderCompletion(order),
+			() => this.validateExistingRating(order),
+			() => this.validateCustomerAuthorization(order, customerId),
+			async () => this.validateRatingTimeWindow(order)
+		];
+
+		for (const validator of validators) {
+			await validator();
+		}
+	}
+
+	private validateOrderCompletion(order: Order): void {
 		if (order.status !== OrderStatusEnum.delivered) {
 			throw new ApplicationError(ErrMessages.rating.OrderNotCompleted, StatusCodes.BAD_REQUEST);
 		}
+	}
 
-		// 2) Check if order is already rated
+	private validateExistingRating(order: Order): void {
 		if (order.rating) {
 			throw new ApplicationError(ErrMessages.rating.RatingAlreadyExists, StatusCodes.BAD_REQUEST);
 		}
+	}
 
-		// 3) Check if user is authorized to rate this order
+	private validateCustomerAuthorization(order: Order, customerId: number): void {
 		if (order.customerId !== customerId) {
 			throw new ApplicationError(ErrMessages.order.UnauthorizedOrderAccess, StatusCodes.FORBIDDEN);
 		}
+	}
 
-		return order;
+	private async validateRatingTimeWindow(order: Order): Promise<void> {
+		const RATING_WINDOW = Number(await SettingService.get(SettingKey.ORDER_RATING_WINDOW_MIN));
+		const deadline = new Date(order.placedAt);
+		deadline.setMinutes(deadline.getMinutes() + RATING_WINDOW);
+
+		const now = new Date();
+
+		if (now > deadline) {
+			throw new ApplicationError(ErrMessages.rating.RatingPeriodExpired, StatusCodes.BAD_REQUEST);
+		}
 	}
 }

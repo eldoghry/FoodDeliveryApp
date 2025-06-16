@@ -115,7 +115,8 @@ const ErrMessages = {
 		FailedToAddRating: 'Failed to add rating',
 		FailedToUpdateRating: 'Failed to update rating',
 		OrderNotCompleted: 'Order is not completed, cannot add rating',
-		RatingNotBelongToOrder: 'Rating does not belong to the specified order'
+		RatingNotBelongToOrder: 'Rating does not belong to the specified order',
+		RatingPeriodExpired: 'Rating period has expired'
 	}
 };
 
