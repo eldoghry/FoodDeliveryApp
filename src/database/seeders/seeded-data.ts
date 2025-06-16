@@ -17,7 +17,6 @@ import {
 	Role,
 	Setting,
 	User,
-	UserRole,
 	UserType
 } from '../../models';
 import { SeedData } from '.';
@@ -25,13 +24,22 @@ import { faker } from '@faker-js/faker';
 import { Category } from '../../models/menu/category.entity';
 import { SettingKey } from '../../enums/setting.enum';
 import { PaymentMethodStatus } from '../../enums/payment_method.enum';
-
 //
 const ITEMS_COUNT = 100;
 const RESTAURANTS_COUNT = 100;
 const MENUS_COUNT = 10;
 const USERS_COUNT = 100;
 const ADDRESSES_COUNT = 10;
+const ROLES = [
+	'customer',
+	'super_admin',
+	'restaurant_admin',
+	'auditor',
+	'support',
+	'driver',
+	'restaurant_user',
+	'admin'
+];
 
 // * Users
 const userTypesData: SeedData<UserType> = {
@@ -44,39 +52,59 @@ const userTypesData: SeedData<UserType> = {
 			name: 'admin'
 		},
 		{
-			name: 'editor'
+			name: 'restaurant_user'
 		}
 	]
 };
 
 const usersData: SeedData<User> = {
 	entity: User,
-	data: Array.from({ length: 100 }).map((u) => {
-		return {
-			name: faker.person.fullName(),
-			email: faker.internet.email(),
-			password: 'hashpassword',
-			phone: faker.phone.number(),
-			isActive: faker.datatype.boolean(),
-			userTypeId: 1
-		};
+	data: Array.from({ length: 100 }).map((u, idx) => {
+		const userRoles = {
+			0: 'customer',
+			1: 'admin',
+			2: 'restaurant_user'
+		} as any;
+
+		const userName = userRoles[idx] || faker.person.fullName();
+		const userEmail = userRoles[idx] ? `${userRoles[idx]}@food.com` : faker.internet.email();
+		const roles = idx < 3 ? [userRoles[idx]] : [faker.helpers.arrayElement(ROLES)];
+
+		const user = new User();
+		user.name = userName;
+		user.email = userEmail;
+		user.password = '$argon2id$v=19$m=65536,t=5,p=1$sSiFpvLPCTVNL2sZlwdgtw$oc+CZ45sNxoclIzghPOcb6p+Wrk8KFZhhodIaJ5MeVc'; // P@$$w0rd,
+		user.phone = faker.phone.number();
+		user.isActive = idx < 3 ? true : faker.datatype.boolean();
+		user.userTypeId = idx < 3 ? idx + 1 : 1;
+
+		console.log(
+			'User Role Index:',
+			ROLES.findIndex((role) => role === userRoles[idx])
+		);
+		if (userRoles[idx]) user.roles = [{ roleId: 1 + ROLES.findIndex((role) => role === userRoles[idx]) }] as Role[];
+		else user.roles = [{ roleId: 1 }] as Role[];
+
+		return user;
 	})
 };
 
 const roleSeedData: SeedData<Role> = {
 	entity: Role,
-	data: ['customer', 'admin', 'driver', 'staff', 'editor'].map((role, i) => ({
+	data: ROLES.map((role, i) => ({
 		name: role.toLowerCase()
 	}))
 };
 
-const userRoleSeedData: SeedData<UserRole> = {
-	entity: UserRole,
-	data: Array.from({ length: 99 }).map((_, index) => ({
-		userId: index + 1, // adjust range based on seeded users
-		roleId: faker.number.int({ min: 1, max: 5 }) // based on roles seeded above
-	}))
-};
+type UserRoles = { userId: number; roleId: number };
+
+// const userRoleSeedData: SeedData<UserRoles> = {
+// 	entity: UserRoles,
+// 	data: Array.from({ length: 99 }).map((_, index) => ({
+// 		userId: index + 1, // adjust range based on seeded users
+// 		roleId: faker.number.int({ min: 1, max: 7 }) // based on roles seeded above
+// 	}))
+// };
 
 const addressSeedData: SeedData<Address> = {
 	entity: Address,
@@ -318,7 +346,6 @@ const seedData = [
 	usersData,
 	customerSeedData,
 	addressSeedData,
-	userRoleSeedData,
 
 	// restaurant & menu
 	restaurantSeedData,

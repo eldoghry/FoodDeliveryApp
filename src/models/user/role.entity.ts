@@ -1,6 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
-import { UserRole } from './user-role.entity';
 
 @Entity()
 export class Role extends AbstractEntity {
@@ -15,7 +14,4 @@ export class Role extends AbstractEntity {
 
 	@UpdateDateColumn()
 	updatedAt!: Date;
-
-	@OneToMany(() => UserRole, (userRole) => userRole.role)
-	userRoles!: UserRole[];
 }
