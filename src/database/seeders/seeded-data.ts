@@ -7,6 +7,8 @@ import {
 	Menu,
 	MenuCategory,
 	MenuItem,
+	Order,
+	OrderStatusEnum,
 	PaymentMethod,
 	PaymentMethodConfig,
 	PaymentMethodEnum,
@@ -80,10 +82,17 @@ const addressSeedData: SeedData<Address> = {
 	entity: Address,
 	data: Array.from({ length: 10 }).map((_, index) => ({
 		customerId: index + 1, // assuming customerId 1-100 exists
-		addressLine1: faker.location.streetAddress(),
-		addressLine2: faker.location.secondaryAddress(),
+		street: faker.location.streetAddress(),
 		city: faker.location.city(),
-		isDefault: true
+		area: faker.location.continent(),
+		building: faker.location.buildingNumber(),
+		floor: faker.number.int({ min: 1, max: 10 }).toString(),
+		coordinates: {
+			lng: parseFloat(faker.location.longitude().toString()),
+			lat: parseFloat(faker.location.latitude().toString())
+		},
+		isDefault: true,
+		label: faker.lorem.word()
 	}))
 };
 
@@ -277,6 +286,24 @@ const settingSeedData: SeedData<Setting> = {
 	]
 };
 
+const orderSeedData: SeedData<Order> = {
+	entity: Order,
+	data: Array.from({ length: 10 }, (_, index) => ({
+		orderId: index + 1,
+		customerId: 1,
+		restaurantId: 1,
+		deliveryAddressId: 1,
+		deliveryFees: 20,
+		serviceFees: 30,
+
+		customerInstructions: faker.lorem.sentence(),
+		status: index === 0 ? OrderStatusEnum.delivered : faker.helpers.enumValue(OrderStatusEnum),
+		totalAmount: 50 + index * 10,
+		createdAt: new Date(),
+		updatedAt: new Date()
+	}))
+};
+
 const seedData = [
 	// users
 	userTypesData,
@@ -300,7 +327,10 @@ const seedData = [
 	menuCategorySeedData,
 
 	// settings
-	settingSeedData
+	settingSeedData,
+
+	// order
+	orderSeedData
 ];
 
 export default seedData;
