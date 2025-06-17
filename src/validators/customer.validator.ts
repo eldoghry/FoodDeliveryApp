@@ -1,7 +1,7 @@
 import Joi from 'joi';
 
 export const customerAddressBodySchema = Joi.object({
-	customerId: Joi.number().min(1).required(),
+	customerId: Joi.number().integer().min(1).required(),
 	label: Joi.string().max(50),
 	city: Joi.string().min(2).max(255).required(),
 	area: Joi.string().min(2).max(255).required(),
@@ -12,4 +12,8 @@ export const customerAddressBodySchema = Joi.object({
 		lat: Joi.number().min(-90).max(90).required(),
 		lng: Joi.number().min(-180).max(180).required()
 	}).required()
+}).required();
+
+export const customerAddressParamsSchema = Joi.object({
+	addressId: Joi.number().integer().min(1).required()
 }).required();

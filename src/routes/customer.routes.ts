@@ -1,14 +1,12 @@
-
 import { Router } from 'express';
 import { isAuthenticated } from '../middlewares/auth.middleware';
 import { validateRequest } from '../middlewares/validate-request.middleware';
 import { CustomerController } from '../controllers';
 import { verifyActor } from '../middlewares/verifyActor.middleware';
-import { customerAddressBodySchema } from '../validators/customer.validator';
+import { customerAddressBodySchema, customerAddressParamsSchema } from '../validators/customer.validator';
 
 const CustomerRouter = Router();
 const controller = new CustomerController();
-
 
 /**
  * @swagger
@@ -29,7 +27,13 @@ const controller = new CustomerController();
  *       201:
  *         description: Address created successfully
  */
-CustomerRouter.post('/addresses', isAuthenticated, verifyActor({ allowedActorTypes: ['customer'] }), validateRequest({ body: customerAddressBodySchema }), controller.createCustomerAddress.bind(controller));
+CustomerRouter.post(
+	'/addresses',
+	isAuthenticated,
+	verifyActor({ allowedActorTypes: ['customer'] }),
+	validateRequest({ body: customerAddressBodySchema }),
+	controller.createCustomerAddress.bind(controller)
+);
 
 /**
  * @swagger
@@ -48,6 +52,52 @@ CustomerRouter.post('/addresses', isAuthenticated, verifyActor({ allowedActorTyp
  *             schema:
  *               $ref: '#/components/schemas/AddressResponse'
  */
-CustomerRouter.get('/addresses',isAuthenticated,verifyActor({allowedActorTypes: ['customer']}),controller.getCustomerAddresses.bind(controller));
+CustomerRouter.get(
+	'/addresses',
+	isAuthenticated,
+	verifyActor({ allowedActorTypes: ['customer'] }),
+	controller.getCustomerAddresses.bind(controller)
+);
+
+/**
+ * @swagger
+ * /customer/addresses/{addressId}/default:
+ *   patch:
+ *     summary: Assign default address
+ *     description: Assign a default address for the customer
+ *     tags: [Customer]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: addressId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Default address assigned successfully
+ *       400:
+ *         description: |
+ *          - address ID is required
+ *          - address ID must be a number
+ *          - address ID must be an integer
+ * 		    - This address does not belong to the specified customer
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: |
+ *          - Address not found
+ *          - Customer not found
+ */
+CustomerRouter.patch(
+	'/addresses/:addressId/default',
+	isAuthenticated,
+	verifyActor({ allowedActorTypes: ['customer'] }),
+	validateRequest({ params: customerAddressParamsSchema }),
+	controller.assignDefaultAddress.bind(controller)
+);
 
 export default CustomerRouter;

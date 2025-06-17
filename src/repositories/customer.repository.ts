@@ -56,7 +56,8 @@ export class CustomerRepository {
 
 	async getAddressesByCustomerId(customerId: number): Promise<Address[]> {
 		return await this.addressRepo.find({
-			where: { customerId }
+			where: { customerId },
+			order: { createdAt: 'DESC' }
 		});
 	}
 
@@ -73,6 +74,7 @@ export class CustomerRepository {
 
 	async setDefaultAddress(addressId: number) {
 		await this.addressRepo.update(addressId, { isDefault: true });
+		return await this.getAddressById(addressId);
 	}
 
 	async updateAddress(addressId: number, data: Partial<Address>): Promise<Address | null> {

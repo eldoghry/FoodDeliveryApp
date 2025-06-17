@@ -24,17 +24,35 @@ export class CustomerService {
 	}
 
 	async getCustomerAddresses(customerId: number) {
-		return await this.customerRepo.getAddressesByCustomerId(customerId);
+		await this.getCustomerByIdOrFail({customerId})
+		const addresses = await this.customerRepo.getAddressesByCustomerId(customerId);
+		return addresses;
 	}
 
-	// @Transactional()
-	// async assignDefaultAddress(addressId: number) {
-	// 	await this.customerRepo.setDefaultAddress(addressId);
-	// }
+	private async validateAddress(customerId: number, addressId: number) {
+		const address = await this.customerRepo.getAddressById(addressId);
+		if (!address) {
+			throw new ApplicationError(ErrMessages.customer.AddressNotFound, HttpStatusCode.NOT_FOUND);
+		}
+
+		if (address.customerId !== customerId) {
+			throw new ApplicationError(ErrMessages.customer.AddressDoesntBelongToCustomer, HttpStatusCode.BAD_REQUEST);
+		}
+		return address;
+	}
+
+	@Transactional()
+	async assignDefaultAddress(customerId: number, addressId: number) {
+		await this.getCustomerByIdOrFail({customerId})
+		await this.validateAddress(customerId, addressId);
+		await this.customerRepo.unsetCustomerDefaultAddress(customerId);
+		const address = await this.customerRepo.setDefaultAddress(addressId);
+		return address;
+	}
 
 	private async checkAddressLimitReached(customerId: number) {
-		const address = await this.getCustomerAddresses(customerId);
-		if (address.length === 10) {
+		const addresses = await this.getCustomerAddresses(customerId);
+		if (addresses.length === 10) {
 			throw new ApplicationError(ErrMessages.customer.ReachedAddressLimit, HttpStatusCode.BAD_REQUEST);
 		}
 	}
@@ -42,6 +60,7 @@ export class CustomerService {
 	@Transactional()
 	async createCustomerAddress(payload: any) {
 		const customerId = payload.customerId;
+		await this.getCustomerByIdOrFail({customerId})
 		await this.customerRepo.unsetCustomerDefaultAddress(customerId);
 		await this.checkAddressLimitReached(customerId);
 		await this.customerRepo.addAddress({ ...payload, isDefault: true });
