@@ -26,6 +26,7 @@
 		"node": ">=20.0.0"
 	},
 	"dependencies": {
+		"argon2": "^0.43.0",
 		"axios": "^1.9.0",
 		"cors": "^2.8.5",
 		"cross-env": "^7.0.3",

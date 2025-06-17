@@ -14,6 +14,6 @@ export const authLoginBodySchema = Joi.object({
 			'string.pattern.base': 'Password must include uppercase, lowercase, number, and special character.',
 			'string.min': 'Password must be at least 8 characters.',
 			'string.max': 'Password must not exceed 30 characters.'
-		}),
-	role: Joi.string().valid('customer', 'restaurant_user')
+		})
+	// role: Joi.string().valid('customer', 'restaurant_user')
 }).required();

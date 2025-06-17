@@ -17,3 +17,12 @@ export const customerAddressBodySchema = Joi.object({
 export const customerAddressParamsSchema = Joi.object({
 	addressId: Joi.number().integer().min(1).required()
 }).required();
+
+export const customerRateOrderQuerySchema = Joi.object({
+	orderId: Joi.number().integer().required()
+}).required();
+
+export const customerRateOrderBodySchema = Joi.object({
+	rating: Joi.number().integer().min(1).max(5).required(),
+	comment: Joi.string().max(500).optional()
+}).required();

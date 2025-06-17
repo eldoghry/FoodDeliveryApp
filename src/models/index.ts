@@ -1,7 +1,6 @@
 // User related entities
 export * from './user/user.entity';
 export * from './user/user-type.entity';
-export * from './user/user-role.entity';
 export * from './user/role.entity';
 
 // Restaurant related entities

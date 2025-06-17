@@ -70,7 +70,9 @@ const ErrMessages = {
 		OrderNotFound: 'Order Not Found',
 		CannotCancelOrderAfter5Minutes: 'Cannot cancel order after 5 minutes of placing it',
 		FailedToUpdateOrderStatus: 'Failed to update order status',
-		FailedToAddOrderStatusLog: 'Failed to add order status log'
+		FailedToAddOrderStatusLog: 'Failed to add order status log',
+		OrderNotCompleted: 'Order is not completed',
+		UnauthorizedOrderAccess: 'You are not authorized to access this order'
 	},
 	customer: {
 		CustomerNotFound: 'Customer not found',
@@ -107,6 +109,16 @@ const ErrMessages = {
 		TransactionNotFound: 'Transaction Not Found',
 		TransactionCreationFailed: 'Transaction Creation Failed',
 		TransactionIdOrReferenceRequired: 'Transaction Id or Reference is Required'
+	},
+
+	rating: {
+		RatingNotFound: 'Rating Not Found',
+		RatingAlreadyExists: 'Rating Already Exists',
+		FailedToAddRating: 'Failed to add rating',
+		FailedToUpdateRating: 'Failed to update rating',
+		OrderNotCompleted: 'Order is not completed, cannot add rating',
+		RatingNotBelongToOrder: 'Rating does not belong to the specified order',
+		RatingPeriodExpired: 'Rating period has expired'
 	}
 };
 
