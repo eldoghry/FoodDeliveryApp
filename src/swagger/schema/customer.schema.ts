@@ -36,6 +36,15 @@ const swaggerSchema = {
             isDefault: { type: 'boolean', description: 'Whether the address is the default address.', example: true },
         }
     },
+    AddressResponse: {
+        type: 'object',
+        properties: {
+            data: {
+                type: 'array',
+                items: { $ref: '#/components/schemas/Address' }
+            }
+        }
+    },
 };
 
 export default swaggerSchema;
