@@ -105,6 +105,58 @@ CustomerRouter.patch(
 	controller.assignDefaultAddress.bind(controller)
 );
 
+/**
+ * @swagger
+ *  /customer/{orderId}/rate:
+ *    post:
+ *      summary: Rate an order
+ *      description: Submit a rating and optional comment for a completed order.
+ *      tags:
+ *        - Customer
+ *      parameters:
+ *        - in: path
+ *          name: orderId
+ *          required: true
+ *          schema:
+ *            type: string
+ *          description: The ID of the order to rate.
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                rating:
+ *                  type: integer
+ *                  minimum: 1
+ *                  maximum: 5
+ *                  example: 4
+ *                  description: Rating value (1-5)
+ *                comment:
+ *                  type: string
+ *                  example: "Great food and fast delivery!"
+ *                  description: Optional comment about the order
+ *              required:
+ *                - rating
+ *      responses:
+ *        '200':
+ *          description: Rating submitted successfully
+ *          content:
+ *            application/json:
+ *              schema:
+ *                type: object
+ *                properties:
+ *                  message:
+ *                    type: string
+ *                    example: "Order rated successfully."
+ *        '400':
+ *          description: Invalid input or order cannot be rated
+ *        '404':
+ *          description: Order not found
+ *        '401':
+ *          description: Unauthorized
+ */
 CustomerRouter.post(
 	'/:orderId/rate',
 	isAuthenticated,
