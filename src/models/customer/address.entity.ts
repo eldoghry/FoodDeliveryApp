@@ -32,7 +32,7 @@ export class Address extends AbstractEntity {
 	@Column({ type: 'jsonb', nullable: false })
 	coordinates!:{ lat: number; lng: number }
 
-	@Column({ type: 'boolean', default: false, nullable: false })
+	@Column({ type: 'boolean', default: true, nullable: false })
 	isDefault!: boolean;
 
 	@CreateDateColumn()

@@ -50,16 +50,29 @@ export class CustomerRepository {
 
 	async getAddressById(addressId: number): Promise<Address | null> {
 		return await this.addressRepo.findOne({
-			where: { addressId },
-			relations: ['customer']
+			where: { addressId }
 		});
 	}
 
 	async getAddressesByCustomerId(customerId: number): Promise<Address[]> {
 		return await this.addressRepo.find({
-			where: { customerId },
-			relations: ['customer']
+			where: { customerId }
 		});
+	}
+
+	async getDefaultAddress(customerId: number) {
+		return await this.addressRepo.findOne({
+			where: { customerId, isDefault: true }
+		});
+	}
+
+	async unsetCustomerDefaultAddress(customerId: number) {
+		const whereCondition = { customerId, isDefault: true };
+		await this.addressRepo.update(whereCondition, { isDefault: false });
+	}
+
+	async setDefaultAddress(addressId: number) {
+		await this.addressRepo.update(addressId, { isDefault: true });
 	}
 
 	async updateAddress(addressId: number, data: Partial<Address>): Promise<Address | null> {

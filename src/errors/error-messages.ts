@@ -74,7 +74,8 @@ const ErrMessages = {
 	},
 	customer: {
 		CustomerNotFound: 'Customer not found',
-		AddressNotFound: 'Customer Address not found'
+		AddressNotFound: 'Customer Address not found',
+		ReachedAddressLimit:"You've reached your address limit. Please remove one to add a new address."
 	},
 
 	restaurant: {
