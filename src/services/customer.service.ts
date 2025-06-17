@@ -6,7 +6,6 @@ import { CustomerRepository } from '../repositories';
 import { Customer, CustomerRelations } from '../models';
 import { Transactional } from 'typeorm-transactional';
 
-
 export class CustomerService {
 	private customerRepo = new CustomerRepository();
 
@@ -22,5 +21,29 @@ export class CustomerService {
 		if (!hasAddress) {
 			throw new ApplicationError(ErrMessages.customer.AddressNotFound, HttpStatusCode.NOT_FOUND);
 		}
+	}
+
+	async getCustomerAddresses(customerId: number) {
+		return await this.customerRepo.getAddressesByCustomerId(customerId);
+	}
+
+	// @Transactional()
+	// async assignDefaultAddress(addressId: number) {
+	// 	await this.customerRepo.setDefaultAddress(addressId);
+	// }
+
+	private async checkAddressLimitReached(customerId: number) {
+		const address = await this.getCustomerAddresses(customerId);
+		if (address.length === 10) {
+			throw new ApplicationError(ErrMessages.customer.ReachedAddressLimit, HttpStatusCode.BAD_REQUEST);
+		}
+	}
+
+	@Transactional()
+	async createCustomerAddress(payload: any) {
+		const customerId = payload.customerId;
+		await this.customerRepo.unsetCustomerDefaultAddress(customerId);
+		await this.checkAddressLimitReached(customerId);
+		await this.customerRepo.addAddress({ ...payload, isDefault: true });
 	}
 }

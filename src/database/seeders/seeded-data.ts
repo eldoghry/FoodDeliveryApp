@@ -80,10 +80,16 @@ const addressSeedData: SeedData<Address> = {
 	entity: Address,
 	data: Array.from({ length: 10 }).map((_, index) => ({
 		customerId: index + 1, // assuming customerId 1-100 exists
-		addressLine1: faker.location.streetAddress(),
-		addressLine2: faker.location.secondaryAddress(),
+		street: faker.location.streetAddress(),
 		city: faker.location.city(),
-		isDefault: true
+		area: faker.location.city(),
+		building: faker.location.buildingNumber().toString(),
+		floor: faker.number.int({ min: 1, max: 10 }).toString(),
+		coordinates: {
+			lat: faker.location.latitude(),
+			lng: faker.location.longitude()
+		},
+		isDefault: false
 	}))
 };
 

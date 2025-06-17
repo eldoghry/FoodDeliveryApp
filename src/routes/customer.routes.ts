@@ -10,6 +10,25 @@ const CustomerRouter = Router();
 const controller = new CustomerController();
 
 
-CustomerRouter.post('/addresses',isAuthenticated,verifyActor({ allowedActorTypes: ['customer'] }),validateRequest({ body: customerAddressBodySchema }),controller.createCustomerAddress.bind(controller));
+/**
+ * @swagger
+ * /customer/addresses:
+ *   post:
+ *     summary: Create a new address
+ *     description: Create a new address for the customer
+ *     tags: [Customer]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AddressBodyRequest'
+ *     responses:
+ *       201:
+ *         description: Address created successfully
+ */
+CustomerRouter.post('/addresses', isAuthenticated, verifyActor({ allowedActorTypes: ['customer'] }), validateRequest({ body: customerAddressBodySchema }), controller.createCustomerAddress.bind(controller));
 
 export default CustomerRouter;
