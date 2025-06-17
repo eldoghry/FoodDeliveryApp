@@ -87,7 +87,7 @@ CustomerRouter.get(
  *          - address ID is required
  *          - address ID must be a number
  *          - address ID must be an integer
- * 		    - This address does not belong to the specified customer
+ *          - This address does not belong to the specified customer
  *       401:
  *         description: Unauthorized
  *       403:
