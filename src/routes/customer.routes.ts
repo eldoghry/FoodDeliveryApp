@@ -31,4 +31,23 @@ const controller = new CustomerController();
  */
 CustomerRouter.post('/addresses', isAuthenticated, verifyActor({ allowedActorTypes: ['customer'] }), validateRequest({ body: customerAddressBodySchema }), controller.createCustomerAddress.bind(controller));
 
+/**
+ * @swagger
+ * /customer/addresses:
+ *   get:
+ *     summary: Get all addresses
+ *     description: Get all addresses for the customer
+ *     tags: [Customer]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Addresses retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AddressResponse'
+ */
+CustomerRouter.get('/addresses',isAuthenticated,verifyActor({allowedActorTypes: ['customer']}),controller.getCustomerAddresses.bind(controller));
+
 export default CustomerRouter;

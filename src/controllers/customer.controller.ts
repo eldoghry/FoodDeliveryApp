@@ -15,9 +15,13 @@ export class CustomerController {
 		sendResponse(res, StatusCodes.CREATED, 'Address created successfully', addressResult);
 	}
 
+	async getCustomerAddresses(req: Request, res: Response) {
+		const { actorId } = req?.user as AuthorizedUser;
+		const addresses = await this.customerService.getCustomerAddresses(actorId);
+		sendResponse(res, StatusCodes.OK, 'Addresses retrieved successfully', addresses);
+	}
+
 	async updateCustomerAddress(req: Request, res: Response) {}
 
 	async deleteCustomerAddress(req: Request, res: Response) {}
-
-	async getCustomerAddress(req: Request, res: Response) {}
 }
