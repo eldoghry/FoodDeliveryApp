@@ -1,5 +1,6 @@
 import { AppDataSource } from '../config/data-source';
-import { User } from '../models/user/user.entity';
+import { GetOneUserByDto } from '../dtos/user.dto';
+import { User, UserRelations } from '../models/user/user.entity';
 import { Repository } from 'typeorm';
 
 export class UserRepository {
@@ -57,5 +58,25 @@ export class UserRepository {
 	async updateUserProfile(userId: number, data: Partial<User>): Promise<User | null> {
 		await this.userRepo.update(userId, data);
 		return await this.getUserById(userId);
+	}
+
+	async getOneBy(filter: GetOneUserByDto): Promise<User | null> {
+		const query = this.userRepo.createQueryBuilder('user');
+
+		const { withPassword, isActive, relations } = filter;
+
+		query.where('user.isActive = :isActive', { isActive: isActive ?? true });
+
+		if (relations) {
+			relations.forEach((relation) => {
+				query.leftJoinAndSelect(`user.${relation}`, relation);
+			});
+		}
+
+		if (withPassword) query.addSelect('user.password');
+		if (filter.userId) query.andWhere('user.userId = :userId', { userId: filter.userId });
+		if (filter.email) query.andWhere('user.email = :email', { email: filter.email });
+
+		return await query.getOne();
 	}
 }

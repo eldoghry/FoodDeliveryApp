@@ -1,10 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
-import { sendPaginatedResponse, sendResponse } from '../utils/sendResponse';
+import { sendResponse } from '../utils/sendResponse';
 import { Request, Response } from 'express';
-import ApplicationError from '../errors/application.error';
 import { AuthorizedUser } from '../middlewares/auth.middleware';
 import { CustomerService } from '../services/customer.service';
-import { log } from 'console';
 
 export class CustomerController {
 	private customerService = new CustomerService();

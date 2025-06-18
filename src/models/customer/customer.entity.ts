@@ -13,6 +13,7 @@ import { AbstractEntity } from '../base.entity';
 import { User } from '../user/user.entity';
 import { Address } from './address.entity';
 import { Order } from '../order/order.entity';
+import { Rating } from '../rating/rating.entity';
 
 export enum Gender {
 	male = 'male',
@@ -51,4 +52,7 @@ export class Customer extends AbstractEntity {
 
 	@OneToMany(() => Order, (order) => order.customer)
 	orders!: Order[];
+
+	@OneToMany(() => Rating, (rating) => rating.customer)
+	ratings!: Rating[];
 }

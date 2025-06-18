@@ -5,9 +5,21 @@ import ErrMessages from '../errors/error-messages';
 import { CustomerRepository } from '../repositories';
 import { Address, Customer, CustomerRelations } from '../models';
 import { Transactional } from 'typeorm-transactional';
+import { RatingService } from './rating.service';
+import { CreateRatingDto } from '../dtos/rating.dto';
+import { OrderService } from './order.service';
 
 export class CustomerService {
 	private customerRepo = new CustomerRepository();
+	private ratingService = new RatingService();
+	private _orderService: OrderService | undefined = undefined;
+
+	get orderService() {
+		if (!this._orderService) {
+			this._orderService = new OrderService();
+		}
+		return this._orderService;
+	}
 
 	async getCustomerByIdOrFail(filter: { customerId: number; relations?: CustomerRelations[] }) {
 		const customer = await this.customerRepo.getCustomerById(filter);
@@ -24,6 +36,7 @@ export class CustomerService {
 	}
 
 	async getCustomerAddresses(customerId: number) {
+		await this.getCustomerByIdOrFail({ customerId });
 		await this.getCustomerByIdOrFail({ customerId });
 		const addresses = await this.customerRepo.getAddressesByCustomerId(customerId);
 		return addresses;
@@ -43,6 +56,7 @@ export class CustomerService {
 
 	@Transactional()
 	async assignDefaultAddress(customerId: number, addressId: number) {
+		await this.getCustomerByIdOrFail({ customerId });
 		await this.getCustomerByIdOrFail({ customerId });
 		await this.validateAddress(customerId, addressId);
 		await this.customerRepo.unsetCustomerDefaultAddress(customerId);

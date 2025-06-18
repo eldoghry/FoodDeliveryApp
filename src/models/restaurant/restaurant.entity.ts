@@ -13,6 +13,7 @@ import { CartItem } from '../cart/cart-item.entity';
 import { AbstractEntity } from '../base.entity';
 import { Menu } from '../menu/menu.entity';
 import { Order } from '../order/order.entity';
+import { Rating } from '../rating/rating.entity';
 
 export enum RestaurantStatus {
 	open = 'open',
@@ -21,7 +22,7 @@ export enum RestaurantStatus {
 	closed = 'closed'
 }
 
-export type RestaurantRelations = 'user' | 'menus' | 'cartItems' | 'orders';
+export type RestaurantRelations = 'user' | 'menus' | 'cartItems' | 'orders' | 'ratings';
 @Entity()
 export class Restaurant extends AbstractEntity {
 	@PrimaryGeneratedColumn()
@@ -75,4 +76,7 @@ export class Restaurant extends AbstractEntity {
 
 	@OneToMany(() => Order, (orderOrder) => orderOrder.restaurant)
 	orders!: Order[];
+
+	@OneToMany(() => Rating, (rating) => rating.restaurant)
+	ratings!: Rating[];
 }
