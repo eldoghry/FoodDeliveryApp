@@ -24,6 +24,7 @@ import { faker } from '@faker-js/faker';
 import { Category } from '../../models/menu/category.entity';
 import { SettingKey } from '../../enums/setting.enum';
 import { PaymentMethodStatus } from '../../enums/payment_method.enum';
+import { Rating } from '../../models/rating/rating.entity';
 //
 const ITEMS_COUNT = 100;
 const RESTAURANTS_COUNT = 100;
@@ -78,10 +79,6 @@ const usersData: SeedData<User> = {
 		user.isActive = idx < 3 ? true : faker.datatype.boolean();
 		user.userTypeId = idx < 3 ? idx + 1 : 1;
 
-		console.log(
-			'User Role Index:',
-			ROLES.findIndex((role) => role === userRoles[idx])
-		);
 		if (userRoles[idx]) user.roles = [{ roleId: 1 + ROLES.findIndex((role) => role === userRoles[idx]) }] as Role[];
 		else user.roles = [{ roleId: 1 }] as Role[];
 
@@ -317,7 +314,7 @@ const settingSeedData: SeedData<Setting> = {
 
 const orderSeedData: SeedData<Order> = {
 	entity: Order,
-	data: Array.from({ length: 10 }, (_, index) => {
+	data: Array.from({ length: 50 }, (_, index) => {
 		const orderStatus = index === 0 ? OrderStatusEnum.delivered : faker.helpers.enumValue(OrderStatusEnum);
 		const placedAt = orderStatus === OrderStatusEnum.delivered ? faker.date.past() : undefined;
 		const deliveredAt = placedAt ? new Date(new Date(placedAt).getTime() + 360000) : undefined;
@@ -337,6 +334,21 @@ const orderSeedData: SeedData<Order> = {
 			updatedAt: new Date()
 		};
 	})
+};
+
+const confirmedOrders = orderSeedData.data.filter((order) => order.status === OrderStatusEnum.delivered);
+
+const ratingSeededData = {
+	entity: Rating,
+	data: Array.from({ length: confirmedOrders.length }, (_, index) => ({
+		customerId: 1,
+		restaurantId: 1,
+		orderId: confirmedOrders[index].orderId,
+		rating: faker.number.int({ min: 1, max: 5 }),
+		comment: faker.lorem.sentence(),
+		createdAt: new Date(),
+		updatedAt: new Date()
+	}))
 };
 
 const seedData = [
@@ -364,7 +376,8 @@ const seedData = [
 	settingSeedData,
 
 	// order
-	orderSeedData
+	orderSeedData,
+	ratingSeededData
 ];
 
 export default seedData;

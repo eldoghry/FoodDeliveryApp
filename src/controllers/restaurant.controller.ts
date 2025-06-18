@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { AuthorizedUser } from '../middlewares/auth.middleware';
 import { RestaurantService } from '../services/restaurant.service';
 import ApplicationError from '../errors/application.error';
+import { ListRestaurantsDto } from '../dtos/restaurant.dto';
 
 export class RestaurantController {
 	private restaurantService = new RestaurantService();
@@ -26,7 +27,12 @@ export class RestaurantController {
 
 	async listRestaurant(req: Request, res: Response) {
 		// TODO: Implement listRestaurant logic
-		throw new ApplicationError('Not implemented', StatusCodes.NOT_IMPLEMENTED);
+		// throw new ApplicationError('Not implemented', StatusCodes.NOT_IMPLEMENTED);
+
+		const query = req.validated?.query as ListRestaurantsDto;
+
+		const data = await this.restaurantService.getAllRestaurants(query);
+		sendResponse(res, StatusCodes.OK, 'List Restaurants Successfully', data);
 	}
 
 	async searchRestaurant(req: Request, res: Response) {

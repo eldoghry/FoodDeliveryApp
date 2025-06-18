@@ -5,6 +5,7 @@ import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { RestaurantRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
+import { ListRestaurantsDto } from '../dtos/restaurant.dto';
 
 export class RestaurantService {
 	private restaurantRepo = new RestaurantRepository();
@@ -16,5 +17,9 @@ export class RestaurantService {
 		if (!restaurant) throw new ApplicationError(ErrMessages.restaurant.RestaurantNotFound, StatusCodes.NOT_FOUND);
 
 		return restaurant;
+	}
+
+	async getAllRestaurants(filter: ListRestaurantsDto) {
+		return this.restaurantRepo.getAllRestaurants(filter);
 	}
 }
