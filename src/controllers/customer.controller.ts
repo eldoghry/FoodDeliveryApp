@@ -35,5 +35,20 @@ export class CustomerController {
 		sendResponse(res, StatusCodes.OK, 'Address updated successfully', address);
 	}
 
-	async deleteCustomerAddress(req: Request, res: Response) {}
+	async deleteCustomerAddress(req: Request, res: Response) { }
+
+	async rateOrder(req: Request, res: Response) {
+		const { orderId } = req.params;
+		const { rating, comment } = req.body;
+		const user = req.user as AuthorizedUser;
+
+		const createdRating = await this.customerService.rateOrder({
+			orderId: Number(orderId),
+			customerId: user.actorId,
+			rating,
+			comment
+		});
+
+		sendResponse(res, StatusCodes.CREATED, 'Rating created successfully', createdRating);
+	}
 }

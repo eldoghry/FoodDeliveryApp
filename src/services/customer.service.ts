@@ -21,6 +21,11 @@ export class CustomerService {
 		return this._orderService;
 	}
 
+	async rateOrder(dto: CreateRatingDto) {
+		const order = await this.orderService.getAndValidateOrderForRating(dto.orderId, dto.customerId);
+		return this.ratingService.createRating({ ...dto, restaurantId: order.restaurantId });
+	}
+
 	async getCustomerByIdOrFail(filter: { customerId: number; relations?: CustomerRelations[] }) {
 		const customer = await this.customerRepo.getCustomerById(filter);
 		if (!customer) throw new ApplicationError(ErrMessages.customer.CustomerNotFound, HttpStatusCode.NOT_FOUND);
