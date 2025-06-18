@@ -37,7 +37,6 @@ export class CustomerService {
 
 	async getCustomerAddresses(customerId: number) {
 		await this.getCustomerByIdOrFail({ customerId });
-		await this.getCustomerByIdOrFail({ customerId });
 		const addresses = await this.customerRepo.getAddressesByCustomerId(customerId);
 		return addresses;
 	}
@@ -56,7 +55,6 @@ export class CustomerService {
 
 	@Transactional()
 	async assignDefaultAddress(customerId: number, addressId: number) {
-		await this.getCustomerByIdOrFail({ customerId });
 		await this.getCustomerByIdOrFail({ customerId });
 		await this.validateAddress(customerId, addressId);
 		await this.customerRepo.unsetCustomerDefaultAddress(customerId);
