@@ -77,9 +77,10 @@ const ErrMessages = {
 	customer: {
 		CustomerNotFound: 'Customer not found',
 		AddressNotFound: 'Customer Address not found',
-		ReachedAddressLimit:"You've reached your address limit. Please remove one to add a new address.",
+		ReachedAddressLimit:'You\'ve reached your address limit. Please remove one to add a new address.',
 		AddressDoesntBelongToCustomer:'This address does not belong to the specified customer.',
-		AtLeastOneDefaultAddress:'There must be at least one default address'
+		AtLeastOneDefaultAddress:'There must be at least one default address',
+		AddressIsUsed:'Action not allowed - This address is being used in a current order.'
 	},
 
 	restaurant: {

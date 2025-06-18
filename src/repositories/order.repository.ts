@@ -1,4 +1,4 @@
-import { LessThan, Repository } from 'typeorm';
+import { In, LessThan, Not, Repository } from 'typeorm';
 import { AppDataSource } from '../config/data-source';
 import { OrderStatusChangeBy } from '../models';
 import { OrderItem } from '../models/order/order-item.entity';
@@ -43,6 +43,7 @@ export class OrderRepository {
 		const orders = await this.orderRepo.find({
 			where: whereClause,
 			relations: ['restaurant', 'customer.user', 'deliveryAddress', 'orderItems.item', 'transaction.paymentMethod'],
+			withDeleted: true,
 			order: { createdAt: 'DESC' },
 			take: limit + 1 // One extra to check for next page
 		});
@@ -165,5 +166,15 @@ export class OrderRepository {
 		}
 
 		return query.getMany();
+	}
+
+	async getActiveOrderByAddressId(addressId: number): Promise<Order | null> {
+		return await this.orderRepo.findOne({
+			where: { deliveryAddressId: addressId, status: Not(In([
+				OrderStatusEnum.delivered,
+				OrderStatusEnum.canceled,
+				OrderStatusEnum.failed
+			])) }
+		});
 	}
 }

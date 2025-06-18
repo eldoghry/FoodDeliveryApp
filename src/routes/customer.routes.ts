@@ -56,6 +56,12 @@ CustomerRouter.post(
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AddressResponse'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Customer not found
  */
 CustomerRouter.get(
 	'/addresses',
@@ -139,7 +145,8 @@ CustomerRouter.patch(
  *          - address ID is required
  *          - address ID must be a number
  *          - address ID must be an integer
- * 		    - This address does not belong to the specified customer
+ *          - This address does not belong to the specified customer
+ *          - Unable to update address — it\'s being used in a current order.
  *       401:
  *         description: Unauthorized
  *       403:
@@ -155,6 +162,47 @@ CustomerRouter.put(
 	verifyActor({ allowedActorTypes: ['customer'] }),
 	validateRequest({ params: customerAddressParamsSchema, body: customerAddressBodySchema }),
 	controller.updateCustomerAddress.bind(controller)
+);
+
+/**
+ * @swagger
+ * /customer/addresses/{addressId}:
+ *   delete:
+ *     summary: Delete an address
+ *     description: Soft delete an address for the customer. (The address will be deleted only if it is not used in any active order.)
+ *     tags: [Customer]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: addressId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Address deleted successfully
+ *       400:
+ *         description: |
+ *          - address ID is required
+ *          - address ID must be a number
+ *          - address ID must be an integer
+ *          - This address does not belong to the specified customer
+ *          - Unable to delete address — it\'s being used in a current order.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: |
+ *          - Address not found
+ */
+CustomerRouter.delete(
+	'/addresses/:addressId',
+	isAuthenticated,
+	verifyActor({ allowedActorTypes: ['customer'] }),
+	validateRequest({ params: customerAddressParamsSchema }),
+	controller.deleteCustomerAddress.bind(controller)
 );
 
 /**

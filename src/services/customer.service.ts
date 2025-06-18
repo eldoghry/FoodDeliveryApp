@@ -1,8 +1,7 @@
 import { StatusCodes as HttpStatusCode } from 'http-status-codes';
-import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
-import { CustomerRepository } from '../repositories';
+import { CustomerRepository, OrderRepository } from '../repositories';
 import { Address, Customer, CustomerRelations } from '../models';
 import { Transactional } from 'typeorm-transactional';
 import { RatingService } from './rating.service';
@@ -11,6 +10,7 @@ import { OrderService } from './order.service';
 
 export class CustomerService {
 	private customerRepo = new CustomerRepository();
+	private orderRepo = new OrderRepository();
 	private ratingService = new RatingService();
 	private _orderService: OrderService | undefined = undefined;
 
@@ -41,7 +41,6 @@ export class CustomerService {
 	}
 
 	async getCustomerAddresses(customerId: number) {
-		await this.getCustomerByIdOrFail({ customerId });
 		const addresses = await this.customerRepo.getAddressesByCustomerId(customerId);
 		return addresses;
 	}
@@ -60,7 +59,6 @@ export class CustomerService {
 
 	@Transactional()
 	async assignDefaultAddress(customerId: number, addressId: number) {
-		await this.getCustomerByIdOrFail({ customerId });
 		await this.validateAddress(customerId, addressId);
 		await this.customerRepo.unsetCustomerDefaultAddress(customerId);
 		const address = await this.customerRepo.setDefaultAddress(addressId);
@@ -76,7 +74,6 @@ export class CustomerService {
 
 	@Transactional()
 	async createCustomerAddress(customerId: number, payload: Partial<Address>) {
-		await this.getCustomerByIdOrFail({ customerId });
 		await this.customerRepo.unsetCustomerDefaultAddress(customerId);
 		await this.checkAddressLimitReached(customerId);
 		await this.customerRepo.addAddress({ ...payload, customerId, isDefault: true });
@@ -89,10 +86,17 @@ export class CustomerService {
 		}
 	}
 
+	private async assertAddressNotInActiveOrder(addressId: number) {
+        const activeOrder = await this.orderRepo.getActiveOrderByAddressId(addressId);
+        if (activeOrder) {
+            throw new ApplicationError(ErrMessages.customer.AddressIsUsed, HttpStatusCode.BAD_REQUEST);
+        }
+    }
+
 	@Transactional()
 	async updateCustomerAddress(customerId: number, addressId: number, payload: Partial<Address>) {
-		await this.getCustomerByIdOrFail({ customerId });
 		await this.validateAddress(customerId, addressId);
+		await this.assertAddressNotInActiveOrder(addressId);
 		if (payload?.isDefault) {
 			await this.customerRepo.unsetCustomerDefaultAddress(customerId);
 		} else {
@@ -101,5 +105,12 @@ export class CustomerService {
 
 		const updatedAddress = await this.customerRepo.updateAddress(addressId, { ...payload, customerId });
 		return updatedAddress;
+	}
+
+	@Transactional()
+	async deleteCustomerAddress(customerId: number, addressId: number) {
+		await this.validateAddress(customerId, addressId);
+		await this.assertAddressNotInActiveOrder(addressId);
+		await this.customerRepo.deleteAddress(addressId);
 	}
 }
