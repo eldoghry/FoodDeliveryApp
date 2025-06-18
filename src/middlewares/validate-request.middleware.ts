@@ -23,7 +23,9 @@ interface RequestSchemas {
 
 const defaultOptions: ValidationOptions = {
 	abortEarly: false,
-	allowUnknown: false
+	allowUnknown: false,
+	stripUnknown: true, // ✅ remove extra fields
+	convert: true // ✅ apply defaults and type coercion
 };
 
 export const validateRequest = (schemas: RequestSchemas) => {
