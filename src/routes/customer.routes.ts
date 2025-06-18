@@ -125,6 +125,10 @@ CustomerRouter.patch(
  *     responses:
  *       200:
  *         description: Address updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Address'
  *       400:
  *         description: |
  *          - address ID is required
