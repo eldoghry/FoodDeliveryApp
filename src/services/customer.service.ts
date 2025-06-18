@@ -3,7 +3,7 @@ import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { CustomerRepository } from '../repositories';
-import { Customer, CustomerRelations } from '../models';
+import { Address, Customer, CustomerRelations } from '../models';
 import { Transactional } from 'typeorm-transactional';
 
 export class CustomerService {
@@ -24,7 +24,7 @@ export class CustomerService {
 	}
 
 	async getCustomerAddresses(customerId: number) {
-		await this.getCustomerByIdOrFail({customerId})
+		await this.getCustomerByIdOrFail({ customerId });
 		const addresses = await this.customerRepo.getAddressesByCustomerId(customerId);
 		return addresses;
 	}
@@ -43,7 +43,7 @@ export class CustomerService {
 
 	@Transactional()
 	async assignDefaultAddress(customerId: number, addressId: number) {
-		await this.getCustomerByIdOrFail({customerId})
+		await this.getCustomerByIdOrFail({ customerId });
 		await this.validateAddress(customerId, addressId);
 		await this.customerRepo.unsetCustomerDefaultAddress(customerId);
 		const address = await this.customerRepo.setDefaultAddress(addressId);
@@ -58,11 +58,31 @@ export class CustomerService {
 	}
 
 	@Transactional()
-	async createCustomerAddress(payload: any) {
-		const customerId = payload.customerId;
-		await this.getCustomerByIdOrFail({customerId})
+	async createCustomerAddress(customerId: number, payload: Partial<Address>) {
+		await this.getCustomerByIdOrFail({ customerId });
 		await this.customerRepo.unsetCustomerDefaultAddress(customerId);
 		await this.checkAddressLimitReached(customerId);
-		await this.customerRepo.addAddress({ ...payload, isDefault: true });
+		await this.customerRepo.addAddress({ ...payload, customerId, isDefault: true });
+	}
+
+	async ensureAtLeastOneDefaultAddress(customerId: number, addressId: number) {
+		const defaultAddress = await this.customerRepo.getDefaultAddress(customerId);
+		if (defaultAddress?.addressId === addressId) {
+			throw new ApplicationError(ErrMessages.customer.AtLeastOneDefaultAddress, HttpStatusCode.BAD_REQUEST);
+		}
+	}
+
+	@Transactional()
+	async updateCustomerAddress(customerId: number, addressId: number, payload: Partial<Address>) {
+		await this.getCustomerByIdOrFail({ customerId });
+		await this.validateAddress(customerId, addressId);
+		if (payload?.isDefault) {
+			await this.customerRepo.unsetCustomerDefaultAddress(customerId);
+		} else {
+			await this.ensureAtLeastOneDefaultAddress(customerId, addressId);
+		}
+
+		const updatedAddress = await this.customerRepo.updateAddress(addressId, { ...payload, customerId });
+		return updatedAddress;
 	}
 }

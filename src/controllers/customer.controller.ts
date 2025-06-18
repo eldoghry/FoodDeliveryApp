@@ -12,7 +12,7 @@ export class CustomerController {
 	async createCustomerAddress(req: Request, res: Response) {
 		const { actorId } = req?.user as AuthorizedUser;
 		const payload = req?.validated?.body;
-		const addressResult = await this.customerService.createCustomerAddress({ customerId: actorId, ...payload });
+		const addressResult = await this.customerService.createCustomerAddress(actorId, payload);
 		sendResponse(res, StatusCodes.CREATED, 'Address created successfully', addressResult);
 	}
 
@@ -29,7 +29,13 @@ export class CustomerController {
 		sendResponse(res, StatusCodes.OK, 'Address assigned successfully', address);
 	}
 
-	async updateCustomerAddress(req: Request, res: Response) {}
+	async updateCustomerAddress(req: Request, res: Response) {
+		const { actorId } = req?.user as AuthorizedUser;
+		const { addressId } = req?.validated?.params;
+		const payload = req?.validated?.body;
+		const address = await this.customerService.updateCustomerAddress(actorId, addressId, payload);
+		sendResponse(res, StatusCodes.OK, 'Address updated successfully', address);
+	}
 
 	async deleteCustomerAddress(req: Request, res: Response) {}
 }
