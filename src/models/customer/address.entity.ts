@@ -48,6 +48,6 @@ export class Address extends AbstractEntity {
 	@JoinColumn({ name: 'customer_id' })
 	customer!: Customer;
 
-	@OneToMany(() => Order, (order) => order.deliveryAddress)
-	orders!: Order[];
+	// @OneToMany(() => Order, (order) => order.deliveryAddress)
+	// orders!: Order[];
 }

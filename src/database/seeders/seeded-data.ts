@@ -315,7 +315,7 @@ const settingSeedData: SeedData<Setting> = {
 	]
 };
 
-const orderSeedData: SeedData<Order> = {
+const orderSeedData: SeedData<any> = {
 	entity: Order,
 	data: Array.from({ length: 10 }, (_, index) => {
 		const orderStatus = index === 0 ? OrderStatusEnum.delivered : faker.helpers.enumValue(OrderStatusEnum);
@@ -326,6 +326,20 @@ const orderSeedData: SeedData<Order> = {
 			customerId: 1,
 			restaurantId: 1,
 			deliveryAddressId: 1,
+			deliveryAddress: {
+				customerId: 1,
+				street: faker.location.streetAddress(),
+				city: faker.location.city(),
+				area: faker.location.continent(),
+				building: faker.location.buildingNumber(),
+				floor: faker.number.int({ min: 1, max: 10 }).toString(),
+				coordinates: {
+					lng: parseFloat(faker.location.longitude().toString()),
+					lat: parseFloat(faker.location.latitude().toString())
+				},
+				isDefault: false,
+				label: faker.lorem.word()
+			},
 			deliveryFees: 20,
 			serviceFees: 30,
 			deliveredAt,
