@@ -32,56 +32,45 @@ export class RestaurantRepository {
 		return this.getRestaurantBy({ userId, relations: ['user'] });
 	}
 
-	async getAllRestaurants(filter: ListRestaurantsDto): Promise<Restaurant[]> {
-		// return await this.restaurantRepo.find({
-		// 	relations: ['user'],
-		// 	where: { isActive: true }
-		// });
+	async getAllRestaurants(filter: ListRestaurantsDto): Promise<any[]> {
+		const averageRating = 'COALESCE(ROUND(AVG(ratings.rating),2),0)';
 
-		// return await this.restaurantRepo.query(
-		// 	`
-		// 	SELECT
-		// 		restaurant.*,
-		// 		COALESCE(ROUND(AVG(rating.rating),2),0) AS average_rating,
-		// 		COUNT(rating.rating_id) AS rating_count
-		// 	FROM restaurant
-		// 	LEFT JOIN rating ON restaurant.restaurant_id = rating.restaurant_id
-		// 	WHERE restaurant.is_active = true
-		// 	GROUP BY restaurant.restaurant_id
-		// 	ORDER BY rating_count DESC
-		// 	`
-		// );
-
-		const query = this.restaurantRepo.createQueryBuilder('restaurant');
-		query
-			.leftJoin('restaurant.ratings', 'ratings', 'restaurant.restaurantId = ratings.restaurantId')
-			.select('restaurant.*')
-			.addSelect('COALESCE(ROUND(AVG(ratings.rating),2),0)', 'averageRating')
-			.addSelect('count(ratings.rating_id)', 'ratingCount')
+		const query = this.restaurantRepo
+			.createQueryBuilder('restaurant')
+			.leftJoin('restaurant.ratings', 'ratings')
+			.leftJoinAndSelect('restaurant.cuisines', 'cuisines')
+			.addSelect('COALESCE(ROUND(AVG(ratings.rating), 2), 0)', 'averageRating')
+			.addSelect('COUNT(ratings.rating)', 'ratingCount')
 			.where('restaurant.isActive = :isActive', { isActive: true });
-
-		if (filter?.limit) query.take(filter.limit);
-		if (filter?.cursor) query.andWhere('restaurant.restaurantId > :cursor', { cursor: filter.cursor });
 
 		if (filter?.search) {
 			query.andWhere('restaurant.name ILIKE :search', { search: `%${filter.search}%` });
 		}
 
-		if (filter?.cuisine) {
-			query.andWhere('restaurant.cuisine ILIKE :cuisine', { cuisine: `%${filter.cuisine}%` });
-		}
-		if (filter?.rating) {
-			query.andWhere('restaurant.rating >= :rating', { rating: filter.rating });
+		if (filter?.cuisines) {
+			query.andWhere('cuisines.cuisineId IN (:...cuisinesIds)', { cuisinesIds: filter.cuisines });
 		}
 
-		// if (filter?.status) {
-		// 	query.andWhere('restaurant.status = :status', { status: filter.status });
-		// }
+		if (filter?.rating) query.having(`${averageRating} >= :rating`, { rating: filter.rating });
 
-		const order: 'ASC' | 'DESC' = filter?.order?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
-		query.orderBy('restaurant.restaurantId', order);
+		if (filter?.cursor) query.andWhere('restaurant.restaurantId < :cursor', { cursor: filter.cursor });
+		if (filter?.limit) query.limit(filter.limit);
+
+		// const order: 'ASC' | 'DESC' = filter?.order?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+		query.orderBy('restaurant.restaurantId', 'DESC');
 		query.groupBy('restaurant.restaurantId');
-		return query.getRawMany();
+		query.addGroupBy('cuisines.cuisineId');
+
+		const { entities, raw } = await query.getRawAndEntities();
+
+		return entities.map((restaurant, index) => {
+			return {
+				...restaurant,
+				cuisines: restaurant.cuisines.map((cuisine) => ({ id: cuisine.cuisineId, name: cuisine.name })),
+				averageRating: +raw[index].averageRating,
+				ratingCount: raw[index].ratingCount
+			};
+		});
 	}
 
 	async updateRestaurant(restaurantId: number, data: Partial<Restaurant>): Promise<Restaurant | null> {
