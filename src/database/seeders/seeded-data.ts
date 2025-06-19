@@ -25,6 +25,8 @@ import { Category } from '../../models/menu/category.entity';
 import { SettingKey } from '../../enums/setting.enum';
 import { PaymentMethodStatus } from '../../enums/payment_method.enum';
 import { Rating } from '../../models/rating/rating.entity';
+import { Cuisine } from '../../models/restaurant/cuisine.entity';
+import { DataSource } from 'typeorm';
 //
 const ITEMS_COUNT = 100;
 const RESTAURANTS_COUNT = 100;
@@ -41,6 +43,8 @@ const ROLES = [
 	'restaurant_user',
 	'admin'
 ];
+
+const CUISINES = ['Italian', 'Chinese', 'Indian', 'Mexican', 'Japanese'];
 
 // * Users
 const userTypesData: SeedData<UserType> = {
@@ -155,24 +159,39 @@ const itemSeedData: SeedData<Item> = {
 };
 
 // * restaurants
+const cuisineSeededData: SeedData<Cuisine> = {
+	entity: Cuisine,
+	data: CUISINES.map((name, index) => ({
+		cuisineId: index + 1,
+		name,
+		isActive: true,
+		createdAt: new Date(),
+		updatedAt: new Date()
+	}))
+};
 
 const restaurantSeedData: SeedData<Restaurant> = {
 	entity: Restaurant,
-	data: Array.from({ length: RESTAURANTS_COUNT }).map((_, index) => ({
-		userId: index + 1,
-		name: faker.company.name(),
-		logoUrl: faker.image.url(),
-		bannerUrl: faker.image.url(),
-		location: {
-			type: 'Point',
-			coordinates: [parseFloat(faker.location.longitude().toString()), parseFloat(faker.location.latitude().toString())]
-		},
-		status: index < 3 ? RestaurantStatus.open : faker.helpers.arrayElement(Object.values(RestaurantStatus)),
-		commercialRegistrationNumber: faker.string.alphanumeric(10),
-		vatNumber: faker.string.alphanumeric(12),
-		isActive: faker.datatype.boolean(),
-		email: `orders@restaurant${index + 1}.com`
-	}))
+	data: Array.from({ length: RESTAURANTS_COUNT }).map((_, index) => {
+		return {
+			userId: index + 1,
+			name: faker.company.name(),
+			logoUrl: faker.image.url(),
+			bannerUrl: faker.image.url(),
+			location: {
+				type: 'Point',
+				coordinates: [
+					parseFloat(faker.location.longitude().toString()),
+					parseFloat(faker.location.latitude().toString())
+				]
+			},
+			status: index < 3 ? RestaurantStatus.open : faker.helpers.arrayElement(Object.values(RestaurantStatus)),
+			commercialRegistrationNumber: faker.string.alphanumeric(10),
+			vatNumber: faker.string.alphanumeric(12),
+			isActive: faker.datatype.boolean(),
+			email: `orders@restaurant${index + 1}.com`
+		};
+	})
 };
 
 const menuItemSeedData: SeedData<MenuItem> = {
@@ -360,6 +379,7 @@ const seedData = [
 	addressSeedData,
 
 	// restaurant & menu
+	cuisineSeededData,
 	restaurantSeedData,
 	menuSeedData,
 	itemSeedData,
@@ -379,5 +399,49 @@ const seedData = [
 	orderSeedData,
 	ratingSeededData
 ];
+
+const seedRestaurantCuisineRelationsCB = async (dataSource: DataSource) => {
+	console.log('🌱 Seeding restaurant_cuisine relations...');
+	const restaurantRepository = dataSource.getRepository(Restaurant);
+	const restaurants = await restaurantRepository.find();
+
+	for (const restaurant of restaurants) {
+		await dataSource
+			.createQueryBuilder()
+			.insert()
+			.into('restaurant_cuisine')
+			.values([
+				{ restaurant_id: restaurant.restaurantId, cuisine_id: faker.helpers.arrayElement([1, 2, 3]) } // Adjust cuisine IDs
+			])
+			.execute();
+	}
+};
+
+const seedRestaurantRatingRelationsCB = async (dataSource: DataSource) => {
+	console.log('🌱 Seeding restaurant_rating relations...');
+	const orderRepository = dataSource.getRepository(Order);
+
+	const orders = await orderRepository.find({ where: { status: OrderStatusEnum.delivered } });
+
+	for (const order of orders) {
+		try {
+			await dataSource
+				.createQueryBuilder()
+				.insert()
+				.into('rating')
+				.values([
+					{
+						orderId: order.orderId,
+						restaurantId: order.restaurantId,
+						customerId: order.customerId,
+						rating: faker.number.int({ min: 1, max: 5 })
+					}
+				])
+				.execute();
+		} catch (error) {}
+	}
+};
+
+export const relationsCallbacks = [seedRestaurantRatingRelationsCB, seedRestaurantCuisineRelationsCB];
 
 export default seedData;
