@@ -105,6 +105,58 @@ CustomerRouter.patch(
 	controller.assignDefaultAddress.bind(controller)
 );
 
+
+/**
+ * @swagger
+ * /customer/addresses/{addressId}:
+ *   put:
+ *     summary: Update an address
+ *     description: Update an address for the customer
+ *     tags: [Customer]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: addressId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AddressBodyRequest'
+ *     responses:
+ *       200:
+ *         description: Address updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Address'
+ *       400:
+ *         description: |
+ *          - address ID is required
+ *          - address ID must be a number
+ *          - address ID must be an integer
+ * 		    - This address does not belong to the specified customer
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: |
+ *          - Address not found
+ *          - Customer not found
+ */
+CustomerRouter.put(
+	'/addresses/:addressId',
+	isAuthenticated,
+	verifyActor({ allowedActorTypes: ['customer'] }),
+	validateRequest({ params: customerAddressParamsSchema, body: customerAddressBodySchema }),
+	controller.updateCustomerAddress.bind(controller)
+);
+
 /**
  * @swagger
  *  /customer/{orderId}/rate:

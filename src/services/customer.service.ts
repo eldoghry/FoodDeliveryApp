@@ -3,7 +3,7 @@ import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { CustomerRepository } from '../repositories';
-import { Customer, CustomerRelations } from '../models';
+import { Address, Customer, CustomerRelations } from '../models';
 import { Transactional } from 'typeorm-transactional';
 import { RatingService } from './rating.service';
 import { CreateRatingDto } from '../dtos/rating.dto';
@@ -19,6 +19,11 @@ export class CustomerService {
 			this._orderService = new OrderService();
 		}
 		return this._orderService;
+	}
+
+	async rateOrder(dto: CreateRatingDto) {
+		const order = await this.orderService.getAndValidateOrderForRating(dto.orderId, dto.customerId);
+		return this.ratingService.createRating({ ...dto, restaurantId: order.restaurantId });
 	}
 
 	async getCustomerByIdOrFail(filter: { customerId: number; relations?: CustomerRelations[] }) {
@@ -70,16 +75,31 @@ export class CustomerService {
 	}
 
 	@Transactional()
-	async createCustomerAddress(payload: any) {
-		const customerId = payload.customerId;
+	async createCustomerAddress(customerId: number, payload: Partial<Address>) {
 		await this.getCustomerByIdOrFail({ customerId });
 		await this.customerRepo.unsetCustomerDefaultAddress(customerId);
 		await this.checkAddressLimitReached(customerId);
-		await this.customerRepo.addAddress({ ...payload, isDefault: true });
+		await this.customerRepo.addAddress({ ...payload, customerId, isDefault: true });
 	}
 
-	async rateOrder(dto: CreateRatingDto) {
-		const order = await this.orderService.getAndValidateOrderForRating(dto.orderId, dto.customerId);
-		return this.ratingService.createRating({ ...dto, restaurantId: order.restaurantId });
+	async ensureAtLeastOneDefaultAddress(customerId: number, addressId: number) {
+		const defaultAddress = await this.customerRepo.getDefaultAddress(customerId);
+		if (defaultAddress?.addressId === addressId) {
+			throw new ApplicationError(ErrMessages.customer.AtLeastOneDefaultAddress, HttpStatusCode.BAD_REQUEST);
+		}
+	}
+
+	@Transactional()
+	async updateCustomerAddress(customerId: number, addressId: number, payload: Partial<Address>) {
+		await this.getCustomerByIdOrFail({ customerId });
+		await this.validateAddress(customerId, addressId);
+		if (payload?.isDefault) {
+			await this.customerRepo.unsetCustomerDefaultAddress(customerId);
+		} else {
+			await this.ensureAtLeastOneDefaultAddress(customerId, addressId);
+		}
+
+		const updatedAddress = await this.customerRepo.updateAddress(addressId, { ...payload, customerId });
+		return updatedAddress;
 	}
 }
