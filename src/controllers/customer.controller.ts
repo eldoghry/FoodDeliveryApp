@@ -3,6 +3,7 @@ import { sendResponse } from '../utils/sendResponse';
 import { Request, Response } from 'express';
 import { AuthorizedUser } from '../middlewares/auth.middleware';
 import { CustomerService } from '../services/customer.service';
+import { DeactivatedBy } from '../models';
 
 export class CustomerController {
 	private customerService = new CustomerService();
@@ -55,5 +56,12 @@ export class CustomerController {
 		});
 
 		sendResponse(res, StatusCodes.CREATED, 'Rating created successfully', createdRating);
+	}
+
+	async deactivateCustomer(req: Request, res: Response) {
+		const { actorId } = req?.user as AuthorizedUser;
+		const payload = req?.validated?.body;
+		const customer = await this.customerService.deactivateCustomer(actorId, payload, DeactivatedBy.customer);
+		sendResponse(res, StatusCodes.OK, 'Customer deactivated successfully', customer);
 	}
 }

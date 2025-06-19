@@ -7,7 +7,8 @@ import {
 	OneToOne,
 	JoinColumn,
 	OneToMany,
-	Check
+	Check,
+	DeleteDateColumn
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { User } from '../user/user.entity';

@@ -6,6 +6,7 @@ import { verifyActor } from '../middlewares/verifyActor.middleware';
 import {
 	customerAddressBodySchema,
 	customerAddressParamsSchema,
+	customerDeactivateBodySchema,
 	customerRateOrderBodySchema,
 	customerRateOrderQuerySchema
 } from '../validators/customer.validator';
@@ -180,7 +181,7 @@ CustomerRouter.put(
  *         schema:
  *           type: integer
  *     responses:
- *       204:
+ *       200:
  *         description: Address deleted successfully
  *       400:
  *         description: |
@@ -211,8 +212,9 @@ CustomerRouter.delete(
  *    post:
  *      summary: Rate an order
  *      description: Submit a rating and optional comment for a completed order.
- *      tags:
- *        - Customer
+ *      tags: [Customer]
+ *      security:
+ *       - bearerAuth: []
  *      parameters:
  *        - in: path
  *          name: orderId
@@ -240,7 +242,7 @@ CustomerRouter.delete(
  *              required:
  *                - rating
  *      responses:
- *        '200':
+ *        200:
  *          description: Rating submitted successfully
  *          content:
  *            application/json:
@@ -250,11 +252,11 @@ CustomerRouter.delete(
  *                  message:
  *                    type: string
  *                    example: "Order rated successfully."
- *        '400':
+ *        400:
  *          description: Invalid input or order cannot be rated
- *        '404':
+ *        404:
  *          description: Order not found
- *        '401':
+ *        401:
  *          description: Unauthorized
  */
 CustomerRouter.post(
@@ -268,4 +270,38 @@ CustomerRouter.post(
 	controller.rateOrder.bind(controller)
 );
 
+/**
+ * @swagger
+ *  /customer/account/deactivate:
+ *    patch:
+ *      summary: Deactivate customer account
+ *      description: Deactivate the customer's account by customer.
+ *      tags: [Customer]
+ *      security:
+ *       - bearerAuth: []
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/DeactivateCustomerBodyRequest'
+ *      responses:
+ *        200:
+ *          description: Customer deactivated successfully
+ *        400:
+ *          description: Invalid input or customer cannot be deactivated
+ *        401:
+ *          description: Unauthorized
+ *        403:
+ *          description: Forbidden
+ *        404:
+ *          description: Customer not found
+ */
+CustomerRouter.patch(
+	'/account/deactivate',
+	isAuthenticated,
+	verifyActor({ allowedActorTypes: ['customer'] }),
+	validateRequest({ body: customerDeactivateBodySchema }),
+	controller.deactivateCustomer.bind(controller)
+);
 export default CustomerRouter;

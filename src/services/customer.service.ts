@@ -1,8 +1,8 @@
 import { StatusCodes as HttpStatusCode } from 'http-status-codes';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
-import { CustomerRepository, OrderRepository } from '../repositories';
-import { Address, Customer, CustomerRelations } from '../models';
+import { CustomerRepository, OrderRepository, UserRepository } from '../repositories';
+import { Address, Customer, CustomerRelations, DeactivatedBy, User } from '../models';
 import { Transactional } from 'typeorm-transactional';
 import { RatingService } from './rating.service';
 import { CreateRatingDto } from '../dtos/rating.dto';
@@ -11,6 +11,7 @@ import { OrderService } from './order.service';
 export class CustomerService {
 	private customerRepo = new CustomerRepository();
 	private orderRepo = new OrderRepository();
+	private userRepo = new UserRepository();
 	private ratingService = new RatingService();
 	private _orderService: OrderService | undefined = undefined;
 
@@ -87,11 +88,11 @@ export class CustomerService {
 	}
 
 	private async assertAddressNotInActiveOrder(addressId: number) {
-        const activeOrder = await this.orderRepo.getActiveOrderByAddressId(addressId);
-        if (activeOrder) {
-            throw new ApplicationError(ErrMessages.customer.AddressIsUsed, HttpStatusCode.BAD_REQUEST);
-        }
-    }
+		const activeOrder = await this.orderRepo.getActiveOrderByAddressId(addressId);
+		if (activeOrder) {
+			throw new ApplicationError(ErrMessages.customer.AddressIsUsed, HttpStatusCode.BAD_REQUEST);
+		}
+	}
 
 	@Transactional()
 	async updateCustomerAddress(customerId: number, addressId: number, payload: Partial<Address>) {
@@ -112,5 +113,18 @@ export class CustomerService {
 		await this.validateAddress(customerId, addressId);
 		await this.assertAddressNotInActiveOrder(addressId);
 		await this.customerRepo.deleteAddress(addressId);
+	}
+
+	private async assertCustomerHasNoActiveOrder(customerId: number) {
+		const activeOrder = await this.orderRepo.getActiveOrderByCustomerId(customerId);
+		if (activeOrder) {
+			throw new ApplicationError(ErrMessages.customer.CustomerIsUsed, HttpStatusCode.BAD_REQUEST);
+		}
+	}
+
+	@Transactional()
+	async deactivateCustomer(customerId: number, payload: Partial<User>, deactivatedBy: DeactivatedBy) {
+		await this.assertCustomerHasNoActiveOrder(customerId);
+		await this.userRepo.updateUser(customerId, { isActive: false, deactivationInfo: { ...payload, deactivatedAt: new Date(), deactivatedBy } });
 	}
 }

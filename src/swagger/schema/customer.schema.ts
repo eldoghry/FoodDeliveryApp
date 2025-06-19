@@ -46,6 +46,12 @@ const swaggerSchema = {
             }
         }
     },
+    DeactivateCustomerBodyRequest: {
+        type: 'object',
+        properties: {
+            reason: { type: 'string', description: 'The reason for deactivating the customer.', example: 'I don\'t want to use the service anymore.' }
+        }
+    }
 };
 
 export default swaggerSchema;
