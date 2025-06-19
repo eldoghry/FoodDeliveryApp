@@ -6,3 +6,4 @@ export * from './payment_method.repository';
 export * from './restaurant.repository';
 export * from './cart.repository';
 export * from './setting.repository';
+export * from './restaurant.repository';

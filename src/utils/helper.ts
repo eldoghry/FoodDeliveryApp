@@ -24,7 +24,7 @@ export function cursorPaginate<T>(items: T[], limit: number, cursorField: keyof 
 
 	return {
 		data,
-		nextCursor: nextCursor ? new Date(nextCursor as any).toISOString() : null,
+		nextCursor: nextCursor as any,
 		hasNextPage
 	};
 }

@@ -1,5 +1,5 @@
 import { DataSource, DeepPartial, ObjectLiteral, Repository } from 'typeorm';
-import seedData from './seeded-data';
+import seedData, { relationsCallbacks } from './seeded-data';
 import * as dotenv from 'dotenv';
 import { resolve, join } from 'path';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
@@ -130,11 +130,18 @@ export class SeedService {
 			await this.clear();
 			await this.resetSequences();
 			await this.seed(data);
+			await this.seedRelationsCallbacks(relationsCallbacks);
 		} catch (error) {
 			throw error;
 		} finally {
 			this.datasource.destroy();
 		}
+	}
+
+	async seedRelationsCallbacks(callbacks: Array<(ds: DataSource) => Promise<any>>) {
+		console.log('🚩 seeding relations by callbacks ...');
+		const promises = callbacks.map((callback) => callback(this.datasource));
+		await Promise.all(promises);
 	}
 }
 
