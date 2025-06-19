@@ -123,8 +123,9 @@ export class CustomerService {
 	}
 
 	@Transactional()
-	async deactivateCustomer(customerId: number, payload: Partial<User>, deactivatedBy: DeactivatedBy) {
+	async deactivateCustomer(userId: number, customerId: number, payload: Partial<User>, deactivatedBy: DeactivatedBy) {
+		const deactivationInfo = { ...payload, deactivatedAt: new Date(), deactivatedBy };
 		await this.assertCustomerHasNoActiveOrder(customerId);
-		await this.userRepo.updateUser(customerId, { isActive: false, deactivationInfo: { ...payload, deactivatedAt: new Date(), deactivatedBy } });
+		await this.userRepo.deactivateUser(userId, deactivationInfo);
 	}
 }

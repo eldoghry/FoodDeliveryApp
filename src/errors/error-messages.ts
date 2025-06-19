@@ -81,7 +81,7 @@ const ErrMessages = {
 		AddressDoesntBelongToCustomer:'This address does not belong to the specified customer.',
 		AtLeastOneDefaultAddress:'There must be at least one default address',
 		AddressIsUsed:'Action not allowed - This address is being used in a current order.',
-		CustomerIsUsed:'Deactivation not allowed - This customer has active orders.'
+		CustomerIsUsed:'Deactivation not allowed - This customer has active order'
 	},
 
 	restaurant: {

@@ -289,13 +289,11 @@ CustomerRouter.post(
  *        200:
  *          description: Customer deactivated successfully
  *        400:
- *          description: Invalid input or customer cannot be deactivated
+ *          description: Deactivation not allowed - This customer has active order
  *        401:
  *          description: Unauthorized
  *        403:
  *          description: Forbidden
- *        404:
- *          description: Customer not found
  */
 CustomerRouter.patch(
 	'/account/deactivate',
