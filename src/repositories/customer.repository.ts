@@ -83,18 +83,9 @@ export class CustomerRepository {
 	}
 
 	async deleteAddress(addressId: number): Promise<void> {
-		await this.addressRepo.delete(addressId);
+		await this.addressRepo.softDelete(addressId);
 	}
 
-	// Helper methods
-	// async getCustomerWithAddresses(customerId: number): Promise<Customer | null> {
-	// 	const customer = await this.getCustomerById(customerId);
-	// 	if (customer) {
-	// 		const addresses = await this.getAddressesByUserId(customer.userId);
-	// 		return { ...customer, addresses } as Customer & { addresses: Address[] };
-	// 	}
-	// 	return null;
-	// }
 
 	async searchCustomers(query: string): Promise<Customer[]> {
 		return await this.customerRepo

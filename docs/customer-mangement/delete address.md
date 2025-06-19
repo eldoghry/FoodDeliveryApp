@@ -10,7 +10,7 @@ Customer delete addresses
 
 ## Constraint
 
-- only address owner can update his address
+- only address owner can delete his address
 - don't have uncompleted order on the same address
 - soft delete
 

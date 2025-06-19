@@ -35,7 +35,12 @@ export class CustomerController {
 		sendResponse(res, StatusCodes.OK, 'Address updated successfully', address);
 	}
 
-	async deleteCustomerAddress(req: Request, res: Response) { }
+	async deleteCustomerAddress(req: Request, res: Response) { 
+		const { actorId } = req?.user as AuthorizedUser;
+		const { addressId } = req?.validated?.params;
+		const address = await this.customerService.deleteCustomerAddress(actorId, addressId);
+		sendResponse(res, StatusCodes.OK, 'Address deleted successfully', address);
+	}
 
 	async rateOrder(req: Request, res: Response) {
 		const { orderId } = req.params;
