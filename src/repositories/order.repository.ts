@@ -177,4 +177,14 @@ export class OrderRepository {
 			])) }
 		});
 	}
+
+	async getActiveOrderByCustomerId(customerId: number): Promise<Order | null> {
+		return await this.orderRepo.findOne({
+			where: { customerId, status: Not(In([
+				OrderStatusEnum.delivered,
+				OrderStatusEnum.canceled,
+				OrderStatusEnum.failed
+			])) }
+		});
+	}
 }

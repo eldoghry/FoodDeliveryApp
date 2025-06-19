@@ -1,6 +1,6 @@
 import { AppDataSource } from '../config/data-source';
 import { GetOneUserByDto } from '../dtos/user.dto';
-import { User, UserRelations } from '../models/user/user.entity';
+import { DeactivatedBy, User, UserRelations } from '../models/user/user.entity';
 import { Repository } from 'typeorm';
 
 export class UserRepository {
@@ -32,8 +32,8 @@ export class UserRepository {
 		return await this.getUserById(userId);
 	}
 
-	async deleteUser(userId: number): Promise<void> {
-		await this.userRepo.update(userId, { isActive: false });
+	async deactivateUser(userId: number, deactivationInfo: User['deactivationInfo']): Promise<void> {
+		await this.userRepo.update(userId, { isActive: false, deactivationInfo });
 	}
 
 	async searchUsers(query: string): Promise<User[]> {
@@ -63,9 +63,7 @@ export class UserRepository {
 	async getOneBy(filter: GetOneUserByDto): Promise<User | null> {
 		const query = this.userRepo.createQueryBuilder('user');
 
-		const { withPassword, isActive, relations } = filter;
-
-		query.where('user.isActive = :isActive', { isActive: isActive ?? true });
+		const { withPassword, relations } = filter;
 
 		if (relations) {
 			relations.forEach((relation) => {
