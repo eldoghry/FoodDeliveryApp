@@ -1,4 +1,3 @@
-import { Customer } from '../../models';
 import { CustomerService } from '../../services/customer.service';
 import { CheckoutHandler, CheckoutContext } from './checkout.handler';
 
@@ -8,9 +7,8 @@ export class ValidateCustomerAddressHandler extends CheckoutHandler {
 	}
 
 	async handleRequest(context: CheckoutContext) {
-		const { customer } = context;
-		const { addressId } = context.payload;
-		this.customerService.validateCustomerAddress(customer as Customer, addressId);
+		const { customerId, addressId } = context.payload;
+		context.address = await this.customerService.validateCustomerAddress(customerId, addressId);
 		return context;
 	}
 }

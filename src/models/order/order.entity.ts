@@ -17,8 +17,19 @@ import { Address } from '../customer/address.entity';
 import { OrderItem } from './order-item.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
 import { Transaction } from '../transaction/transaction.entity';
+import { Rating } from '../rating/rating.entity';
 
-export type OrderRelations = 'orderStatusLogs' | 'orderItems' | 'deliveryAddress' | 'restaurant' | 'customer' | 'transactions'| 'customer.user' | 'orderItems.item' | 'transactions.paymentMethod';
+export type OrderRelations =
+	| 'orderStatusLogs'
+	| 'orderItems'
+	| 'deliveryAddress'
+	| 'restaurant'
+	| 'customer'
+	| 'transactions'
+	| 'customer.user'
+	| 'orderItems.item'
+	| 'transaction.paymentMethod'
+	| 'rating';
 
 @Check(`"delivery_fees" >= 0.00`)
 @Check(`"service_fees" >= 0.00`)
@@ -45,8 +56,7 @@ export class Order extends AbstractEntity {
 	@Column({ nullable: false })
 	deliveryAddressId!: number;
 
-	@ManyToOne(() => Address, (address) => address.orders)
-	@JoinColumn({ name: 'delivery_address_id' })
+	@Column({ type: 'jsonb', nullable: false })
 	deliveryAddress!: Address;
 
 	@Column({ type: 'enum', enum: OrderStatusEnum, nullable: false, default: OrderStatusEnum.initiated })
@@ -87,4 +97,7 @@ export class Order extends AbstractEntity {
 
 	@OneToOne(() => Transaction, (transaction) => transaction.order)
 	transaction!: Transaction;
+
+	@OneToOne(() => Rating, (rating) => rating.order)
+	rating!: Rating;
 }

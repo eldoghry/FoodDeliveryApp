@@ -1,24 +1,27 @@
+import { UserService } from './user.service';
 import { config } from '../config/env';
 import { AuthorizedUser } from '../middlewares/auth.middleware';
 import { UserRepository } from '../repositories/user.repository';
 import { JwtService } from '../shared/jwt';
+import { AuthLoginDto } from '../dtos/auth.dto';
+import { StatusCodes } from 'http-status-codes';
+import ApplicationError from '../errors/application.error';
 
 export class AuthService {
 	private repo = new UserRepository();
 	private jwtService = new JwtService();
+	private userService = new UserService();
 
-	async login(data: any) {
-		// todo: implement login logic
-		const { role } = data;
-		const roles = [];
-		if (role === 'customer') roles.push('customer');
-		if (role === 'restaurant_user') roles.push('restaurant_user', 'editor');
+	async login(dto: AuthLoginDto) {
+		const user = await this.validateUser(dto);
+		const userType = user.userType.name;
+		let actorId = userType === 'customer' ? user.customer.customerId : user.userId; // TODO: create user restaurant enitity
 
 		const payload: AuthorizedUser = {
-			userId: 1, // This should be replaced with actual user ID after authentication
-			roles,
-			actorType: role === 'customer' ? 'customer' : 'restaurant_user',
-			actorId: 1 // This should be replaced with actual actor ID after authentication
+			userId: user.userId,
+			roles: user.roles.map((role) => role.name),
+			actorType: user.userType.name,
+			actorId // TODO: This should be replaced with actual actor ID after authentication
 		};
 
 		const token = this.jwtService.sign(payload);
@@ -27,6 +30,23 @@ export class AuthService {
 		});
 
 		return { token, refresh };
+	}
+
+	async validateUser(dto: AuthLoginDto) {
+		const user = await this.userService.getOneOrFailBy({
+			email: dto.email,
+			withPassword: true,
+			relations: ['roles', 'userType', 'customer']
+		});
+
+		if (!user.isActive) throw new ApplicationError('User is inactive', StatusCodes.UNAUTHORIZED);
+
+		const isValid = await this.userService.comparePasswords(dto.password, user.password);
+
+		if (!isValid) throw new ApplicationError('Invalid credentials', StatusCodes.UNAUTHORIZED);
+
+		const userWithOutPassword = { ...user, password: undefined };
+		return userWithOutPassword;
 	}
 
 	async logout() {
