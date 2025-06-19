@@ -7,8 +7,8 @@ export class AuthController {
 	private authService = new AuthService();
 
 	async login(req: Request, res: Response) {
-		const { email, password, role } = req.validated?.body;
-		const tokens = await this.authService.login({ email, password, role });
+		const { email, password } = req.validated?.body;
+		const tokens = await this.authService.login({ email, password });
 		sendResponse(res, StatusCodes.OK, 'Login successfully', tokens);
 	}
 }

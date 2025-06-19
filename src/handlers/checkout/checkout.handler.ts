@@ -1,10 +1,11 @@
 import { CheckoutPayload } from '../../interfaces/order.interface';
-import { Cart, Customer, Order, Restaurant, Transaction } from '../../models';
+import { Address, Cart, Customer, Order, Restaurant, Transaction } from '../../models';
 
 export interface CheckoutContext {
 	payload: CheckoutPayload;
 	customer?: Customer;
 	restaurant?: Restaurant;
+	address?: Address;
 	cart?: Cart;
 	totalAmount?: number;
 	serviceFees?: number;

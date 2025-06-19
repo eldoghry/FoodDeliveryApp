@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, DeleteDateColumn } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { Customer } from './customer.entity';
 import { Order } from '../order/order.entity';
@@ -11,16 +11,28 @@ export class Address extends AbstractEntity {
 	@Column({ nullable: false })
 	customerId!: number;
 
-	@Column({ type: 'text', nullable: false })
-	addressLine1!: string;
+	@Column({ type: 'varchar', length: 50, nullable: true })
+	label?: string;
 
-	@Column({ type: 'text', nullable: false })
-	addressLine2!: string;
-
-	@Column({ type: 'varchar', length: 255, nullable: false  })
+	@Column({ type: 'varchar', length: 255, nullable: false })
 	city!: string;
 
-	@Column({ type: 'boolean', default: false, nullable: false })
+	@Column({ type: 'varchar', length: 255, nullable: false })
+	area!: string;
+
+	@Column({ type: 'text', nullable: false })
+	street!: string;
+
+	@Column({ type: 'varchar', length: 50, nullable: true })
+	building?: string
+
+	@Column({ type: 'varchar', length: 50, nullable: true })
+	floor?: string
+
+	@Column({ type: 'jsonb', nullable: false })
+	coordinates!: { lat: number; lng: number }
+
+	@Column({ type: 'boolean', default: true, nullable: false })
 	isDefault!: boolean;
 
 	@CreateDateColumn()
@@ -29,10 +41,13 @@ export class Address extends AbstractEntity {
 	@UpdateDateColumn()
 	updatedAt!: Date;
 
+	@DeleteDateColumn()
+	deletedAt?: Date;
+
 	@ManyToOne(() => Customer, (customer) => customer.addresses)
 	@JoinColumn({ name: 'customer_id' })
 	customer!: Customer;
 
-	@OneToMany(() => Order, (order) => order.deliveryAddress)
-	orders!: Order[];
+	// @OneToMany(() => Order, (order) => order.deliveryAddress)
+	// orders!: Order[];
 }

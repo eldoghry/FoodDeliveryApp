@@ -185,16 +185,15 @@ OrderRouter.get(
  *     parameters:
  *       - in: query
  *         name: perPage
+ *         description: Number of orders per page (default is 10)
  *         required: false
  *         schema:
  *           type: integer
- *           default: 10
  *       - in: query
  *         name: cursor
  *         required: false
  *         schema:
  *           type: string
- *           default: null
  *     responses:
  *       200:
  *         description: Orders history retrieved successfully
@@ -215,7 +214,6 @@ OrderRouter.get(
  *       403:
  *         description: Forbidden
  */
-
 OrderRouter.get(
 	'/',
 	isAuthenticated,

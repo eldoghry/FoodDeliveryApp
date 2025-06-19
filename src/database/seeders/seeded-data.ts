@@ -7,6 +7,8 @@ import {
 	Menu,
 	MenuCategory,
 	MenuItem,
+	Order,
+	OrderStatusEnum,
 	PaymentMethod,
 	PaymentMethodConfig,
 	PaymentMethodEnum,
@@ -15,7 +17,6 @@ import {
 	Role,
 	Setting,
 	User,
-	UserRole,
 	UserType
 } from '../../models';
 import { SeedData } from '.';
@@ -23,13 +24,22 @@ import { faker } from '@faker-js/faker';
 import { Category } from '../../models/menu/category.entity';
 import { SettingKey } from '../../enums/setting.enum';
 import { PaymentMethodStatus } from '../../enums/payment_method.enum';
-
 //
 const ITEMS_COUNT = 100;
 const RESTAURANTS_COUNT = 100;
 const MENUS_COUNT = 10;
 const USERS_COUNT = 100;
 const ADDRESSES_COUNT = 10;
+const ROLES = [
+	'customer',
+	'super_admin',
+	'restaurant_admin',
+	'auditor',
+	'support',
+	'driver',
+	'restaurant_user',
+	'admin'
+];
 
 // * Users
 const userTypesData: SeedData<UserType> = {
@@ -42,48 +52,75 @@ const userTypesData: SeedData<UserType> = {
 			name: 'admin'
 		},
 		{
-			name: 'editor'
+			name: 'restaurant_user'
 		}
 	]
 };
 
 const usersData: SeedData<User> = {
 	entity: User,
-	data: Array.from({ length: 100 }).map((u) => {
-		return {
-			name: faker.person.fullName(),
-			email: faker.internet.email(),
-			password: 'hashpassword',
-			phone: faker.phone.number(),
-			isActive: faker.datatype.boolean(),
-			userTypeId: 1
-		};
+	data: Array.from({ length: 100 }).map((u, idx) => {
+		const userRoles = {
+			0: 'customer',
+			1: 'admin',
+			2: 'restaurant_user'
+		} as any;
+
+		const userName = userRoles[idx] || faker.person.fullName();
+		const userEmail = userRoles[idx] ? `${userRoles[idx]}@food.com` : faker.internet.email();
+		const roles = idx < 3 ? [userRoles[idx]] : [faker.helpers.arrayElement(ROLES)];
+
+		const user = new User();
+		user.name = userName;
+		user.email = userEmail;
+		user.password = '$argon2id$v=19$m=65536,t=5,p=1$sSiFpvLPCTVNL2sZlwdgtw$oc+CZ45sNxoclIzghPOcb6p+Wrk8KFZhhodIaJ5MeVc'; // P@$$w0rd,
+		user.phone = faker.phone.number();
+		user.isActive = idx < 3 ? true : faker.datatype.boolean();
+		user.userTypeId = idx < 3 ? idx + 1 : 1;
+
+		console.log(
+			'User Role Index:',
+			ROLES.findIndex((role) => role === userRoles[idx])
+		);
+		if (userRoles[idx]) user.roles = [{ roleId: 1 + ROLES.findIndex((role) => role === userRoles[idx]) }] as Role[];
+		else user.roles = [{ roleId: 1 }] as Role[];
+
+		return user;
 	})
 };
 
 const roleSeedData: SeedData<Role> = {
 	entity: Role,
-	data: ['customer', 'admin', 'driver', 'staff', 'editor'].map((role, i) => ({
+	data: ROLES.map((role, i) => ({
 		name: role.toLowerCase()
 	}))
 };
 
-const userRoleSeedData: SeedData<UserRole> = {
-	entity: UserRole,
-	data: Array.from({ length: 99 }).map((_, index) => ({
-		userId: index + 1, // adjust range based on seeded users
-		roleId: faker.number.int({ min: 1, max: 5 }) // based on roles seeded above
-	}))
-};
+type UserRoles = { userId: number; roleId: number };
+
+// const userRoleSeedData: SeedData<UserRoles> = {
+// 	entity: UserRoles,
+// 	data: Array.from({ length: 99 }).map((_, index) => ({
+// 		userId: index + 1, // adjust range based on seeded users
+// 		roleId: faker.number.int({ min: 1, max: 7 }) // based on roles seeded above
+// 	}))
+// };
 
 const addressSeedData: SeedData<Address> = {
 	entity: Address,
 	data: Array.from({ length: 10 }).map((_, index) => ({
 		customerId: index + 1, // assuming customerId 1-100 exists
-		addressLine1: faker.location.streetAddress(),
-		addressLine2: faker.location.secondaryAddress(),
+		street: faker.location.streetAddress(),
 		city: faker.location.city(),
-		isDefault: true
+		area: faker.location.continent(),
+		building: faker.location.buildingNumber(),
+		floor: faker.number.int({ min: 1, max: 10 }).toString(),
+		coordinates: {
+			lng: parseFloat(faker.location.longitude().toString()),
+			lat: parseFloat(faker.location.latitude().toString())
+		},
+		isDefault: false,
+		label: faker.lorem.word()
 	}))
 };
 
@@ -214,6 +251,7 @@ const settingSeedData: SeedData<Setting> = {
 		{ key: SettingKey.MAX_ORDER_ITEMS, value: 50, description: 'Maximum number of items per order' },
 		{ key: SettingKey.ORDER_CANCELLATION_WINDOW_MIN, value: 10, description: 'Minutes allowed to cancel an order' },
 		{ key: SettingKey.ORDER_EXPIRED_AFTER_WINDOW_MIN, value: 120, description: 'Expire an order after minute' },
+		{ key: SettingKey.ORDER_RATING_WINDOW_MIN, value: 7 * 24 * 60, description: 'Minutes allowed to rate an order' },
 
 		{ key: SettingKey.DELIVERY_BASE_FEE, value: 30, description: 'Base fee for delivery orders' },
 		{ key: SettingKey.DELIVERY_PER_KM_FEE, value: 2.5, description: 'Delivery fee per kilometer' },
@@ -277,6 +315,44 @@ const settingSeedData: SeedData<Setting> = {
 	]
 };
 
+const orderSeedData: SeedData<any> = {
+	entity: Order,
+	data: Array.from({ length: 10 }, (_, index) => {
+		const orderStatus = index === 0 ? OrderStatusEnum.delivered : faker.helpers.enumValue(OrderStatusEnum);
+		const placedAt = orderStatus === OrderStatusEnum.delivered ? faker.date.past() : undefined;
+		const deliveredAt = placedAt ? new Date(new Date(placedAt).getTime() + 360000) : undefined;
+		return {
+			orderId: index + 1,
+			customerId: 1,
+			restaurantId: 1,
+			deliveryAddressId: 1,
+			deliveryAddress: {
+				customerId: 1,
+				street: faker.location.streetAddress(),
+				city: faker.location.city(),
+				area: faker.location.continent(),
+				building: faker.location.buildingNumber(),
+				floor: faker.number.int({ min: 1, max: 10 }).toString(),
+				coordinates: {
+					lng: parseFloat(faker.location.longitude().toString()),
+					lat: parseFloat(faker.location.latitude().toString())
+				},
+				isDefault: false,
+				label: faker.lorem.word()
+			},
+			deliveryFees: 20,
+			serviceFees: 30,
+			deliveredAt,
+			placedAt,
+			customerInstructions: faker.lorem.sentence(),
+			status: orderStatus,
+			totalAmount: 50 + index * 10,
+			createdAt: new Date(),
+			updatedAt: new Date()
+		};
+	})
+};
+
 const seedData = [
 	// users
 	userTypesData,
@@ -284,7 +360,6 @@ const seedData = [
 	usersData,
 	customerSeedData,
 	addressSeedData,
-	userRoleSeedData,
 
 	// restaurant & menu
 	restaurantSeedData,
@@ -300,7 +375,10 @@ const seedData = [
 	menuCategorySeedData,
 
 	// settings
-	settingSeedData
+	settingSeedData,
+
+	// order
+	orderSeedData
 ];
 
 export default seedData;
