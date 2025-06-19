@@ -1,7 +1,7 @@
 import { StatusCodes as HttpStatusCode } from 'http-status-codes';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
-import { CustomerRepository, OrderRepository, UserRepository } from '../repositories';
+import { CustomerRepository, UserRepository } from '../repositories';
 import { Address, CustomerRelations, DeactivatedBy, User } from '../models';
 import { Transactional } from 'typeorm-transactional';
 import { RatingService } from './rating.service';
@@ -10,7 +10,6 @@ import { OrderService } from './order.service';
 
 export class CustomerService {
 	private customerRepo = new CustomerRepository();
-	private orderRepo = new OrderRepository();
 	private userRepo = new UserRepository();
 	private ratingService = new RatingService();
 	private _orderService: OrderService | undefined = undefined;
@@ -28,7 +27,6 @@ export class CustomerService {
 		const order = await this.orderService.getAndValidateOrderForRating(dto.orderId, dto.customerId);
 		return this.ratingService.createRating({ ...dto, restaurantId: order.restaurantId });
 	}
-
 
 	/* === Customer Address CRUD Operations === */
 
@@ -81,8 +79,7 @@ export class CustomerService {
 		return customer;
 	}
 
-
-    /* === Validation Methods === */
+	/* === Validation Methods === */
 
 	async validateCustomerAddress(customerId: number, addressId: number) {
 		const address = await this.customerRepo.getAddressById(addressId);
@@ -111,7 +108,8 @@ export class CustomerService {
 	}
 
 	private async validateAddressNotInActiveOrder(addressId: number) {
-		const activeOrder = await this.orderRepo.getActiveOrderByAddressId(addressId);
+		// TODO: check me
+		const activeOrder = await this.orderService.getActiveOrderByAddressId(addressId);
 		if (activeOrder) {
 			throw new ApplicationError(ErrMessages.customer.AddressIsUsed, HttpStatusCode.BAD_REQUEST);
 		}
@@ -123,7 +121,7 @@ export class CustomerService {
 	}
 
 	private async validateCustomerDeactivation(customerId: number) {
-		const activeOrder = await this.orderRepo.getActiveOrderByCustomerId(customerId);
+		const activeOrder = await this.orderService.getActiveOrderByCustomerId(customerId);
 		if (activeOrder) {
 			throw new ApplicationError(ErrMessages.customer.CustomerIsUsed, HttpStatusCode.BAD_REQUEST);
 		}
@@ -131,13 +129,15 @@ export class CustomerService {
 
 	/* === Helper Methods === */
 
-	private async handleDefaultAddressChange(customerId: number, addressId: number, payload: Partial<Address>): Promise<void> {
+	private async handleDefaultAddressChange(
+		customerId: number,
+		addressId: number,
+		payload: Partial<Address>
+	): Promise<void> {
 		if (payload?.isDefault) {
 			await this.customerRepo.unsetCustomerDefaultAddress(customerId);
 		} else {
 			await this.validateNotLastDefaultAddress(customerId, addressId);
 		}
 	}
-
-
 }

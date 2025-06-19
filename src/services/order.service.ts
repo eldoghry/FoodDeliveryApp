@@ -543,4 +543,12 @@ export class OrderService {
 			throw new ApplicationError(ErrMessages.rating.RatingPeriodExpired, StatusCodes.BAD_REQUEST);
 		}
 	}
+
+	async getActiveOrderByAddressId(addressId: number): Promise<Order | null> {
+		return this.orderRepo.getActiveOrderByAddressId(addressId);
+	}
+
+	async getActiveOrderByCustomerId(customerId: number): Promise<Order | null> {
+		return this.orderRepo.getActiveOrderByCustomerId(customerId);
+	}
 }
