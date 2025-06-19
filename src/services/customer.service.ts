@@ -33,20 +33,20 @@ export class CustomerService {
 		return customer;
 	}
 
-	async validateCustomerAddress(customer: Customer, addressId: number) {
-		const hasAddress = customer.addresses.some((address) => address.addressId === addressId);
+	// async validateCustomerAddress(customer: Customer, addressId: number) {
+	// 	const hasAddress = customer.addresses.some((address) => address.addressId === addressId);
 
-		if (!hasAddress) {
-			throw new ApplicationError(ErrMessages.customer.AddressNotFound, HttpStatusCode.NOT_FOUND);
-		}
-	}
+	// 	if (!hasAddress) {
+	// 		throw new ApplicationError(ErrMessages.customer.AddressNotFound, HttpStatusCode.NOT_FOUND);
+	// 	}
+	// }
 
 	async getCustomerAddresses(customerId: number) {
 		const addresses = await this.customerRepo.getAddressesByCustomerId(customerId);
 		return addresses;
 	}
 
-	private async validateAddress(customerId: number, addressId: number) {
+	async validateCustomerAddress(customerId: number, addressId: number) {
 		const address = await this.customerRepo.getAddressById(addressId);
 		if (!address) {
 			throw new ApplicationError(ErrMessages.customer.AddressNotFound, HttpStatusCode.NOT_FOUND);
@@ -60,7 +60,7 @@ export class CustomerService {
 
 	@Transactional()
 	async assignDefaultAddress(customerId: number, addressId: number) {
-		await this.validateAddress(customerId, addressId);
+		await this.validateCustomerAddress(customerId, addressId);
 		await this.customerRepo.unsetCustomerDefaultAddress(customerId);
 		const address = await this.customerRepo.setDefaultAddress(addressId);
 		return address;
@@ -96,7 +96,7 @@ export class CustomerService {
 
 	@Transactional()
 	async updateCustomerAddress(customerId: number, addressId: number, payload: Partial<Address>) {
-		await this.validateAddress(customerId, addressId);
+		await this.validateCustomerAddress(customerId, addressId);
 		await this.assertAddressNotInActiveOrder(addressId);
 		if (payload?.isDefault) {
 			await this.customerRepo.unsetCustomerDefaultAddress(customerId);
@@ -110,7 +110,7 @@ export class CustomerService {
 
 	@Transactional()
 	async deleteCustomerAddress(customerId: number, addressId: number) {
-		await this.validateAddress(customerId, addressId);
+		await this.validateCustomerAddress(customerId, addressId);
 		await this.assertAddressNotInActiveOrder(addressId);
 		await this.customerRepo.deleteAddress(addressId);
 	}

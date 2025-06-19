@@ -42,7 +42,7 @@ export class OrderRepository {
 
 		const orders = await this.orderRepo.find({
 			where: whereClause,
-			relations: ['restaurant', 'customer.user', 'deliveryAddress', 'orderItems.item', 'transaction.paymentMethod'],
+			relations: ['restaurant', 'customer.user', 'orderItems.item', 'transaction.paymentMethod'],
 			withDeleted: true,
 			order: { createdAt: 'DESC' },
 			take: limit + 1 // One extra to check for next page
@@ -98,17 +98,10 @@ export class OrderRepository {
 	}
 
 	async getOrderById(filter: { orderId: number; relations?: OrderRelations[] }) {
-		if (Object.keys(filter).length === 0) return null;
-
-		const query = this.orderRepo.createQueryBuilder('order');
-
-		if (filter?.relations) {
-			filter.relations.forEach((relation) => query.leftJoinAndSelect(`order.${relation}`, relation));
-		}
-
-		query.where('order.orderId = :orderId', { orderId: filter.orderId });
-
-		return query.getOne();
+		return await this.orderRepo.findOne({
+			where: { orderId: filter.orderId },
+			relations: filter.relations || []
+		});
 	}
 
 	async getOrderStatusLogByOrderId(orderId: number): Promise<OrderStatusLog[]> {

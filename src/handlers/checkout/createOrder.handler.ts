@@ -12,6 +12,7 @@ export class CreateOrderHandler extends CheckoutHandler {
 		context.order = await this.orderRepo.createOrder({
 			restaurantId: context.payload.restaurantId,
 			customerId: context.payload.customerId,
+			deliveryAddress: context.address,
 			deliveryAddressId: context.payload.addressId,
 			deliveryFees: context.deliveryFees,
 			serviceFees: context.serviceFees,
