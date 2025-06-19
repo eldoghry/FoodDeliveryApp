@@ -19,6 +19,7 @@ const swaggerSchema = {
             building: { type: 'string', description: 'The building of the address.', example: '123' },
             floor: { type: 'string', description: 'The floor of the address.', example: '1' },
             coordinates: { type: 'object', description: 'The coordinates of the address.', example: { lat: 40.7128, lng: -74.0060 } },
+            isDefault: { type: 'boolean', description: 'Whether the address is the default address.', example: true },
         }
     },
     Address: {
@@ -45,6 +46,12 @@ const swaggerSchema = {
             }
         }
     },
+    DeactivateCustomerBodyRequest: {
+        type: 'object',
+        properties: {
+            reason: { type: 'string', description: 'The reason for deactivating the customer.', example: 'I don\'t want to use the service anymore.' }
+        }
+    }
 };
 
 export default swaggerSchema;

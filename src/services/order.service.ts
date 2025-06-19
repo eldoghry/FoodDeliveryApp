@@ -487,11 +487,12 @@ export class OrderService {
 	async getOrderDetails(orderId: number, actorType: string): Promise<OrderData> {
 		const order = await this.getOrderOrFailBy({
 			orderId,
-			relations: ['restaurant', 'customer.user', 'deliveryAddress', 'orderItems.item', 'transactions.paymentMethod']
+			relations: ['restaurant', 'customer.user', 'orderItems.item', 'transaction.paymentMethod']
 		});
 		return this.formatOrderData(order, actorType);
 	}
 
+	// === Order Rating Methods ===
 	async getAndValidateOrderForRating(orderId: number, customerId: number): Promise<Order> {
 		const order = await this.getOrderOrFailBy({ orderId, relations: ['rating'] });
 
@@ -541,5 +542,13 @@ export class OrderService {
 		if (now > deadline) {
 			throw new ApplicationError(ErrMessages.rating.RatingPeriodExpired, StatusCodes.BAD_REQUEST);
 		}
+	}
+
+	async getActiveOrderByAddressId(addressId: number): Promise<Order | null> {
+		return this.orderRepo.getActiveOrderByAddressId(addressId);
+	}
+
+	async getActiveOrderByCustomerId(customerId: number): Promise<Order | null> {
+		return this.orderRepo.getActiveOrderByCustomerId(customerId);
 	}
 }

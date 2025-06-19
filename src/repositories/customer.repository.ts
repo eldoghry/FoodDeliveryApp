@@ -12,7 +12,8 @@ export class CustomerRepository {
 		this.addressRepo = AppDataSource.getRepository(Address);
 	}
 
-	// Customer operations
+	/* === Customer operations === */
+
 	async createCustomer(data: Partial<Customer>): Promise<Customer> {
 		const customer = this.customerRepo.create(data);
 		return await this.customerRepo.save(customer);
@@ -42,7 +43,8 @@ export class CustomerRepository {
 		return await this.getCustomerById({ customerId });
 	}
 
-	// Address operations
+	/* === Address operations === */
+	
 	async addAddress(data: Partial<Address>): Promise<Address> {
 		const address = this.addressRepo.create(data);
 		return await this.addressRepo.save(address);
@@ -83,26 +85,6 @@ export class CustomerRepository {
 	}
 
 	async deleteAddress(addressId: number): Promise<void> {
-		await this.addressRepo.delete(addressId);
-	}
-
-	// Helper methods
-	// async getCustomerWithAddresses(customerId: number): Promise<Customer | null> {
-	// 	const customer = await this.getCustomerById(customerId);
-	// 	if (customer) {
-	// 		const addresses = await this.getAddressesByUserId(customer.userId);
-	// 		return { ...customer, addresses } as Customer & { addresses: Address[] };
-	// 	}
-	// 	return null;
-	// }
-
-	async searchCustomers(query: string): Promise<Customer[]> {
-		return await this.customerRepo
-			.createQueryBuilder('customer')
-			.leftJoinAndSelect('customer.user', 'user')
-			.where('user.firstName ILIKE :query', { query: `%${query}%` })
-			.orWhere('user.lastName ILIKE :query', { query: `%${query}%` })
-			.orWhere('user.email ILIKE :query', { query: `%${query}%` })
-			.getMany();
+		await this.addressRepo.softDelete(addressId);
 	}
 }

@@ -6,6 +6,7 @@ import { verifyActor } from '../middlewares/verifyActor.middleware';
 import {
 	customerAddressBodySchema,
 	customerAddressParamsSchema,
+	customerDeactivateBodySchema,
 	customerRateOrderBodySchema,
 	customerRateOrderQuerySchema
 } from '../validators/customer.validator';
@@ -56,6 +57,12 @@ CustomerRouter.post(
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AddressResponse'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Customer not found
  */
 CustomerRouter.get(
 	'/addresses',
@@ -105,14 +112,109 @@ CustomerRouter.patch(
 	controller.assignDefaultAddress.bind(controller)
 );
 
+
+/**
+ * @swagger
+ * /customer/addresses/{addressId}:
+ *   put:
+ *     summary: Update an address
+ *     description: Update an address for the customer
+ *     tags: [Customer]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: addressId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AddressBodyRequest'
+ *     responses:
+ *       200:
+ *         description: Address updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Address'
+ *       400:
+ *         description: |
+ *          - address ID is required
+ *          - address ID must be a number
+ *          - address ID must be an integer
+ *          - This address does not belong to the specified customer
+ *          - Unable to update address — it\'s being used in a current order.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: |
+ *          - Address not found
+ *          - Customer not found
+ */
+CustomerRouter.put(
+	'/addresses/:addressId',
+	isAuthenticated,
+	verifyActor({ allowedActorTypes: ['customer'] }),
+	validateRequest({ params: customerAddressParamsSchema, body: customerAddressBodySchema }),
+	controller.updateCustomerAddress.bind(controller)
+);
+
+/**
+ * @swagger
+ * /customer/addresses/{addressId}:
+ *   delete:
+ *     summary: Delete an address
+ *     description: Soft delete an address for the customer. (The address will be deleted only if it is not used in any active order.)
+ *     tags: [Customer]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: addressId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Address deleted successfully
+ *       400:
+ *         description: |
+ *          - address ID is required
+ *          - address ID must be a number
+ *          - address ID must be an integer
+ *          - This address does not belong to the specified customer
+ *          - Unable to delete address — it\'s being used in a current order.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: |
+ *          - Address not found
+ */
+CustomerRouter.delete(
+	'/addresses/:addressId',
+	isAuthenticated,
+	verifyActor({ allowedActorTypes: ['customer'] }),
+	validateRequest({ params: customerAddressParamsSchema }),
+	controller.deleteCustomerAddress.bind(controller)
+);
+
 /**
  * @swagger
  *  /customer/{orderId}/rate:
  *    post:
  *      summary: Rate an order
  *      description: Submit a rating and optional comment for a completed order.
- *      tags:
- *        - Customer
+ *      tags: [Customer]
+ *      security:
+ *       - bearerAuth: []
  *      parameters:
  *        - in: path
  *          name: orderId
@@ -140,7 +242,7 @@ CustomerRouter.patch(
  *              required:
  *                - rating
  *      responses:
- *        '200':
+ *        200:
  *          description: Rating submitted successfully
  *          content:
  *            application/json:
@@ -150,11 +252,11 @@ CustomerRouter.patch(
  *                  message:
  *                    type: string
  *                    example: "Order rated successfully."
- *        '400':
+ *        400:
  *          description: Invalid input or order cannot be rated
- *        '404':
+ *        404:
  *          description: Order not found
- *        '401':
+ *        401:
  *          description: Unauthorized
  */
 CustomerRouter.post(
@@ -168,4 +270,36 @@ CustomerRouter.post(
 	controller.rateOrder.bind(controller)
 );
 
+/**
+ * @swagger
+ *  /customer/account/deactivate:
+ *    patch:
+ *      summary: Deactivate customer account
+ *      description: Deactivate the customer's account by customer.
+ *      tags: [Customer]
+ *      security:
+ *       - bearerAuth: []
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/DeactivateCustomerBodyRequest'
+ *      responses:
+ *        200:
+ *          description: Customer deactivated successfully
+ *        400:
+ *          description: Deactivation not allowed - This customer has active order
+ *        401:
+ *          description: Unauthorized
+ *        403:
+ *          description: Forbidden
+ */
+CustomerRouter.patch(
+	'/account/deactivate',
+	isAuthenticated,
+	verifyActor({ allowedActorTypes: ['customer'] }),
+	validateRequest({ body: customerDeactivateBodySchema }),
+	controller.deactivateCustomer.bind(controller)
+);
 export default CustomerRouter;

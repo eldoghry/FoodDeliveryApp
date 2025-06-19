@@ -28,7 +28,7 @@ export type OrderRelations =
 	| 'transactions'
 	| 'customer.user'
 	| 'orderItems.item'
-	| 'transactions.paymentMethod'
+	| 'transaction.paymentMethod'
 	| 'rating';
 
 @Check(`"delivery_fees" >= 0.00`)
@@ -56,8 +56,7 @@ export class Order extends AbstractEntity {
 	@Column({ nullable: false })
 	deliveryAddressId!: number;
 
-	@ManyToOne(() => Address, (address) => address.orders)
-	@JoinColumn({ name: 'delivery_address_id' })
+	@Column({ type: 'jsonb', nullable: false })
 	deliveryAddress!: Address;
 
 	@Column({ type: 'enum', enum: OrderStatusEnum, nullable: false, default: OrderStatusEnum.initiated })
