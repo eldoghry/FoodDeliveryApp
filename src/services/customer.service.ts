@@ -1,7 +1,8 @@
+import { UserService } from './user.service';
 import { StatusCodes as HttpStatusCode } from 'http-status-codes';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
-import { CustomerRepository, UserRepository } from '../repositories';
+import { CustomerRepository } from '../repositories';
 import { Address, CustomerRelations, DeactivatedBy, User } from '../models';
 import { Transactional } from 'typeorm-transactional';
 import { RatingService } from './rating.service';
@@ -10,7 +11,7 @@ import { OrderService } from './order.service';
 
 export class CustomerService {
 	private customerRepo = new CustomerRepository();
-	private userRepo = new UserRepository();
+	private userService = new UserService();
 	private ratingService = new RatingService();
 	private _orderService: OrderService | undefined = undefined;
 
@@ -70,7 +71,7 @@ export class CustomerService {
 	async deactivateCustomer(userId: number, customerId: number, payload: Partial<User>, deactivatedBy: DeactivatedBy) {
 		const deactivationInfo = { ...payload, deactivatedAt: new Date(), deactivatedBy };
 		await this.validateCustomerDeactivation(customerId);
-		await this.userRepo.deactivateUser(userId, deactivationInfo);
+		await this.userService.deactivateUser(userId, deactivationInfo);
 	}
 
 	async getCustomerByIdOrFail(filter: { customerId: number; relations?: CustomerRelations[] }) {

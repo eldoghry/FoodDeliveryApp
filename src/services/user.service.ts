@@ -50,4 +50,8 @@ export class UserService {
 	async comparePasswords(plainText: string, hashed: string): Promise<boolean> {
 		return await HashingService.verify(plainText, hashed);
 	}
+
+	async deactivateUser(userId: number, deactivationInfo: User['deactivationInfo']): Promise<void> {
+		await this.repo.deactivateUser(userId, deactivationInfo);
+	}
 }
