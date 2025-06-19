@@ -30,6 +30,7 @@ import { DataSource } from 'typeorm';
 //
 const ITEMS_COUNT = 100;
 const RESTAURANTS_COUNT = 100;
+const ORDERS_COUNT = 200;
 const MENUS_COUNT = 10;
 const USERS_COUNT = 100;
 const ADDRESSES_COUNT = 10;
@@ -333,14 +334,14 @@ const settingSeedData: SeedData<Setting> = {
 
 const orderSeedData: SeedData<Order> = {
 	entity: Order,
-	data: Array.from({ length: 50 }, (_, index) => {
+	data: Array.from({ length: ORDERS_COUNT }, (_, index) => {
 		const orderStatus = index === 0 ? OrderStatusEnum.delivered : faker.helpers.enumValue(OrderStatusEnum);
 		const placedAt = orderStatus === OrderStatusEnum.delivered ? faker.date.past() : undefined;
 		const deliveredAt = placedAt ? new Date(new Date(placedAt).getTime() + 360000) : undefined;
 		return {
 			orderId: index + 1,
 			customerId: 1,
-			restaurantId: 1,
+			restaurantId: faker.number.int({ min: 1, max: RESTAURANTS_COUNT }),
 			deliveryAddressId: 1,
 			deliveryFees: 20,
 			serviceFees: 30,
@@ -357,18 +358,18 @@ const orderSeedData: SeedData<Order> = {
 
 const confirmedOrders = orderSeedData.data.filter((order) => order.status === OrderStatusEnum.delivered);
 
-const ratingSeededData = {
-	entity: Rating,
-	data: Array.from({ length: confirmedOrders.length }, (_, index) => ({
-		customerId: 1,
-		restaurantId: 1,
-		orderId: confirmedOrders[index].orderId,
-		rating: faker.number.int({ min: 1, max: 5 }),
-		comment: faker.lorem.sentence(),
-		createdAt: new Date(),
-		updatedAt: new Date()
-	}))
-};
+// const ratingSeededData = {
+// 	entity: Rating,
+// 	data: Array.from({ length: confirmedOrders.length }, (_, index) => ({
+// 		customerId: 1,
+// 		restaurantId: 1,
+// 		orderId: confirmedOrders[index].orderId,
+// 		rating: faker.number.int({ min: 1, max: 5 }),
+// 		comment: faker.lorem.sentence(),
+// 		createdAt: new Date(),
+// 		updatedAt: new Date()
+// 	}))
+// };
 
 const seedData = [
 	// users
@@ -396,8 +397,8 @@ const seedData = [
 	settingSeedData,
 
 	// order
-	orderSeedData,
-	ratingSeededData
+	orderSeedData
+	// ratingSeededData
 ];
 
 const seedRestaurantCuisineRelationsCB = async (dataSource: DataSource) => {
