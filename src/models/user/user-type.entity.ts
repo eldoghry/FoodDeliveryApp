@@ -2,6 +2,14 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { AbstractEntity } from '../base.entity';
 import { User } from './user.entity';
 
+export enum UserTypeNames {
+	customer = 'customer',
+	restaurant_owner = 'restaurant_owner',
+	restaurant_manager = 'restaurant_manager',
+	restaurant_employee = 'restaurant_employee',
+	restaurant_delivery_person = 'restaurant_delivery_person',
+	admin = 'admin',
+}
 @Entity()
 export class UserType extends AbstractEntity {
 	@PrimaryGeneratedColumn()

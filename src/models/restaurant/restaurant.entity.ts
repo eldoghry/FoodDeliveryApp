@@ -8,7 +8,8 @@ import {
 	JoinColumn,
 	OneToMany,
 	JoinTable,
-	ManyToMany
+	ManyToMany,
+	ManyToOne,
 } from 'typeorm';
 import { User } from '../user/user.entity';
 import { CartItem } from '../cart/cart-item.entity';
@@ -17,8 +18,12 @@ import { Menu } from '../menu/menu.entity';
 import { Order } from '../order/order.entity';
 import { Rating } from '../rating/rating.entity';
 import { Cuisine } from './cuisine.entity';
+import { Chain } from './chain.entity';
 
 export enum RestaurantStatus {
+	pending = 'pending_approval',
+	approved = 'approved',
+	rejected = 'rejected',
 	open = 'open',
 	busy = 'busy',
 	pause = 'pause',
@@ -31,44 +36,63 @@ export class Restaurant extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	restaurantId!: number;
 
-	@Column({ unique: true, nullable: false })
-	userId!: number;
-
 	@Column({ type: 'varchar', length: 255, nullable: false })
 	name!: string;
 
-	@Column({ type: 'varchar', length: 512, default: '' })
-	logoUrl!: string;
+	@Column({ type: 'integer', nullable: true })
+	chainId?: number;
 
 	@Column({ type: 'varchar', length: 512, default: '' })
-	bannerUrl!: string;
+	logoUrl?: string;
+
+	@Column({ type: 'varchar', length: 512, default: '' })
+	bannerUrl?: string;
 
 	@Column({ type: 'jsonb', nullable: false })
-	location!: Record<string, any>;
+	location!: {
+		city: string;
+		area: string;
+		street: string;
+		coordinates: {
+			lat: number;
+			lng: number;
+		};
+	};
 
 	@Column({ type: 'enum', enum: RestaurantStatus, nullable: false })
 	status!: RestaurantStatus;
 
-	@Column({ type: 'varchar', length: 20, unique: true, nullable: false })
-	commercialRegistrationNumber!: string;
+	@Column({ type: 'varchar', length: 100, nullable: true })
+	email?: string;
 
-	@Column({ type: 'varchar', length: 15, unique: true, nullable: false })
-	vatNumber!: string;
+	@Column({ type: 'varchar', length: 30, nullable: true })
+	phone?: string;
 
-	@Column({ type: 'boolean', default: true, nullable: false })
+	@Column({ type: 'boolean', default: false, nullable: false })
 	isActive!: boolean;
-
-	@Column({ type: 'varchar', length: 100, unique: true })
-	email!: string;
 
 	@CreateDateColumn()
 	createdAt!: Date;
 
+	@Column({ type: 'timestamp', nullable: true })
+	approvedAt?: Date;
+
+	@Column({ type: 'timestamp', nullable: true })
+	rejectedAt?: Date;
+
 	@UpdateDateColumn()
 	updatedAt!: Date;
 
-	@OneToOne(() => User)
-	@JoinColumn({ name: 'user_id' })
+	@ManyToOne(() => Chain, (chain) => chain.restaurants)
+	@JoinColumn({ name: 'chain_id' })
+	chain?: Chain;
+
+	@ManyToMany(() => User, (user) => user.restaurants)
+	@JoinTable({
+		name: 'restaurant_user',
+		joinColumn: { name: 'restaurant_id', referencedColumnName: 'restaurantId' },
+		inverseJoinColumn: { name: 'user_id', referencedColumnName: 'userId' }
+	})
 	user!: User;
 
 	@OneToMany(() => Menu, (menu) => menu.restaurant)

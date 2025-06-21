@@ -21,6 +21,6 @@ ApiRouter.use('/payment', PaymentRouter);
 ApiRouter.use('/setting', SettingRouter);
 ApiRouter.use('/payment_method', PaymentMethodRouter);
 ApiRouter.use('/customer', CustomerRouter);
-ApiRouter.use('/restaurant', RestaurantRouter);
+ApiRouter.use('/restaurants', RestaurantRouter);
 
 export default ApiRouter;

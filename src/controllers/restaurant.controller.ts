@@ -9,11 +9,12 @@ import { ListRestaurantsDto } from '../dtos/restaurant.dto';
 export class RestaurantController {
 	private restaurantService = new RestaurantService();
 
-	async createRestaurant(req: Request, res: Response) {
-		// TODO: Implement createRestaurant logic
-		throw new ApplicationError('Not implemented', StatusCodes.NOT_IMPLEMENTED);
+	async registerRestaurant (req: Request, res: Response) {
+		const payload = req.validated?.body;
+		const restaurant = await this.restaurantService.registerRestaurant(payload);
+		sendResponse(res, StatusCodes.OK, 'Registration successful. Your restaurant is pending approval.', restaurant);
 	}
-
+  
 	async updateRestaurant(req: Request, res: Response) {
 		// TODO: Implement updateRestaurant logic
 
