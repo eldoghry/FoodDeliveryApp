@@ -61,9 +61,9 @@ export class RestaurantService {
 		}
 
 		await this.validateUserUniqueness(userData);
-		const chainId = await this.resolveOrCreateChain(chainData);
-		restaurantData.chainId = chainId;
-		const restaurant = await this.restaurantRepo.createRestaurant(restaurantData);
+		const chain = await this.createChain(chainData);
+		restaurantData.chainId = chain.chainId;
+		const restaurant = await this.createRestaurant(restaurantData);
 		return this.formatRegisterRestaurantResponse(restaurant!);
 	}
 
@@ -76,8 +76,14 @@ export class RestaurantService {
 	}
 
 	private async validateChainUniqueness(payload: Partial<Chain>) {
+		await this.validateChainNameUniqueness(payload.name!);
 		await this.validateCommercialRegistrationNumberUniqueness(payload.commercialRegistrationNumber!);
 		await this.validateVatNumberUniqueness(payload.vatNumber!);
+	}
+
+	private async validateChainNameUniqueness(name: string) {
+		const chain = await this.restaurantRepo.getChainByName(name);
+		if (chain) throw new ApplicationError(ErrMessages.restaurant.ChainNameAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
 
 	private async validateCommercialRegistrationNumberUniqueness(commercialRegistrationNumber: string) {
@@ -90,31 +96,17 @@ export class RestaurantService {
 		if (chain) throw new ApplicationError(ErrMessages.restaurant.ChainVatNumberAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
 
-	/* === Helper Methods === */
-
-	private async getExistingChain(payload: Partial<Chain>) {
-		let chain: Chain | null = null;
-		if(payload.commercialRegistrationNumber){
-			chain = await this.restaurantRepo.getChainByCommercialRegistrationNumber(payload.commercialRegistrationNumber!);
-		}
-		else if(payload.vatNumber){
-			chain = await this.restaurantRepo.getChainByVatNumber(payload.vatNumber!);
-		}
-		else{
-			chain = await this.restaurantRepo.getChainByName(payload.name!);
-		}
-		return chain;
+	private async validateRestaurantNameUniqueness(name: string) {
+		const restaurant = await this.restaurantRepo.getRestaurantByName(name);
+		if (restaurant) throw new ApplicationError(ErrMessages.restaurant.RestaurantNameAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
 
-	private async resolveOrCreateChain(payload: Partial<Chain>) {
-		const existingChain = await this.getExistingChain(payload);
-		if (existingChain){
-			return existingChain.chainId;
-		}
-		else{
-			const chain = await this.createChain(payload);
-			return chain.chainId;
-		}
+	/* === Helper Methods === */
+	@Transactional()
+	async createRestaurant(payload: Partial<Restaurant>) {
+		await this.validateRestaurantNameUniqueness(payload.name!);
+		const restaurant = await this.restaurantRepo.createRestaurant(payload);
+		return restaurant;
 	}
 
 	private async formatRegisterRestaurantResponse(restaurant: Restaurant) {

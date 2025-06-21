@@ -53,7 +53,7 @@ export class RestaurantRepository {
 		return await this.getRestaurantById(restaurant.restaurantId);
 	}
 
-	async getRestaurantBy(filter: { restaurantId?: number; userId?: number; relations?: RestaurantRelations[] }) {
+	async getRestaurantBy(filter: { restaurantId?: number; userId?: number;name?: string; relations?: RestaurantRelations[] }) {
 		const { relations, ...whereOptions } = filter;
 		return await this.restaurantRepo.findOne({
 			where: whereOptions,
@@ -63,6 +63,10 @@ export class RestaurantRepository {
 
 	async getRestaurantById(restaurantId: number): Promise<Restaurant | null> {
 		return this.getRestaurantBy({ restaurantId });
+	}
+
+	async getRestaurantByName(name: string): Promise<Restaurant | null> {
+		return this.getRestaurantBy({ name });
 	}
 
 	async getAllRestaurants(filter: ListRestaurantsDto): Promise<any[]> {

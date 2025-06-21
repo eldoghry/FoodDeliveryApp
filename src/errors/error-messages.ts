@@ -94,7 +94,8 @@ const ErrMessages = {
 			'Sorry restaurant cannot process your order right now, try again later or choose different one',
 		ChainNameAlreadyExists: 'Chain name already exists',
 		ChainCommercialRegistrationNumberAlreadyExists: 'Chain commercial registration number already exists',
-		ChainVatNumberAlreadyExists: 'Chain vat number already exists'
+		ChainVatNumberAlreadyExists: 'Chain vat number already exists',
+		RestaurantNameAlreadyExists: 'Restaurant name already exists'
 	},
 
 	item: {
