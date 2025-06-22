@@ -89,7 +89,7 @@ export class RestaurantService {
 	}
 
 	@Transactional()
-	async deactivateRestaurant(actorId: number, restaurantId: number, payload: Partial<User>, deactivatedBy: RestaurantDeactivatedBy) {
+	async deactivateRestaurant(actorId: number, restaurantId: number, payload: Partial<Restaurant['deactivationInfo']>, deactivatedBy: RestaurantDeactivatedBy) {
 		const deactivationInfo = { ...payload, deactivatedAt: new Date(), deactivatedBy };
 		await this.validateRestaurantDeactivation(actorId, restaurantId);
 		const restaurant = await this.restaurantRepo.updateRestaurant(restaurantId, { isActive: false, status: RestaurantStatus.closed, deactivationInfo });
@@ -103,6 +103,19 @@ export class RestaurantService {
 		const activationInfo = { activatedAt: new Date(), activatedBy: activatedBy };
 		const restaurant = await this.restaurantRepo.updateRestaurant(restaurantId, { isActive: true, status: RestaurantStatus.open, activationInfo });
 		return this.formatActivationRestaurantResponse(restaurant!, 'activate');
+	}
+
+	@Transactional()
+	async updateRestaurantStatus(actorId: number, restaurantId: number, payload: { status: RestaurantStatus }) {
+		await this.validateRestaurantBelongsToUser(actorId, restaurantId);
+		await this.validateRestaurantIsApproved(restaurantId);
+		await this.validateRestaurantIsActivated(restaurantId);
+
+		if(payload.status === RestaurantStatus.closed || payload.status === RestaurantStatus.pause) {
+			await this.validateRestaurantHasActiveOrders(restaurantId);
+		}
+		const restaurant = await this.restaurantRepo.updateRestaurant(restaurantId, { status: payload.status });
+		return this.formatRestaurantStatusResponse(restaurant!);
 	}
 
 	/* === Validation Methods === */
@@ -183,6 +196,10 @@ export class RestaurantService {
 		if (restaurant.isActive) throw new ApplicationError(ErrMessages.restaurant.RestaurantIsActive, StatusCodes.BAD_REQUEST);
 	}
 
+	private async validateRestaurantIsActivated(restaurantId: number) {
+		const restaurant = await this.getRestaurantOrFail({ restaurantId });
+		if (!restaurant.isActive) throw new ApplicationError(ErrMessages.restaurant.RestaurantIsNotActivated, StatusCodes.BAD_REQUEST);
+	}
 	/* === Helper Methods === */
 
 	@Transactional()
@@ -313,4 +330,11 @@ export class RestaurantService {
 		})) || [];
 	}
 
+	private formatRestaurantStatusResponse(restaurant: Restaurant) {
+		return {
+			restaurantId: restaurant.restaurantId,
+			name: restaurant.name,
+			status: restaurant.status
+		};
+	}
 }

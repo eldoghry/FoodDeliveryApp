@@ -3,7 +3,7 @@ import { isAuthenticated } from '../middlewares/auth.middleware';
 import { validateRequest } from '../middlewares/validate-request.middleware';
 import { RestaurantController } from '../controllers';
 import { verifyActor } from '../middlewares/verifyActor.middleware';
-import { listRestaurantsQuerySchema, registerRestaurantBodySchema, restaurantDeactivateBodySchema, restaurantParamsSchema } from '../validators/restaurant.validator';
+import { listRestaurantsQuerySchema, registerRestaurantBodySchema, restaurantDeactivateBodySchema, restaurantParamsSchema, restaurantStatusBodySchema } from '../validators/restaurant.validator';
 // import {} from '../validators/restaurant.validator';
 
 const RestaurantRouter = Router();
@@ -24,7 +24,7 @@ RestaurantRouter.get('/search', controller.searchRestaurant.bind(controller));
 // RestaurantRouter.post('/:restaurantId/status', controller.toggleRestaurantStatus.bind(controller));
 RestaurantRouter.patch('/:restaurantId/deactivate', isAuthenticated, verifyActor({ allowedActorTypes: ['restaurant_owner'] }), validateRequest({ params: restaurantParamsSchema, body: restaurantDeactivateBodySchema }), controller.deactivateRestaurant.bind(controller));
 RestaurantRouter.patch('/:restaurantId/activate', isAuthenticated, verifyActor({ allowedActorTypes: ['restaurant_owner'] }), validateRequest({ params: restaurantParamsSchema }), controller.activateRestaurant.bind(controller));
-
+RestaurantRouter.patch('/:restaurantId/status', isAuthenticated, verifyActor({ allowedActorTypes: ['restaurant_owner', 'restaurant_user'] }), validateRequest({ params: restaurantParamsSchema, body: restaurantStatusBodySchema }), controller.updateRestaurantStatus.bind(controller));
 RestaurantRouter.get('/top-rated', controller.getTopRatedRestaurant.bind(controller));
 RestaurantRouter.get('/recommended', controller.getTopRatedRestaurant.bind(controller));
 

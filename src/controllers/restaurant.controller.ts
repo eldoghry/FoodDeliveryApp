@@ -58,6 +58,14 @@ export class RestaurantController {
 		sendResponse(res, StatusCodes.OK, 'Restaurant activated successfully', restaurant);
 	}
 
+	async updateRestaurantStatus(req: Request, res: Response) {
+		const { actorId } = req?.user as AuthorizedUser;
+		const { restaurantId } = req.validated?.params;
+		const payload = req.validated?.body;
+		const restaurant = await this.restaurantService.updateRestaurantStatus(actorId, restaurantId, payload);
+		sendResponse(res, StatusCodes.OK, 'Restaurant status updated successfully', restaurant);
+	}
+
 	async getTopRatedRestaurant(req: Request, res: Response) {
 		// TODO: Implement getTopRatedRestaurant logic
 
