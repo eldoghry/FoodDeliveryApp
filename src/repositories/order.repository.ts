@@ -161,19 +161,13 @@ export class OrderRepository {
 		return query.getMany();
 	}
 
-	async getActiveOrderByAddressId(addressId: number): Promise<Order | null> {
+	async getActiveOrderBy(restaurantId?: number,customerId?: number,addressId?: number): Promise<Order | null> {
+		const whereClause: any = {};
+		if (restaurantId) whereClause.restaurantId = restaurantId;
+		if (customerId) whereClause.customerId = customerId;
+		if (addressId) whereClause.deliveryAddressId = addressId;
 		return await this.orderRepo.findOne({
-			where: { deliveryAddressId: addressId, status: Not(In([
-				OrderStatusEnum.delivered,
-				OrderStatusEnum.canceled,
-				OrderStatusEnum.failed
-			])) }
-		});
-	}
-
-	async getActiveOrderByCustomerId(customerId: number): Promise<Order | null> {
-		return await this.orderRepo.findOne({
-			where: { customerId, status: Not(In([
+			where: { ...whereClause, status: Not(In([
 				OrderStatusEnum.delivered,
 				OrderStatusEnum.canceled,
 				OrderStatusEnum.failed

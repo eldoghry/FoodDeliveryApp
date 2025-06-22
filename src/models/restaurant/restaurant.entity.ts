@@ -29,7 +29,12 @@ export enum RestaurantStatus {
 	closed = 'closed'
 }
 
-export type RestaurantRelations = 'chain' | 'user' | 'menus' | 'cartItems' | 'orders' | 'ratings' | 'cuisines' | 'menus.menuCategories' | 'menus.menuCategories.category.items';
+export enum RestaurantDeactivatedBy {
+	restaurant = 'restaurant',
+	system = 'system'
+}
+
+export type RestaurantRelations = 'chain' | 'user' | 'menus' | 'cartItems' | 'orders' | 'ratings' | 'cuisines' | 'menus.menuCategories' | 'menus.menuCategories.category.items' | 'users.restaurants';
 @Entity()
 export class Restaurant extends AbstractEntity {
 	@PrimaryGeneratedColumn()
@@ -70,6 +75,19 @@ export class Restaurant extends AbstractEntity {
 	@Column({ type: 'boolean', default: false, nullable: false })
 	isActive!: boolean;
 
+	@Column({ type: 'jsonb', nullable: true })
+	deactivationInfo?: {
+		deactivatedAt: Date;
+		reason?: string;
+		deactivatedBy?: RestaurantDeactivatedBy;
+	};
+
+	@Column({ type: 'jsonb', nullable: true })
+	activationInfo?: {
+		activatedAt: Date;
+		activatedBy?: RestaurantDeactivatedBy;
+	};
+
 	@CreateDateColumn()
 	createdAt!: Date;
 
@@ -92,7 +110,8 @@ export class Restaurant extends AbstractEntity {
 		joinColumn: { name: 'restaurant_id', referencedColumnName: 'restaurantId' },
 		inverseJoinColumn: { name: 'user_id', referencedColumnName: 'userId' }
 	})
-	user!: User;
+	users!: User[];
+
 
 	@OneToMany(() => Menu, (menu) => menu.restaurant)
 	menus!: Menu[];

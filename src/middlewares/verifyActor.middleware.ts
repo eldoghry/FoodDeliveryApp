@@ -7,7 +7,7 @@ import ErrMessages from '../errors/error-messages';
 const customerRepo = new CustomerRepository();
 const restaurantRepo = new RestaurantRepository();
 
-type actorType = 'customer' | 'restaurant_user';
+type actorType = 'customer' | 'restaurant_user' | 'restaurant_owner';
 interface actorTypeOptions {
     allowedActorTypes: actorType[];
 }

@@ -39,3 +39,7 @@ export const registerRestaurantBodySchema = Joi.object({
 export const restaurantParamsSchema = Joi.object({
 	restaurantId: Joi.number().integer().min(1).required(),
 }).required();
+
+export const restaurantDeactivateBodySchema = Joi.object({
+	reason: Joi.string().max(500).required()
+}).required();
