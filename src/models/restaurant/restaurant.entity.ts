@@ -20,13 +20,16 @@ import { Cuisine } from './cuisine.entity';
 import { Chain } from './chain.entity';
 
 export enum RestaurantStatus {
-	pending = 'pending_approval',
-	approved = 'approved',
-	rejected = 'rejected',
 	open = 'open',
 	busy = 'busy',
 	pause = 'pause',
 	closed = 'closed'
+}
+
+export enum RestaurantApprovalStatus {
+	pending = 'pending_approval',
+	approved = 'approved',
+	rejected = 'rejected'
 }
 
 export enum RestaurantDeactivatedBy {
@@ -63,8 +66,11 @@ export class Restaurant extends AbstractEntity {
 		};
 	};
 
-	@Column({ type: 'enum', enum: RestaurantStatus, nullable: false })
-	status!: RestaurantStatus;
+	@Column({ type: 'enum', enum: RestaurantApprovalStatus, nullable: false })
+	approvalStatus?: RestaurantApprovalStatus;
+
+	@Column({ type: 'enum', enum: RestaurantStatus,default: RestaurantStatus.closed, nullable: false })
+	status?: RestaurantStatus;
 
 	@Column({ type: 'varchar', length: 100, nullable: true })
 	email?: string;

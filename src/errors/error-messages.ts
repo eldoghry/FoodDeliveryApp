@@ -99,7 +99,9 @@ const ErrMessages = {
 		RestaurantHasActiveOrders: 'Deactivation not allowed - Restaurant has active orders',
 		RestaurantDoesNotBelongToUser: 'Action not allowed - Restaurant does not belong to user',
 		RestaurantIsNotActive: 'Restaurant is already deactivated',
-		RestaurantIsActive: 'Restaurant is already activated'
+		RestaurantIsActive: 'Restaurant is already activated',
+		RestaurantIsNotApproved: 'Restaurant is not approved',
+		RestaurantDectivatedBySystemAdmin: 'Restaurant is deactivated by system admin - please contact support',
 	},
 
 	item: {

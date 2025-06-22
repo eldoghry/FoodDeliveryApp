@@ -1,4 +1,4 @@
-import { Restaurant, RestaurantDeactivatedBy, RestaurantRelations, RestaurantStatus } from './../models/restaurant/restaurant.entity';
+import { Restaurant, RestaurantApprovalStatus, RestaurantDeactivatedBy, RestaurantRelations, RestaurantStatus } from './../models/restaurant/restaurant.entity';
 import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
@@ -68,7 +68,7 @@ export class RestaurantService {
 			logoUrl: payload.logoUrl,
 			bannerUrl: payload.bannerUrl,
 			location: payload.location,
-			status: RestaurantStatus.pending,
+			approvalStatus: RestaurantApprovalStatus.pending,
 		}
 
 		await this.validateUserUniqueness(userData);
@@ -99,7 +99,7 @@ export class RestaurantService {
 	@Transactional()
 	async activateRestaurant(actorId: number, restaurantId: number, activatedBy: RestaurantDeactivatedBy) {
 		await this.validateRestaurantActivation(actorId, restaurantId); 
-		
+
 		const activationInfo = { activatedAt: new Date(), activatedBy: activatedBy };
 		const restaurant = await this.restaurantRepo.updateRestaurant(restaurantId, { isActive: true, status: RestaurantStatus.open, activationInfo });
 		return this.formatActivationRestaurantResponse(restaurant!, 'activate');
@@ -146,11 +146,24 @@ export class RestaurantService {
 
 	private async validateRestaurantActivation(actorId: number, restaurantId: number) {
 		await this.validateRestaurantBelongsToUser(actorId, restaurantId);
+		await this.validateRestaurantDectivatedBySystemAdmin(restaurantId);
+		await this.validateRestaurantIsApproved(restaurantId);
 		await this.validateRestaurantIsActive(restaurantId);
+	}
+
+	private async validateRestaurantIsApproved(restaurantId: number) {
+		const restaurant = await this.getRestaurantOrFail({ restaurantId });
+		if (restaurant.approvalStatus !== RestaurantApprovalStatus.approved) throw new ApplicationError(ErrMessages.restaurant.RestaurantIsNotApproved, StatusCodes.BAD_REQUEST);
+	}
+
+	private async validateRestaurantDectivatedBySystemAdmin(restaurantId: number) {
+		const restaurant = await this.getRestaurantOrFail({ restaurantId });
+		if (restaurant.deactivationInfo?.deactivatedBy === RestaurantDeactivatedBy.system) throw new ApplicationError(ErrMessages.restaurant.RestaurantDectivatedBySystemAdmin, StatusCodes.BAD_REQUEST);
 	}
 
 	private async validateRestaurantBelongsToUser(actorId: number, restaurantId: number) {
 		const restaurant = await this.getRestaurantOrFail({ restaurantId, relations: ['users.restaurants'] });
+		console.log(restaurant.users);
 		if (restaurant.users.some((user) => user.userId !== actorId)) throw new ApplicationError(ErrMessages.restaurant.RestaurantDoesNotBelongToUser, StatusCodes.BAD_REQUEST);
 
 	}
