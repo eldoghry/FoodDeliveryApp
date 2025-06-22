@@ -51,6 +51,13 @@ export class RestaurantController {
 		sendResponse(res, StatusCodes.OK, 'Restaurant deactivated successfully', restaurant);
 	}
 
+	async activateRestaurant(req: Request, res: Response) {
+		const { actorId } = req?.user as AuthorizedUser;
+		const { restaurantId } = req.validated?.params;
+		const restaurant = await this.restaurantService.activateRestaurant(actorId, restaurantId, RestaurantDeactivatedBy.restaurant);
+		sendResponse(res, StatusCodes.OK, 'Restaurant activated successfully', restaurant);
+	}
+
 	async getTopRatedRestaurant(req: Request, res: Response) {
 		// TODO: Implement getTopRatedRestaurant logic
 

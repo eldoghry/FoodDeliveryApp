@@ -96,6 +96,15 @@ export class RestaurantService {
 		return this.formatActivationRestaurantResponse(restaurant!, 'deactivate');
 	}
 
+	@Transactional()
+	async activateRestaurant(actorId: number, restaurantId: number, activatedBy: RestaurantDeactivatedBy) {
+		await this.validateRestaurantActivation(actorId, restaurantId); 
+		
+		const activationInfo = { activatedAt: new Date(), activatedBy: activatedBy };
+		const restaurant = await this.restaurantRepo.updateRestaurant(restaurantId, { isActive: true, status: RestaurantStatus.open, activationInfo });
+		return this.formatActivationRestaurantResponse(restaurant!, 'activate');
+	}
+
 	/* === Validation Methods === */
 
 	private async validateUserUniqueness(payload: Partial<User>) {
@@ -127,6 +136,38 @@ export class RestaurantService {
 	private async validateRestaurantNameUniqueness(name: string) {
 		const restaurant = await this.restaurantRepo.getRestaurantByName(name);
 		if (restaurant) throw new ApplicationError(ErrMessages.restaurant.RestaurantNameAlreadyExists, StatusCodes.BAD_REQUEST);
+	}
+
+	private async validateRestaurantDeactivation(actorId: number, restaurantId: number) {
+		await this.validateRestaurantBelongsToUser(actorId, restaurantId);
+		await this.validateRestaurantIsDeactivated(restaurantId);
+		await this.validateRestaurantHasActiveOrders(restaurantId);
+	}
+
+	private async validateRestaurantActivation(actorId: number, restaurantId: number) {
+		await this.validateRestaurantBelongsToUser(actorId, restaurantId);
+		await this.validateRestaurantIsActive(restaurantId);
+	}
+
+	private async validateRestaurantBelongsToUser(actorId: number, restaurantId: number) {
+		const restaurant = await this.getRestaurantOrFail({ restaurantId, relations: ['users.restaurants'] });
+		if (restaurant.users.some((user) => user.userId !== actorId)) throw new ApplicationError(ErrMessages.restaurant.RestaurantDoesNotBelongToUser, StatusCodes.BAD_REQUEST);
+
+	}
+
+	private async validateRestaurantHasActiveOrders(restaurantId: number) {
+		const activeOrder = await this.orderService.getActiveOrderByRestaurantId(restaurantId);
+		if (activeOrder) throw new ApplicationError(ErrMessages.restaurant.RestaurantHasActiveOrders, StatusCodes.BAD_REQUEST);
+	}
+
+	private async validateRestaurantIsDeactivated(restaurantId: number,) {
+		const restaurant = await this.getRestaurantOrFail({ restaurantId });
+		if (!restaurant.isActive) throw new ApplicationError(ErrMessages.restaurant.RestaurantIsNotActive, StatusCodes.BAD_REQUEST);
+	}
+
+	private async validateRestaurantIsActive(restaurantId: number) {
+		const restaurant = await this.getRestaurantOrFail({ restaurantId });
+		if (restaurant.isActive) throw new ApplicationError(ErrMessages.restaurant.RestaurantIsActive, StatusCodes.BAD_REQUEST);
 	}
 
 	/* === Helper Methods === */
@@ -259,25 +300,4 @@ export class RestaurantService {
 		})) || [];
 	}
 
-	private async validateRestaurantDeactivation(actorId: number, restaurantId: number) {
-		await this.validateRestaurantBelongsToUser(actorId, restaurantId);
-		await this.validateRestaurantHasActiveOrders(restaurantId);
-		await this.validateRestaurantIsActive(restaurantId);
-	}
-
-	private async validateRestaurantBelongsToUser(actorId: number, restaurantId: number) {
-		const restaurant = await this.getRestaurantOrFail({ restaurantId, relations: ['users.restaurants'] });
-		if (restaurant.users.some((user) => user.userId !== actorId)) throw new ApplicationError(ErrMessages.restaurant.RestaurantDoesNotBelongToUser, StatusCodes.BAD_REQUEST);
-
-	}
-
-	private async validateRestaurantHasActiveOrders(restaurantId: number) {
-		const activeOrder = await this.orderService.getActiveOrderByRestaurantId(restaurantId);
-		if (activeOrder) throw new ApplicationError(ErrMessages.restaurant.RestaurantHasActiveOrders, StatusCodes.BAD_REQUEST);
-	}
-
-	private async validateRestaurantIsActive(restaurantId: number) {
-		const restaurant = await this.getRestaurantOrFail({ restaurantId });
-		if (!restaurant.isActive) throw new ApplicationError(ErrMessages.restaurant.RestaurantIsNotActive, StatusCodes.BAD_REQUEST);
-	}
 }

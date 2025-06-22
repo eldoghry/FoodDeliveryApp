@@ -98,7 +98,8 @@ const ErrMessages = {
 		RestaurantNameAlreadyExists: 'Restaurant name already exists',
 		RestaurantHasActiveOrders: 'Deactivation not allowed - Restaurant has active orders',
 		RestaurantDoesNotBelongToUser: 'Action not allowed - Restaurant does not belong to user',
-		RestaurantIsNotActive: 'Restaurant is already deactivated'
+		RestaurantIsNotActive: 'Restaurant is already deactivated',
+		RestaurantIsActive: 'Restaurant is already activated'
 	},
 
 	item: {

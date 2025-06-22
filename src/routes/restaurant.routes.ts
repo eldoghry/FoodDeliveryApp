@@ -22,7 +22,9 @@ RestaurantRouter.get(
 
 RestaurantRouter.get('/search', controller.searchRestaurant.bind(controller));
 // RestaurantRouter.post('/:restaurantId/status', controller.toggleRestaurantStatus.bind(controller));
-RestaurantRouter.patch('/:restaurantId/deactivate',isAuthenticated, verifyActor({ allowedActorTypes: ['restaurant_owner'] }), validateRequest({ params: restaurantParamsSchema, body: restaurantDeactivateBodySchema }), controller.deactivateRestaurant.bind(controller));
+RestaurantRouter.patch('/:restaurantId/deactivate', isAuthenticated, verifyActor({ allowedActorTypes: ['restaurant_owner'] }), validateRequest({ params: restaurantParamsSchema, body: restaurantDeactivateBodySchema }), controller.deactivateRestaurant.bind(controller));
+RestaurantRouter.patch('/:restaurantId/activate', isAuthenticated, verifyActor({ allowedActorTypes: ['restaurant_owner'] }), validateRequest({ params: restaurantParamsSchema }), controller.activateRestaurant.bind(controller));
+
 RestaurantRouter.get('/top-rated', controller.getTopRatedRestaurant.bind(controller));
 RestaurantRouter.get('/recommended', controller.getTopRatedRestaurant.bind(controller));
 
