@@ -5,7 +5,7 @@ import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { RestaurantRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
-import { ListRestaurantsDto } from '../dtos/restaurant.dto';
+import { ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
 import { cursorPaginate } from '../utils/helper';
 
 export class RestaurantService {
@@ -23,6 +23,12 @@ export class RestaurantService {
 	async getAllRestaurants(filter: ListRestaurantsDto) {
 		const { limit } = filter;
 		const restaurants = await this.restaurantRepo.getAllRestaurants({ ...filter, limit: limit + 1 });
+		return cursorPaginate(restaurants, limit, 'restaurantId' as any);
+	}
+
+	async getTopRatedRestaurants(filter: ListTopRatedRestaurantsDto) {
+		const { limit } = filter;
+		const restaurants = await this.restaurantRepo.getTopRatedRestaurants({ ...filter, limit: limit + 1 });
 		return cursorPaginate(restaurants, limit, 'restaurantId' as any);
 	}
 }
