@@ -12,7 +12,7 @@ export class RestaurantController {
 	async registerRestaurant (req: Request, res: Response) {
 		const payload = req.validated?.body;
 		const restaurant = await this.restaurantService.registerRestaurant(payload);
-		sendResponse(res, StatusCodes.OK, 'Registration successful. Your restaurant is pending approval.', restaurant);
+		sendResponse(res, StatusCodes.CREATED, 'Registration successful. Your restaurant is pending approval.', restaurant);
 	}
   
 	async updateRestaurant(req: Request, res: Response) {
@@ -21,9 +21,10 @@ export class RestaurantController {
 		throw new ApplicationError('Not implemented', StatusCodes.NOT_IMPLEMENTED);
 	}
 
-	async getRestaurantById(req: Request, res: Response) {
-		// TODO: Implement getRestaurantById logic
-		throw new ApplicationError('Not implemented', StatusCodes.NOT_IMPLEMENTED);
+	async viewRestaurant(req: Request, res: Response) {
+		const { restaurantId } = req.validated?.params;
+		const restaurant = await this.restaurantService.viewRestaurant(restaurantId);
+		sendResponse(res, StatusCodes.OK, 'Restaurant view successfully', restaurant);
 	}
 
 	async listRestaurant(req: Request, res: Response) {

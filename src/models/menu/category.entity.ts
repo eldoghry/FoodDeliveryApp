@@ -33,6 +33,10 @@ export class Category extends AbstractEntity {
 	menuCategories!: MenuCategory[];
 
 	@ManyToMany(() => Item, (item) => item.categories)
-	@JoinTable({ name: 'category_items' })
+	@JoinTable({
+		name: 'category_items',
+		joinColumn: { name: 'category_id', referencedColumnName: 'categoryId' },
+		inverseJoinColumn: { name: 'item_id', referencedColumnName: 'itemId' }
+	})
 	items!: Item[];
 }
