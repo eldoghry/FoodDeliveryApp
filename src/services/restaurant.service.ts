@@ -108,7 +108,6 @@ export class RestaurantService {
 	@Transactional()
 	async updateRestaurantStatus(actorId: number, restaurantId: number, payload: { status: RestaurantStatus }) {
 		await this.validateRestaurantBelongsToUser(actorId, restaurantId);
-		await this.validateRestaurantIsApproved(restaurantId);
 		await this.validateRestaurantIsActivated(restaurantId);
 
 		if(payload.status === RestaurantStatus.closed || payload.status === RestaurantStatus.pause) {
