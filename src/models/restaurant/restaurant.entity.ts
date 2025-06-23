@@ -29,7 +29,7 @@ export enum RestaurantStatus {
 	closed = 'closed'
 }
 
-export type RestaurantRelations = 'user' | 'menus' | 'cartItems' | 'orders' | 'ratings' | 'cuisines';
+export type RestaurantRelations = 'chain' | 'user' | 'menus' | 'cartItems' | 'orders' | 'ratings' | 'cuisines' | 'menus.menuCategories' | 'menus.menuCategories.category.items';
 @Entity()
 export class Restaurant extends AbstractEntity {
 	@PrimaryGeneratedColumn()

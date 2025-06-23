@@ -35,3 +35,7 @@ export const registerRestaurantBodySchema = Joi.object({
 	vatNumber: Joi.string().required(),
 	cuisines: Joi.array().items(Joi.number().integer().min(1)).required(),
 }).required();
+
+export const restaurantParamsSchema = Joi.object({
+	restaurantId: Joi.number().integer().min(1).required(),
+}).required();

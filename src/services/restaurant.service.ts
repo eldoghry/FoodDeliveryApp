@@ -10,12 +10,15 @@ import { Transactional } from 'typeorm-transactional';
 import { Chain } from '../models/restaurant/chain.entity';
 import { UserService } from './user.service';
 import { User, UserTypeNames } from '../models';
+import { Rating } from '../models/rating/rating.entity';
+import { SettingService } from './setting.service';
+import { SettingKey } from '../enums/setting.enum';
 
 export class RestaurantService {
 	private restaurantRepo = new RestaurantRepository();
 	private userService = new UserService();
 
-	async getRestaurantOrFail(filter: { restaurantId?: number; userId?: number; relations?: RestaurantRelations[] }) {
+	async getRestaurantOrFail(filter: { restaurantId?: number; userId?: number; relations?: RestaurantRelations[];}) {
 		const restaurant = await this.restaurantRepo.getRestaurantBy(filter);
 
 		if (!restaurant) throw new ApplicationError(ErrMessages.restaurant.RestaurantNotFound, StatusCodes.NOT_FOUND);
@@ -38,35 +41,44 @@ export class RestaurantService {
 
 	@Transactional()
 	async registerRestaurant(payload: any) {
-		const userData : Partial<User> ={
+		const userData: Partial<User> = {
 			name: payload.firstName + ' ' + payload.lastName,
 			phone: payload.businessPhone,
 			email: payload.businessEmail,
 			userTypeId: (await this.userService.getUserTypeByName(UserTypeNames.restaurant_owner))?.userTypeId
 		}
 
-		const chainData : Partial<Chain> = {
+		const chainData: Partial<Chain> = {
 			name: payload.chainName,
 			commercialRegistrationNumber: payload.commercialRegistrationNumber,
 			vatNumber: payload.vatNumber
 		}
 
-		const restaurantData : Partial<Restaurant> = {
+		const restaurantData: Partial<Restaurant> = {
 			name: payload.name,
 			logoUrl: payload.logoUrl,
 			bannerUrl: payload.bannerUrl,
 			location: payload.location,
-			cuisines: payload.cuisines,
 			status: RestaurantStatus.pending,
 		}
 
 		await this.validateUserUniqueness(userData);
+
 		const chain = await this.createChain(chainData);
 		restaurantData.chainId = chain.chainId;
+
+		const cuisines = await this.getRestaurantCuisines(payload.cuisines);
+		restaurantData.cuisines = cuisines;
+
 		const restaurant = await this.createRestaurant(restaurantData);
 		return this.formatRegisterRestaurantResponse(restaurant!);
 	}
 
+	async viewRestaurant(restaurantId: number) {
+		const restaurant = await this.restaurantRepo.getRestaurantByFilteredRelations(restaurantId);
+		return this.formatViewRestaurantResponse(restaurant!);
+		// return restaurant;
+	}
 
 	/* === Validation Methods === */
 
@@ -102,11 +114,16 @@ export class RestaurantService {
 	}
 
 	/* === Helper Methods === */
+	
 	@Transactional()
 	async createRestaurant(payload: Partial<Restaurant>) {
 		await this.validateRestaurantNameUniqueness(payload.name!);
 		const restaurant = await this.restaurantRepo.createRestaurant(payload);
 		return restaurant;
+	}
+
+	async getRestaurantCuisines(cuisines: number[]) {
+		return await this.restaurantRepo.getCuisines(cuisines);
 	}
 
 	private async formatRegisterRestaurantResponse(restaurant: Restaurant) {
@@ -115,8 +132,92 @@ export class RestaurantService {
 			name: restaurant.name,
 			status: restaurant.status,
 			submittedAt: restaurant.createdAt,
-			
+
 		};
 	}
 
+	private async formatViewRestaurantResponse(restaurant: Restaurant) {
+		return {
+			restaurantId: restaurant.restaurantId,
+			name: restaurant.name,
+			avarageRating: this.calculateAverageRating(restaurant.ratings),
+			ratingCount: restaurant.ratings.length,
+			status: restaurant.status,
+			chain: this.formatChainInfo(restaurant.chain),
+			cuisines: this.formatCuisines(restaurant.cuisines),
+			contact: this.formatContactInfo(restaurant),
+			location: restaurant.location,
+			logoUrl: restaurant.logoUrl,
+			bannerUrl: restaurant.bannerUrl,
+			menus: this.formatMenus(restaurant.menus),
+			deliveryFees: await SettingService.get(SettingKey.DELIVERY_BASE_FEE),
+			minOrderAmount: await SettingService.get(SettingKey.MIN_ORDER_AMOUNT),
+			minEstimatedDeliveryTime: await SettingService.get(SettingKey.MIN_ESTIMATED_DELIVERY_TIME),
+			maxEstimatedDeliveryTime: await SettingService.get(SettingKey.MAX_ESTIMATED_DELIVERY_TIME),
+		};
+	}
+
+	private calculateAverageRating(ratings: Rating[]) {
+		if (ratings.length === 0) return 0;
+		const averageRating = ratings.reduce((acc, rating) => acc + Number(rating.rating), 0) / ratings.length;
+		return averageRating;
+	}
+		
+	
+	private formatChainInfo(chain: any) {
+		return chain ? {
+			chainId: chain.chainId,
+			name: chain.name,
+		} : null;
+	}
+	
+	private formatCuisines(cuisines: any[]) {
+		return cuisines?.map(cuisine => ({
+			cuisineId: cuisine.cuisineId,
+			name: cuisine.name,
+		})) || [];
+	}
+	
+	private formatContactInfo(restaurant: Restaurant) {
+		return {
+			phone: restaurant.phone,
+			email: restaurant.email,
+		};
+	}
+	
+	private formatMenus(menus: any[]) {
+		return menus?.map(menu => ({
+			menuId: menu.menuId,
+			menuTitle: menu.menuTitle,
+			categories: this.formatMenuCategories(menu.menuCategories),
+		})) || [];
+	}
+	
+	private formatMenuCategories(menuCategories: any[]) {
+		return menuCategories
+			?.map(menuCategory => this.formatMenuCategory(menuCategory.category))
+			.filter(Boolean) || [];
+	}
+	
+	private formatMenuCategory(category: any) {
+		if (!category) return null;
+		
+		return {
+			categoryId: category.categoryId,
+			title: category.title,
+			items: this.formatCategoryItems(category.items),
+		};
+	}
+	
+	private formatCategoryItems(items: any[]) {
+		return items?.map(item => ({
+			itemId: item.itemId,
+			name: item.name,
+			description: item.description,
+			imagePath: item.imagePath,
+			price: item.price,
+			energyValCal: item.energyValCal,
+			notes: item.notes,
+		})) || [];
+	}
 }

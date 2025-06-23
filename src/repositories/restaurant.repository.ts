@@ -1,17 +1,20 @@
 import { AppDataSource } from '../config/data-source';
 import { Restaurant, RestaurantRelations } from '../models/restaurant/restaurant.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { RestaurantStatus } from '../models/restaurant/restaurant.entity';
 import { ListRestaurantsDto } from '../dtos/restaurant.dto';
 import { Chain } from '../models/restaurant/chain.entity';
+import { Cuisine } from '../models/restaurant/cuisine.entity';
 
 export class RestaurantRepository {
 	private restaurantRepo: Repository<Restaurant>;
 	private chainRepo: Repository<Chain>;
+	private cuisineRepo: Repository<Cuisine>;
 
 	constructor() {
 		this.restaurantRepo = AppDataSource.getRepository(Restaurant);
 		this.chainRepo = AppDataSource.getRepository(Chain);
+		this.cuisineRepo = AppDataSource.getRepository(Cuisine);
 	}
 
 	async createChain(data: Partial<Chain>): Promise<Chain> {
@@ -47,6 +50,13 @@ export class RestaurantRepository {
 		await this.chainRepo.delete(chainId);
 	}
 
+	async getCuisines(cuisines: number[]) {
+		const cuisineEntities = await this.cuisineRepo.findBy({
+			cuisineId: In(cuisines)
+		  });
+		  return cuisineEntities;
+	}
+
 	async createRestaurant(data: Partial<Restaurant>): Promise<Restaurant | null> {
 		const restaurant = this.restaurantRepo.create(data);
 		await this.restaurantRepo.save(restaurant);
@@ -68,6 +78,26 @@ export class RestaurantRepository {
 	async getRestaurantByName(name: string): Promise<Restaurant | null> {
 		return this.getRestaurantBy({ name });
 	}
+
+	async getRestaurantByFilteredRelations(restaurantId: number) {
+		return this.restaurantRepo
+		  .createQueryBuilder('restaurant')
+		  .leftJoinAndSelect('restaurant.chain', 'chain')
+		  .leftJoinAndSelect('restaurant.ratings', 'ratings')
+		  .leftJoinAndSelect('restaurant.cuisines', 'cuisines')
+		  .leftJoinAndSelect('restaurant.menus', 'menu', 'menu.isActive = :menuActive', {
+			menuActive: true
+		  })
+		  .leftJoinAndSelect('menu.menuCategories', 'menuCategory')
+		  .leftJoinAndSelect('menuCategory.category', 'category', 'category.isActive = :categoryActive', {
+			categoryActive: true
+		  })
+		  .leftJoinAndSelect('category.items', 'item', 'item.isAvailable = :itemAvailable', {
+			itemAvailable: true
+		  })
+		  .where('restaurant.restaurantId = :restaurantId', { restaurantId })
+		  .getOne();
+	  }	  
 
 	async getAllRestaurants(filter: ListRestaurantsDto): Promise<any[]> {
 		const averageRating = 'COALESCE(ROUND(AVG(ratings.rating),2),0)';

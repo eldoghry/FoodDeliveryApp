@@ -24,7 +24,7 @@ export class Chain extends AbstractEntity {
     @Column({ type: 'varchar', length: 15, unique: true, nullable: false })
     vatNumber!: string;
 
-    @Column({ type: 'integer', default: 0, nullable: true })
+    @Column({ type: 'integer', default: 1, nullable: true })
     storeCount?: number;
     
     @CreateDateColumn()
