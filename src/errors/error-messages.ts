@@ -95,7 +95,13 @@ const ErrMessages = {
 		ChainNameAlreadyExists: 'Chain name already exists',
 		ChainCommercialRegistrationNumberAlreadyExists: 'Chain commercial registration number already exists',
 		ChainVatNumberAlreadyExists: 'Chain vat number already exists',
-		RestaurantNameAlreadyExists: 'Restaurant name already exists'
+		RestaurantNameAlreadyExists: 'Restaurant name already exists',
+		RestaurantHasActiveOrders: 'Deactivation not allowed - Restaurant has active orders',
+		RestaurantDoesNotBelongToUser: 'Action not allowed - Restaurant does not belong to user',
+		RestaurantIsNotActive: 'Restaurant is already deactivated',
+		RestaurantIsActive: 'Restaurant is already activated',
+		RestaurantIsNotApproved: 'Restaurant is not approved',
+		RestaurantDectivatedBySystemAdmin: 'Restaurant is deactivated by system admin - please contact support',
 	},
 
 	item: {

@@ -5,6 +5,7 @@ import { AuthorizedUser } from '../middlewares/auth.middleware';
 import { RestaurantService } from '../services/restaurant.service';
 import ApplicationError from '../errors/application.error';
 import { ListRestaurantsDto } from '../dtos/restaurant.dto';
+import { RestaurantDeactivatedBy } from '../models';
 
 export class RestaurantController {
 	private restaurantService = new RestaurantService();
@@ -42,9 +43,19 @@ export class RestaurantController {
 		throw new ApplicationError('Not implemented', StatusCodes.NOT_IMPLEMENTED);
 	}
 
-	async toggleRestaurantStatus(req: Request, res: Response) {
-		// TODO: Implement toggleRestaurantStatus logic
-		throw new ApplicationError('Not implemented', StatusCodes.NOT_IMPLEMENTED);
+	async deactivateRestaurant(req: Request, res: Response) {
+		const { actorId } = req?.user as AuthorizedUser;
+		const { restaurantId } = req.validated?.params;
+		const payload = req.validated?.body;
+		const restaurant = await this.restaurantService.deactivateRestaurant(actorId, restaurantId, payload, RestaurantDeactivatedBy.restaurant);
+		sendResponse(res, StatusCodes.OK, 'Restaurant deactivated successfully', restaurant);
+	}
+
+	async activateRestaurant(req: Request, res: Response) {
+		const { actorId } = req?.user as AuthorizedUser;
+		const { restaurantId } = req.validated?.params;
+		const restaurant = await this.restaurantService.activateRestaurant(actorId, restaurantId, RestaurantDeactivatedBy.restaurant);
+		sendResponse(res, StatusCodes.OK, 'Restaurant activated successfully', restaurant);
 	}
 
 	async getTopRatedRestaurant(req: Request, res: Response) {

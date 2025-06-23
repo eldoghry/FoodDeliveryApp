@@ -13,6 +13,7 @@ import {
 	PaymentMethodConfig,
 	PaymentMethodEnum,
 	Restaurant,
+	RestaurantApprovalStatus,
 	RestaurantStatus,
 	Role,
 	Setting,
@@ -202,6 +203,7 @@ const restaurantSeedData: SeedData<Restaurant> = {
 				}
 			},
 			status: RestaurantStatus.open,
+			approvalStatus: RestaurantApprovalStatus.pending,
 			isActive: faker.datatype.boolean(),
 			email: `orders@restaurant${index + 1}.com`,
 			phone: faker.phone.number(),

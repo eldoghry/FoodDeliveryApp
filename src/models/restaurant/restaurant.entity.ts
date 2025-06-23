@@ -20,16 +20,24 @@ import { Cuisine } from './cuisine.entity';
 import { Chain } from './chain.entity';
 
 export enum RestaurantStatus {
-	pending = 'pending_approval',
-	approved = 'approved',
-	rejected = 'rejected',
 	open = 'open',
 	busy = 'busy',
 	pause = 'pause',
 	closed = 'closed'
 }
 
-export type RestaurantRelations = 'chain' | 'user' | 'menus' | 'cartItems' | 'orders' | 'ratings' | 'cuisines' | 'menus.menuCategories' | 'menus.menuCategories.category.items';
+export enum RestaurantApprovalStatus {
+	pending = 'pending_approval',
+	approved = 'approved',
+	rejected = 'rejected'
+}
+
+export enum RestaurantDeactivatedBy {
+	restaurant = 'restaurant',
+	system = 'system'
+}
+
+export type RestaurantRelations = 'chain' | 'user' | 'menus' | 'cartItems' | 'orders' | 'ratings' | 'cuisines' | 'menus.menuCategories' | 'menus.menuCategories.category.items' | 'users.restaurants';
 @Entity()
 export class Restaurant extends AbstractEntity {
 	@PrimaryGeneratedColumn()
@@ -58,8 +66,11 @@ export class Restaurant extends AbstractEntity {
 		};
 	};
 
-	@Column({ type: 'enum', enum: RestaurantStatus, nullable: false })
-	status!: RestaurantStatus;
+	@Column({ type: 'enum', enum: RestaurantApprovalStatus, nullable: false })
+	approvalStatus?: RestaurantApprovalStatus;
+
+	@Column({ type: 'enum', enum: RestaurantStatus,default: RestaurantStatus.closed, nullable: false })
+	status?: RestaurantStatus;
 
 	@Column({ type: 'varchar', length: 100, nullable: true })
 	email?: string;
@@ -69,6 +80,19 @@ export class Restaurant extends AbstractEntity {
 
 	@Column({ type: 'boolean', default: false, nullable: false })
 	isActive!: boolean;
+
+	@Column({ type: 'jsonb', nullable: true })
+	deactivationInfo?: {
+		deactivatedAt: Date;
+		reason?: string;
+		deactivatedBy?: RestaurantDeactivatedBy;
+	};
+
+	@Column({ type: 'jsonb', nullable: true })
+	activationInfo?: {
+		activatedAt: Date;
+		activatedBy?: RestaurantDeactivatedBy;
+	};
 
 	@CreateDateColumn()
 	createdAt!: Date;
@@ -92,7 +116,8 @@ export class Restaurant extends AbstractEntity {
 		joinColumn: { name: 'restaurant_id', referencedColumnName: 'restaurantId' },
 		inverseJoinColumn: { name: 'user_id', referencedColumnName: 'userId' }
 	})
-	user!: User;
+	users!: User[];
+
 
 	@OneToMany(() => Menu, (menu) => menu.restaurant)
 	menus!: Menu[];

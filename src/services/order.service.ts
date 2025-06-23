@@ -43,7 +43,6 @@ export class OrderService {
 	private orderRepo = new OrderRepository();
 	private cartService = new CartService();
 	private customerService = new CustomerService();
-	// private dataSource = AppDataSource; // to be used for typeorm transactions
 	private restaurantService = new RestaurantService();
 	private transactionService = new TransactionService();
 
@@ -545,10 +544,14 @@ export class OrderService {
 	}
 
 	async getActiveOrderByAddressId(addressId: number): Promise<Order | null> {
-		return this.orderRepo.getActiveOrderByAddressId(addressId);
+		return this.orderRepo.getActiveOrderBy(addressId);
 	}
 
 	async getActiveOrderByCustomerId(customerId: number): Promise<Order | null> {
-		return this.orderRepo.getActiveOrderByCustomerId(customerId);
+		return this.orderRepo.getActiveOrderBy(customerId);
+	}
+
+	async getActiveOrderByRestaurantId(restaurantId: number): Promise<Order | null> {
+		return this.orderRepo.getActiveOrderBy(restaurantId);
 	}
 }
