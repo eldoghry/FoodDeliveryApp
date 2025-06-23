@@ -2,9 +2,9 @@ import { AppDataSource } from '../config/data-source';
 import { Restaurant, RestaurantRelations } from '../models/restaurant/restaurant.entity';
 import { In, Repository } from 'typeorm';
 import { RestaurantStatus } from '../models/restaurant/restaurant.entity';
-import { ListRestaurantsDto } from '../dtos/restaurant.dto';
 import { Chain } from '../models/restaurant/chain.entity';
 import { Cuisine } from '../models/restaurant/cuisine.entity';
+import { ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
 
 export class RestaurantRepository {
 	private restaurantRepo: Repository<Restaurant>;
@@ -53,8 +53,8 @@ export class RestaurantRepository {
 	async getCuisines(cuisines: number[]) {
 		const cuisineEntities = await this.cuisineRepo.findBy({
 			cuisineId: In(cuisines)
-		  });
-		  return cuisineEntities;
+		});
+		return cuisineEntities;
 	}
 
 	async createRestaurant(data: Partial<Restaurant>): Promise<Restaurant | null> {
@@ -63,7 +63,12 @@ export class RestaurantRepository {
 		return await this.getRestaurantById(restaurant.restaurantId);
 	}
 
-	async getRestaurantBy(filter: { restaurantId?: number; userId?: number;name?: string; relations?: RestaurantRelations[] }) {
+	async getRestaurantBy(filter: {
+		restaurantId?: number;
+		userId?: number;
+		name?: string;
+		relations?: RestaurantRelations[];
+	}) {
 		const { relations, ...whereOptions } = filter;
 		return await this.restaurantRepo.findOne({
 			where: whereOptions,
@@ -81,23 +86,23 @@ export class RestaurantRepository {
 
 	async getRestaurantByFilteredRelations(restaurantId: number) {
 		return this.restaurantRepo
-		  .createQueryBuilder('restaurant')
-		  .leftJoinAndSelect('restaurant.chain', 'chain')
-		  .leftJoinAndSelect('restaurant.ratings', 'ratings')
-		  .leftJoinAndSelect('restaurant.cuisines', 'cuisines')
-		  .leftJoinAndSelect('restaurant.menus', 'menu', 'menu.isActive = :menuActive', {
-			menuActive: true
-		  })
-		  .leftJoinAndSelect('menu.menuCategories', 'menuCategory')
-		  .leftJoinAndSelect('menuCategory.category', 'category', 'category.isActive = :categoryActive', {
-			categoryActive: true
-		  })
-		  .leftJoinAndSelect('category.items', 'item', 'item.isAvailable = :itemAvailable', {
-			itemAvailable: true
-		  })
-		  .where('restaurant.restaurantId = :restaurantId', { restaurantId })
-		  .getOne();
-	  }	  
+			.createQueryBuilder('restaurant')
+			.leftJoinAndSelect('restaurant.chain', 'chain')
+			.leftJoinAndSelect('restaurant.ratings', 'ratings')
+			.leftJoinAndSelect('restaurant.cuisines', 'cuisines')
+			.leftJoinAndSelect('restaurant.menus', 'menu', 'menu.isActive = :menuActive', {
+				menuActive: true
+			})
+			.leftJoinAndSelect('menu.menuCategories', 'menuCategory')
+			.leftJoinAndSelect('menuCategory.category', 'category', 'category.isActive = :categoryActive', {
+				categoryActive: true
+			})
+			.leftJoinAndSelect('category.items', 'item', 'item.isAvailable = :itemAvailable', {
+				itemAvailable: true
+			})
+			.where('restaurant.restaurantId = :restaurantId', { restaurantId })
+			.getOne();
+	}
 
 	async getAllRestaurants(filter: ListRestaurantsDto): Promise<any[]> {
 		const averageRating = 'COALESCE(ROUND(AVG(ratings.rating),2),0)';
@@ -161,5 +166,39 @@ export class RestaurantRepository {
 			.where('restaurant.name ILIKE :query', { query: `%${query}%` })
 			.andWhere('restaurant.isActive = :isActive', { isActive: true })
 			.getMany();
+	}
+
+	async getTopRatedRestaurants(filter: ListTopRatedRestaurantsDto): Promise<any[]> {
+		const avgRatingExpr = 'COALESCE(ROUND(AVG(ratings.rating),2),0)';
+
+		const query = this.restaurantRepo
+			.createQueryBuilder('restaurant')
+			.leftJoin('restaurant.ratings', 'ratings')
+			.leftJoinAndSelect('restaurant.cuisines', 'cuisines')
+			.addSelect(avgRatingExpr, 'averageRating')
+			.addSelect('COUNT(ratings.rating)', 'ratingCount')
+			.where('restaurant.isActive = :isActive', { isActive: true });
+
+		if (filter?.cuisines) {
+			query.andWhere('cuisines.cuisineId IN (:...cuisinesIds)', { cuisinesIds: filter.cuisines });
+		}
+
+		if (filter?.cursor) query.andWhere('restaurant.restaurantId < :cursor', { cursor: filter.cursor });
+		if (filter?.limit) query.limit(filter.limit);
+
+		query.orderBy(avgRatingExpr, 'DESC');
+		query.groupBy('restaurant.restaurantId');
+		query.addGroupBy('cuisines.cuisineId');
+
+		const { entities, raw } = await query.getRawAndEntities();
+
+		return entities.map((restaurant, index) => {
+			return {
+				...restaurant,
+				cuisines: restaurant.cuisines.map((cuisine) => ({ id: cuisine.cuisineId, name: cuisine.name })),
+				averageRating: +raw[index].averageRating,
+				ratingCount: raw[index].ratingCount
+			};
+		});
 	}
 }

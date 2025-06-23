@@ -9,3 +9,7 @@ export class ListRestaurantsDto extends PaginationDto {
 	// sort?: 'name' | 'rating' | 'distance' | 'created_at';
 	// order?: OrderBy;
 }
+
+export class ListTopRatedRestaurantsDto extends PaginationDto {
+	cuisines?: number[];
+}
