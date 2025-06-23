@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { RestaurantStatus } from '../models';
 
 export const listRestaurantsQuerySchema = Joi.object({
 	// page: Joi.number().integer().min(1).default(1),
@@ -43,3 +44,8 @@ export const restaurantParamsSchema = Joi.object({
 export const restaurantDeactivateBodySchema = Joi.object({
 	reason: Joi.string().max(500).required()
 }).required();
+
+export const restaurantStatusBodySchema = Joi.object({
+	status: Joi.string().valid(...Object.values(RestaurantStatus)).required()
+}).required();
+
