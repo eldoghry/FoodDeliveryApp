@@ -74,6 +74,10 @@ const ErrMessages = {
 		OrderNotCompleted: 'Order is not completed',
 		UnauthorizedOrderAccess: 'You are not authorized to access this order'
 	},
+	user:{
+		EmailAlreadyExists: 'Email Already Exists',
+		PhoneAlreadyExists: 'Phone Already Exists',
+	},
 	customer: {
 		CustomerNotFound: 'Customer not found',
 		AddressNotFound: 'Customer Address not found',
@@ -87,7 +91,11 @@ const ErrMessages = {
 	restaurant: {
 		RestaurantNotFound: 'Restaurant not found',
 		RestaurantNotAvailable:
-			'Sorry restaurant cannot process your order right now, try again later or choose different one'
+			'Sorry restaurant cannot process your order right now, try again later or choose different one',
+		ChainNameAlreadyExists: 'Chain name already exists',
+		ChainCommercialRegistrationNumberAlreadyExists: 'Chain commercial registration number already exists',
+		ChainVatNumberAlreadyExists: 'Chain vat number already exists',
+		RestaurantNameAlreadyExists: 'Restaurant name already exists'
 	},
 
 	item: {

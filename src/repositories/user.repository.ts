@@ -1,13 +1,22 @@
 import { AppDataSource } from '../config/data-source';
 import { GetOneUserByDto } from '../dtos/user.dto';
-import { DeactivatedBy, User, UserRelations } from '../models/user/user.entity';
+import { User } from '../models/user/user.entity';
 import { Repository } from 'typeorm';
+import { UserType } from '../models/user/user-type.entity';
 
 export class UserRepository {
 	private userRepo: Repository<User>;
+	private userTypeRepo: Repository<UserType>;
 
 	constructor() {
 		this.userRepo = AppDataSource.getRepository(User);
+		this.userTypeRepo = AppDataSource.getRepository(UserType);
+	}
+
+	async getUserTypeByName(name: string): Promise<UserType | null> {
+		return await this.userTypeRepo.findOne({
+			where: { name }
+		});
 	}
 
 	async createUser(data: Partial<User>): Promise<User> {
@@ -24,6 +33,12 @@ export class UserRepository {
 	async getUserByEmail(email: string): Promise<User | null> {
 		return await this.userRepo.findOne({
 			where: { email }
+		});
+	}
+
+	async getUserByPhone(phone: string): Promise<User | null> {
+		return await this.userRepo.findOne({
+			where: { phone }
 		});
 	}
 

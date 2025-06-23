@@ -74,11 +74,6 @@ export class CustomerService {
 		await this.userService.deactivateUser(userId, deactivationInfo);
 	}
 
-	async getCustomerByIdOrFail(filter: { customerId: number; relations?: CustomerRelations[] }) {
-		const customer = await this.customerRepo.getCustomerById(filter);
-		if (!customer) throw new ApplicationError(ErrMessages.customer.CustomerNotFound, HttpStatusCode.NOT_FOUND);
-		return customer;
-	}
 
 	/* === Validation Methods === */
 
@@ -129,6 +124,12 @@ export class CustomerService {
 	}
 
 	/* === Helper Methods === */
+
+	async getCustomerByIdOrFail(filter: { customerId: number; relations?: CustomerRelations[] }) {
+		const customer = await this.customerRepo.getCustomerById(filter);
+		if (!customer) throw new ApplicationError(ErrMessages.customer.CustomerNotFound, HttpStatusCode.NOT_FOUND);
+		return customer;
+	}
 
 	private async handleDefaultAddressChange(
 		customerId: number,

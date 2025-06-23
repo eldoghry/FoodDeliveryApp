@@ -9,8 +9,7 @@ import {
 	OneToMany,
 	OneToOne,
 	ManyToMany,
-	JoinTable,
-	DeleteDateColumn
+	JoinTable
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { UserType } from './user-type.entity';
@@ -34,7 +33,7 @@ export class User extends AbstractEntity {
 	@Column({ type: 'varchar', length: 100 })
 	name!: string;
 
-	@Column({ type: 'varchar', length: 100, unique: true })
+	@Column({ type: 'varchar', length: 100, unique: true, nullable: false })
 	email!: string;
 
 	@Column({ type: 'varchar', length: 30, nullable: true, unique: true })
@@ -77,8 +76,8 @@ export class User extends AbstractEntity {
 	})
 	roles!: Role[];
 
-	@OneToOne(() => Restaurant, (restaurant) => restaurant.user)
-	restaurant!: Restaurant;
+	@ManyToMany(() => Restaurant, (restaurant) => restaurant.user)
+	restaurants!: Restaurant[];
 
 	@OneToOne(() => Customer, (customer) => customer.user)
 	customer!: Customer;

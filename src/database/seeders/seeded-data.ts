@@ -27,6 +27,7 @@ import { PaymentMethodStatus } from '../../enums/payment_method.enum';
 import { Rating } from '../../models/rating/rating.entity';
 import { Cuisine } from '../../models/restaurant/cuisine.entity';
 import { DataSource } from 'typeorm';
+import { Chain } from '../../models/restaurant/chain.entity';
 //
 const ITEMS_COUNT = 100;
 const RESTAURANTS_COUNT = 100;
@@ -171,26 +172,41 @@ const cuisineSeededData: SeedData<Cuisine> = {
 	}))
 };
 
+const chainSeedData: SeedData<Chain> = {
+	entity: Chain,
+	data: Array.from({ length: 10 }).map((_, index) => ({
+		chainId: index + 1,
+		name: faker.company.name(),
+		commercialRegistrationNumber: faker.string.alphanumeric(10),
+		vatNumber: faker.string.alphanumeric(12),
+		createdAt: new Date(),
+		updatedAt: new Date()
+	}))
+};
+
 const restaurantSeedData: SeedData<Restaurant> = {
 	entity: Restaurant,
 	data: Array.from({ length: RESTAURANTS_COUNT }).map((_, index) => {
 		return {
-			userId: index + 1,
+			chainId: 1,
 			name: faker.company.name(),
 			logoUrl: faker.image.url(),
 			bannerUrl: faker.image.url(),
 			location: {
-				type: 'Point',
-				coordinates: [
-					parseFloat(faker.location.longitude().toString()),
-					parseFloat(faker.location.latitude().toString())
-				]
+				city: faker.location.city(),
+				area: faker.location.continent(),
+				street: faker.location.streetAddress(),
+				coordinates: {
+					lng: parseFloat(faker.location.longitude().toString()),
+					lat: parseFloat(faker.location.latitude().toString())
+				}
 			},
-			status: index < 3 ? RestaurantStatus.open : faker.helpers.arrayElement(Object.values(RestaurantStatus)),
-			commercialRegistrationNumber: faker.string.alphanumeric(10),
-			vatNumber: faker.string.alphanumeric(12),
+			status: RestaurantStatus.open,
 			isActive: faker.datatype.boolean(),
-			email: `orders@restaurant${index + 1}.com`
+			email: `orders@restaurant${index + 1}.com`,
+			phone: faker.phone.number(),
+			createdAt: new Date(),
+			updatedAt: new Date()
 		};
 	})
 };
@@ -395,6 +411,7 @@ const seedData = [
 
 	// restaurant & menu
 	cuisineSeededData,
+	chainSeedData,
 	restaurantSeedData,
 	menuSeedData,
 	itemSeedData,

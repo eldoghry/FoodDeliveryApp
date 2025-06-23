@@ -1,10 +1,11 @@
-import HttpStatusCodes from 'http-status-codes';
+import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
 import ApplicationError from '../errors/application.error';
 import { UserRepository } from '../repositories/user.repository';
 import logger from '../config/logger';
 import { User } from '../models/user/user.entity';
 import { HashingService } from '../shared/secureHashing';
 import { CreateUserDto, GetOneUserByDto } from '../dtos/user.dto';
+import ErrMessages from '../errors/error-messages';
 
 export class UserService {
 	private repo = new UserRepository();
@@ -53,5 +54,19 @@ export class UserService {
 
 	async deactivateUser(userId: number, deactivationInfo: User['deactivationInfo']): Promise<void> {
 		await this.repo.deactivateUser(userId, deactivationInfo);
+	}
+
+	async getUserTypeByName(name: string) {
+		return this.repo.getUserTypeByName(name);
+	}
+
+	async validateEmailUniqueness(email: string) {
+		const user = await this.repo.getUserByEmail(email);
+		if (user) throw new ApplicationError(ErrMessages.user.EmailAlreadyExists, StatusCodes.BAD_REQUEST);
+	}
+
+	async validatePhoneUniqueness(phone: string) {
+		const user = await this.repo.getUserByPhone(phone);
+		if (user) throw new ApplicationError(ErrMessages.user.PhoneAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
 }

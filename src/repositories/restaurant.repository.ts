@@ -3,20 +3,57 @@ import { Restaurant, RestaurantRelations } from '../models/restaurant/restaurant
 import { Repository } from 'typeorm';
 import { RestaurantStatus } from '../models/restaurant/restaurant.entity';
 import { ListRestaurantsDto } from '../dtos/restaurant.dto';
+import { Chain } from '../models/restaurant/chain.entity';
 
 export class RestaurantRepository {
 	private restaurantRepo: Repository<Restaurant>;
+	private chainRepo: Repository<Chain>;
 
 	constructor() {
 		this.restaurantRepo = AppDataSource.getRepository(Restaurant);
+		this.chainRepo = AppDataSource.getRepository(Chain);
 	}
 
-	async createRestaurant(data: Partial<Restaurant>): Promise<Restaurant> {
+	async createChain(data: Partial<Chain>): Promise<Chain> {
+		const chain = this.chainRepo.create(data);
+		return await this.chainRepo.save(chain);
+	}
+
+	async getChainById(chainId: number): Promise<Chain | null> {
+		return await this.chainRepo.findOne({
+			where: { chainId },
+			relations: ['restaurants']
+		});
+	}
+
+	async getChainByName(name: string): Promise<Chain | null> {
+		return await this.chainRepo.findOne({ where: { name } });
+	}
+
+	async getChainByCommercialRegistrationNumber(commercialRegistrationNumber: string): Promise<Chain | null> {
+		return await this.chainRepo.findOne({ where: { commercialRegistrationNumber } });
+	}
+
+	async getChainByVatNumber(vatNumber: string): Promise<Chain | null> {
+		return await this.chainRepo.findOne({ where: { vatNumber } });
+	}
+
+	async updateChain(chainId: number, data: Partial<Chain>): Promise<Chain | null> {
+		await this.chainRepo.update(chainId, data);
+		return await this.getChainById(chainId);
+	}
+
+	async deleteChain(chainId: number): Promise<void> {
+		await this.chainRepo.delete(chainId);
+	}
+
+	async createRestaurant(data: Partial<Restaurant>): Promise<Restaurant | null> {
 		const restaurant = this.restaurantRepo.create(data);
-		return await this.restaurantRepo.save(restaurant);
+		await this.restaurantRepo.save(restaurant);
+		return await this.getRestaurantById(restaurant.restaurantId);
 	}
 
-	async getRestaurantBy(filter: { restaurantId?: number; userId?: number; relations?: RestaurantRelations[] }) {
+	async getRestaurantBy(filter: { restaurantId?: number; userId?: number;name?: string; relations?: RestaurantRelations[] }) {
 		const { relations, ...whereOptions } = filter;
 		return await this.restaurantRepo.findOne({
 			where: whereOptions,
@@ -25,11 +62,11 @@ export class RestaurantRepository {
 	}
 
 	async getRestaurantById(restaurantId: number): Promise<Restaurant | null> {
-		return this.getRestaurantBy({ restaurantId, relations: ['user'] });
+		return this.getRestaurantBy({ restaurantId });
 	}
 
-	async getRestaurantByUserId(userId: number): Promise<Restaurant | null> {
-		return this.getRestaurantBy({ userId, relations: ['user'] });
+	async getRestaurantByName(name: string): Promise<Restaurant | null> {
+		return this.getRestaurantBy({ name });
 	}
 
 	async getAllRestaurants(filter: ListRestaurantsDto): Promise<any[]> {
