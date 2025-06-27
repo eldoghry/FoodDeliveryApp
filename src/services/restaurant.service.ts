@@ -117,6 +117,32 @@ export class RestaurantService {
 		return this.formatRestaurantStatusResponse(restaurant!);
 	}
 
+	async searchRestaurants(query: any) {
+		/*
+		TODO: Implement searchRestaurants logic
+		*constraints:
+		- restaurants returns depend on first the lng & lat & radius
+		- restaurants returns should be active & not paused
+		*search techniques:
+		- search by restaurant name or by cuisine name
+		- if search by restaurant name founded exactly return it & add it in the first in list
+		then resturn the restaurant have like name & the rest of the list return by containing same cuisine name for restaurant that founded exactly
+		- else if not found same name exactly return the restaurant have like name & the rest of the list return by containing same cuisine name for restaurant that founded exactly
+		- else if not found exactly or like name return the restaurant have containing same cuisine name (that added in search query)
+		- else return empty list 
+		*/
+
+		/*
+		- will aplly first search technique 
+		- then add to search (lat & lng & radius)
+		- then decide i will return order by what!
+		*/
+
+		const {keyword, lat, lng} = query;
+		const restaurants = await this.restaurantRepo.searchRestaurants(query);
+		return restaurants;
+	}
+
 	/* === Validation Methods === */
 
 	private async validateUserUniqueness(payload: Partial<User>) {

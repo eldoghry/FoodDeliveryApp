@@ -39,8 +39,9 @@ export class RestaurantController {
 	}
 
 	async searchRestaurant(req: Request, res: Response) {
-		// TODO: Implement searchRestaurant logic
-		throw new ApplicationError('Not implemented', StatusCodes.NOT_IMPLEMENTED);
+		const query = req.validated?.query;
+		const data = await this.restaurantService.searchRestaurants(query);
+		sendResponse(res, StatusCodes.OK, 'Search Restaurants Successfully', data);
 	}
 
 	async deactivateRestaurant(req: Request, res: Response) {
