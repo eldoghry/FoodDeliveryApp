@@ -1,6 +1,6 @@
 import { AppDataSource } from '../config/data-source';
 import { Restaurant, RestaurantRelations } from '../models/restaurant/restaurant.entity';
-import { In, Not, Repository } from 'typeorm';
+import { Brackets, In, Not, Repository } from 'typeorm';
 import { RestaurantStatus } from '../models/restaurant/restaurant.entity';
 import { ListRestaurantsDto } from '../dtos/restaurant.dto';
 import { Chain } from '../models/restaurant/chain.entity';
@@ -154,69 +154,69 @@ export class RestaurantRepository {
 		await this.restaurantRepo.update(restaurantId, { isActive: false });
 	}
 
-	// async searchRestaurants(query: any): Promise<Restaurant[]> {
-	// 	const keyword = query.keyword.replace(/[^a-zA-Z]+/g, '').toLowerCase();
-
-	// 	return await this.restaurantRepo
-	// 		.createQueryBuilder('restaurant')
-	// 		.where('restaurant.name ILIKE :query', { query: `%${keyword}%` })
-	// 		.andWhere('restaurant.isActive = :isActive', { isActive: true })
-	// 		// .andWhere('restaurant.status = :status', { status: Not(In([RestaurantStatus.pause])) })
-	// 		.orderBy('restaurant.name', 'ASC')
-	// 		.getMany();
-	// }
-
 	// searchRestaurants
 	async searchRestaurants(query: any) {
-		let results: Restaurant[] = []
-		// match exact or like name of keyword search
-		// results.push(await this.searchRestaurantsByKeyword(query))
-		const restaurantsByName = await this.searchRestaurantsByKeyword(query)
-
-		// match cuisines of restaurants founded by like name of keyword search
-		// const restaurantsByCuisine = await this.searchRestaurantsByCuisine(query)
-		// const cuisines = restaurantsByName[0]['cuisines'].map((cuisine) => cuisine.cuisineId)
-		// const restaurantsByCuisine = await this.restaurantRepo.find({ where: { cuisines: In(cuisines) } })
-		// results = [...restaurantsByName, ...restaurantsByCuisine]
-		return restaurantsByName
+		const restaurants = await this.searchRestaurantsByKeyword(query)
+		return restaurants
 	}
-    async searchRestaurantsByCuisine(query: any) {
-        
-    }
 
 	async searchRestaurantsByKeyword(query: any): Promise<Restaurant[]> {
-       const patterns = this.handleSearchPattern(query.keyword)
+		const patterns = this.handleSearchPattern(query.keyword);
 		const queryBuilder = this.restaurantRepo.createQueryBuilder('restaurant')
 			.leftJoinAndSelect('restaurant.cuisines', 'cuisine')
-			
+			.where('restaurant.isActive = :isActive', { isActive: true })
+			.andWhere('restaurant.status NOT IN (:...excludedStatuses)', { excludedStatuses: [RestaurantStatus.pause] })
 
-		patterns.forEach((pattern, index) => {
-			const paramName = `query${index}`;
-			if (index === 0) {
-				queryBuilder.andWhere(`restaurant.name ILIKE :${paramName}`, { [paramName]: `%${pattern}%` }); // exact match restaurant name
-				queryBuilder.andWhere(`cuisine.name ILIKE :${paramName}`, { [paramName]: `%${pattern}%` }); // exact match cuisine name
+		const exactPattern = patterns[0];
+		const partialPatterns = patterns.slice(1);
 
-			} else {
-				queryBuilder.orWhere(`restaurant.name ILIKE :${paramName}`, { [paramName]: `%${pattern}%` }); // partial match
-				queryBuilder.orWhere(`cuisine.name ILIKE :${paramName}`, { [paramName]: `%${pattern}%` }); // partial match
+		let cuisineIdsFromExactMatch: number[] = [];
+
+		// 1. Try to find cuisines of a restaurant with an exact name match
+		const exactMatch = await this.restaurantRepo.createQueryBuilder('restaurant')
+			.leftJoinAndSelect('restaurant.cuisines', 'cuisine')
+			.where('restaurant.name ILIKE :exactPattern', { exactPattern: `%${exactPattern}%` })
+			.andWhere('restaurant.isActive = true')
+			.andWhere('restaurant.status != :excludedStatuses', { excludedStatuses: RestaurantStatus.pause })
+			.getOne();
+
+		if (exactMatch?.cuisines?.length) {
+			cuisineIdsFromExactMatch = exactMatch.cuisines.map((c) => c.cuisineId);
+		}
+
+		// 2. Build the main query conditions
+		queryBuilder.andWhere(new Brackets((qb) => {
+			qb.where('restaurant.name ILIKE :exactPattern', { exactPattern: `%${exactPattern}%` });
+			qb.orWhere('cuisine.name ILIKE :exactPattern', { exactPattern: `%${exactPattern}%` });
+			partialPatterns.forEach((pattern, index) => {
+				const paramName = `pattern${index}`;
+				qb.orWhere(`restaurant.name ILIKE :${paramName}`, { [paramName]: `%${pattern}%` });
+				qb.orWhere(`cuisine.name ILIKE :${paramName}`, { [paramName]: `%${pattern}%` });
+			});
+
+			if (cuisineIdsFromExactMatch.length > 0) {
+				qb.orWhere('cuisine.cuisineId IN (:...cuisineIds)', { cuisineIds: cuisineIdsFromExactMatch });
 			}
+		}));
 
-			queryBuilder.andWhere('restaurant.isActive = :isActive', { isActive: true });
-		});
-
-		// sort by exact match first then partial match
+		// 3. Ordering: exact match first
 		queryBuilder.orderBy(`
-			CASE 
-				WHEN restaurant.name ILIKE :exactPattern THEN 0
-				WHEN cuisine.name ILIKE :exactPattern THEN 1
-				ELSE 2                                           
-			END`, 'ASC')
-			.setParameter('exactPattern', patterns[0]);  
+				CASE 
+					WHEN restaurant.name ILIKE :exactPattern THEN 0
+					WHEN restaurant.name ILIKE :partialPattern THEN 1
+					WHEN cuisine.name ILIKE :exactPattern THEN 2
+					WHEN cuisine.name ILIKE :partialPattern THEN 3
+					WHEN cuisine.cuisineId IN (:...cuisineIds) THEN 4
+					ELSE 5
+				END
+			`, 'ASC')
+			.setParameter('exactPattern', `%${exactPattern}%`)
+			.setParameter('partialPattern', `%${partialPatterns.map((p) => `%${p}%`).join('%')}%`)
+			.setParameter('cuisineIds', cuisineIdsFromExactMatch);
 
 		return await queryBuilder.getMany();
 	}
 
-	
 
 	/* === Handle Search pattern === */
 
