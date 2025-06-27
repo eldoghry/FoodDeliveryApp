@@ -2,9 +2,9 @@ import { AppDataSource } from '../config/data-source';
 import { Restaurant, RestaurantRelations } from '../models/restaurant/restaurant.entity';
 import { Brackets, In, Not, Repository } from 'typeorm';
 import { RestaurantStatus } from '../models/restaurant/restaurant.entity';
-import { ListRestaurantsDto } from '../dtos/restaurant.dto';
 import { Chain } from '../models/restaurant/chain.entity';
 import { Cuisine } from '../models/restaurant/cuisine.entity';
+import { ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
 
 export class RestaurantRepository {
 	private restaurantRepo: Repository<Restaurant>;
@@ -152,6 +152,40 @@ export class RestaurantRepository {
 
 	async deleteRestaurant(restaurantId: number): Promise<void> {
 		await this.restaurantRepo.update(restaurantId, { isActive: false });
+	}
+
+	async getTopRatedRestaurants(filter: ListTopRatedRestaurantsDto): Promise<any[]> {
+		const avgRatingExpr = 'COALESCE(ROUND(AVG(ratings.rating),2),0)';
+
+		const query = this.restaurantRepo
+			.createQueryBuilder('restaurant')
+			.leftJoin('restaurant.ratings', 'ratings')
+			.leftJoinAndSelect('restaurant.cuisines', 'cuisines')
+			.addSelect(avgRatingExpr, 'averageRating')
+			.addSelect('COUNT(ratings.rating)', 'ratingCount')
+			.where('restaurant.isActive = :isActive', { isActive: true });
+
+		if (filter?.cuisines) {
+			query.andWhere('cuisines.cuisineId IN (:...cuisinesIds)', { cuisinesIds: filter.cuisines });
+		}
+
+		if (filter?.cursor) query.andWhere('restaurant.restaurantId < :cursor', { cursor: filter.cursor });
+		if (filter?.limit) query.limit(filter.limit);
+
+		query.orderBy(avgRatingExpr, 'DESC');
+		query.groupBy('restaurant.restaurantId');
+		query.addGroupBy('cuisines.cuisineId');
+
+		const { entities, raw } = await query.getRawAndEntities();
+
+		return entities.map((restaurant, index) => {
+			return {
+				...restaurant,
+				cuisines: restaurant.cuisines.map((cuisine) => ({ id: cuisine.cuisineId, name: cuisine.name })),
+				averageRating: +raw[index].averageRating,
+				ratingCount: raw[index].ratingCount
+			};
+		});
 	}
 
 	// searchRestaurants

@@ -7,7 +7,7 @@ export const listRestaurantsQuerySchema = Joi.object({
 	limit: Joi.number().integer().min(1).max(100).default(20),
 	cursor: Joi.string().optional(),
 	search: Joi.string().optional(),
-	cuisines: Joi.array().items(Joi.number().integer().min(1)).optional(),
+	cuisines: Joi.array().items(Joi.number().integer().min(1)).single().optional(),
 	rating: Joi.number().min(0).max(5).optional()
 	// status: Joi.string().valid('active', 'inactive').default('active'),
 	// radius: Joi.number().min(0).optional(),
@@ -30,16 +30,16 @@ export const registerRestaurantBodySchema = Joi.object({
 		street: Joi.string().required(),
 		coordinates: Joi.object({
 			lat: Joi.number().required(),
-			lng: Joi.number().required(),
-		}).required(),
+			lng: Joi.number().required()
+		}).required()
 	}).required(),
 	commercialRegistrationNumber: Joi.string().required(),
 	vatNumber: Joi.string().required(),
-	cuisines: Joi.array().items(Joi.number().integer().min(1)).required(),
+	cuisines: Joi.array().items(Joi.number().integer().min(1)).required()
 }).required();
 
 export const restaurantParamsSchema = Joi.object({
-	restaurantId: Joi.number().integer().min(1).required(),
+	restaurantId: Joi.number().integer().min(1).required()
 }).required();
 
 export const restaurantDeactivateBodySchema = Joi.object({
@@ -47,7 +47,9 @@ export const restaurantDeactivateBodySchema = Joi.object({
 }).required();
 
 export const restaurantStatusBodySchema = Joi.object({
-	status: Joi.string().valid(...Object.values(RestaurantStatus)).required()
+	status: Joi.string()
+		.valid(...Object.values(RestaurantStatus))
+		.required()
 }).required();
 
 export const searchRestaurantQuerySchema = Joi.object({
@@ -57,3 +59,8 @@ export const searchRestaurantQuerySchema = Joi.object({
 }).required();
 
 
+export const listTopRatedRestaurantsQuerySchema = Joi.object({
+	limit: Joi.number().integer().min(1).max(100).default(20),
+	cursor: Joi.string().optional(),
+	cuisines: Joi.array().items(Joi.number().integer().min(1)).single().optional()
+});
