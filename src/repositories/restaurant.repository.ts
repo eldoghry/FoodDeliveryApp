@@ -5,6 +5,8 @@ import { RestaurantStatus } from '../models/restaurant/restaurant.entity';
 import { Chain } from '../models/restaurant/chain.entity';
 import { Cuisine } from '../models/restaurant/cuisine.entity';
 import { ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
+import { cursorPaginate } from '../utils/helper';
+
 
 export class RestaurantRepository {
 	private restaurantRepo: Repository<Restaurant>;
@@ -194,7 +196,7 @@ export class RestaurantRepository {
 		return restaurants
 	}
 
-	async searchRestaurantsByKeyword(query: any): Promise<Restaurant[]> {
+	async searchRestaurantsByKeyword(query: any): Promise<any[]> {
 		const patterns = this.handleSearchPattern(query.keyword);
 		const queryBuilder = this.restaurantRepo.createQueryBuilder('restaurant')
 			.leftJoinAndSelect('restaurant.cuisines', 'cuisine')
@@ -231,24 +233,80 @@ export class RestaurantRepository {
 			if (cuisineIdsFromExactMatch.length > 0) {
 				qb.orWhere('cuisine.cuisineId IN (:...cuisineIds)', { cuisineIds: cuisineIdsFromExactMatch });
 			}
-		}));
+		}))
 
-		// 3. Ordering: exact match first
-		queryBuilder.orderBy(`
-				CASE 
-					WHEN restaurant.name ILIKE :exactPattern THEN 0
-					WHEN restaurant.name ILIKE :partialPattern THEN 1
-					WHEN cuisine.name ILIKE :exactPattern THEN 2
-					WHEN cuisine.name ILIKE :partialPattern THEN 3
-					WHEN cuisine.cuisineId IN (:...cuisineIds) THEN 4
-					ELSE 5
-				END
-			`, 'ASC')
+		// 3. Add rank CASE to order results and select it for cursor tracking
+		queryBuilder.addSelect(`
+		CASE 
+			WHEN restaurant.name ILIKE :exactPattern THEN 0
+			WHEN restaurant.name ILIKE :partialPattern THEN 1
+			WHEN cuisine.name ILIKE :exactPattern THEN 2
+			WHEN cuisine.name ILIKE :partialPattern THEN 3
+			WHEN cuisine.cuisineId IN (:...cuisineIds) THEN 4
+			ELSE 5
+		END
+	`, 'rank');
+
+		queryBuilder
+			.orderBy('rank', 'ASC')
+			.addOrderBy('restaurant.name', 'ASC')
 			.setParameter('exactPattern', `%${exactPattern}%`)
 			.setParameter('partialPattern', `%${partialPatterns.map((p) => `%${p}%`).join('%')}%`)
 			.setParameter('cuisineIds', cuisineIdsFromExactMatch);
 
-		return await queryBuilder.getMany();
+		// 4. Apply cursor filtering if provided
+		if (query.cursor) {
+			const cursorRow= query.cursor.split('|')
+			const cursorRank = cursorRow[0]
+			const cursorName = cursorRow[1]
+			queryBuilder.andWhere(
+				new Brackets((qb) => {
+					qb.andWhere(new Brackets((qb) => {
+						qb.where(`
+							(
+								CASE 
+									WHEN restaurant.name ILIKE :exactPattern THEN 0
+									WHEN restaurant.name ILIKE :partialPattern THEN 1
+									WHEN cuisine.name ILIKE :exactPattern THEN 2
+									WHEN cuisine.name ILIKE :partialPattern THEN 3
+									WHEN cuisine.cuisineId IN (:...cuisineIds) THEN 4
+									ELSE 5
+								END
+							) > :cursorRank
+						`, { cursorRank: cursorRank });
+					
+						qb.orWhere(`
+							(
+								CASE 
+									WHEN restaurant.name ILIKE :exactPattern THEN 0
+									WHEN restaurant.name ILIKE :partialPattern THEN 1
+									WHEN cuisine.name ILIKE :exactPattern THEN 2
+									WHEN cuisine.name ILIKE :partialPattern THEN 3
+									WHEN cuisine.cuisineId IN (:...cuisineIds) THEN 4
+									ELSE 5
+								END
+							) = :cursorRank AND restaurant.name > :cursorName
+						`, {
+							cursorRank: cursorRank,
+							cursorName: cursorName,
+						});
+					}))					
+				})
+			);
+		}
+
+		// Take limit + 1 to determine if there’s a next page
+		queryBuilder.take(query.limit + 1);
+		// const results = await queryBuilder.getMany();
+		const { entities, raw } = await queryBuilder.getRawAndEntities();
+		const results = entities.map((entity, index) => {
+			return {
+				...entity,
+				rank: raw[index].rank,
+			}
+		})
+		return results;
+
 	}
 
 

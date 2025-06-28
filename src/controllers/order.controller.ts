@@ -49,10 +49,10 @@ export class OrderController {
 
 	async getOrdersHistory(req: Request, res: Response) {
 		const { actorType, actorId } = req?.user as AuthorizedUser;
-		const { perPage, cursor } = req?.validated?.query;
-		const data = await this.orderService.getOrdersHistory(actorType, actorId, perPage, cursor);
+		const { limit, cursor } = req?.validated?.query;
+		const data = await this.orderService.getOrdersHistory(actorType, actorId, limit, cursor);
 		sendPaginatedResponse(res, StatusCodes.OK, 'Orders retrieved successfully', data.orders, {
-			perPage,
+			limit,
 			nextCursor: data.nextCursor,
 			hasNextPage: data.hasNextPage
 		});

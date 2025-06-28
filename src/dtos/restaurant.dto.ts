@@ -13,3 +13,7 @@ export class ListRestaurantsDto extends PaginationDto {
 export class ListTopRatedRestaurantsDto extends PaginationDto {
 	cuisines?: number[];
 }
+
+export class SearchRestaurantsResponseDto extends PaginationDto {
+	keyword?: string;
+}

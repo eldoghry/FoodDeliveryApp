@@ -5,8 +5,7 @@ import {
 	RestaurantRelations,
 	RestaurantStatus
 } from './../models/restaurant/restaurant.entity';
-import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
-import logger from '../config/logger';
+import { StatusCodes } from 'http-status-codes';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { RestaurantRepository } from '../repositories';
@@ -43,8 +42,14 @@ export class RestaurantService {
 
 	async getAllRestaurants(filter: ListRestaurantsDto) {
 		const { limit } = filter;
-		const restaurants = await this.restaurantRepo.getAllRestaurants({ ...filter, limit: limit + 1 });
-		return cursorPaginate(restaurants, limit, 'restaurantId' as any);
+		const restaurants = await this.restaurantRepo.getAllRestaurants({ ...filter, limit: limit! + 1 });
+		return cursorPaginate(restaurants, limit, 'restaurantId');
+	}
+
+	async getTopRatedRestaurants(filter: ListTopRatedRestaurantsDto) {
+		const { limit } = filter;
+		const restaurants = await this.restaurantRepo.getTopRatedRestaurants({ ...filter, limit: limit! + 1 });
+		return cursorPaginate(restaurants, limit, 'restaurantId');
 	}
 
 	@Transactional()
@@ -137,29 +142,8 @@ export class RestaurantService {
 	}
 
 	async searchRestaurants(query: any) {
-		/*
-		TODO: Implement searchRestaurants logic
-		*constraints:
-		- restaurants returns depend on first the lng & lat & radius
-		- restaurants returns should be active & not paused
-		*search techniques:
-		- search by restaurant name or by cuisine name
-		- if search by restaurant name founded exactly return it & add it in the first in list
-		then resturn the restaurant have like name & the rest of the list return by containing same cuisine name for restaurant that founded exactly
-		- else if not found same name exactly return the restaurant have like name & the rest of the list return by containing same cuisine name for restaurant that founded exactly
-		- else if not found exactly or like name return the restaurant have containing same cuisine name (that added in search query)
-		- else return empty list 
-		*/
-
-		/*
-		- will aplly first search technique 
-		- then add to search (lat & lng & radius)
-		- then decide i will return order by what!
-		*/
-
-		const {keyword, lat, lng} = query;
-		const restaurants = await this.restaurantRepo.searchRestaurants(query);
-		return restaurants;
+		const results = await this.restaurantRepo.searchRestaurants(query);
+		return cursorPaginate(results, query.limit, ['rank','name']);
 	}
 
 	/* === Validation Methods === */
@@ -395,11 +379,5 @@ export class RestaurantService {
 			name: restaurant.name,
 			status: restaurant.status
 		};
-	}
-
-	async getTopRatedRestaurants(filter: ListTopRatedRestaurantsDto) {
-		const { limit } = filter;
-		const restaurants = await this.restaurantRepo.getTopRatedRestaurants({ ...filter, limit: limit + 1 });
-		return cursorPaginate(restaurants, limit, 'restaurantId' as any);
 	}
 }

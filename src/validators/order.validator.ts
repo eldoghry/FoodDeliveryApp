@@ -32,7 +32,7 @@ export const cancelOrderBodySchema = Joi.object({
 }).required();
 
 export const getOrdersQuerySchema = Joi.object({
-	perPage: Joi.number().integer().min(1).max(25).default(10),
+	limit: Joi.number().integer().min(1).max(25).default(10),
 	cursor: Joi.string().default(null)
 }).required();
 
