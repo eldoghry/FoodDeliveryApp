@@ -67,13 +67,13 @@ export class Restaurant extends AbstractEntity {
 		type: 'geography',
 		spatialFeatureType: 'Point',
 		srid: 4326,
-	  })
-	  geoLocation!: Point; // { type: 'Point', coordinates: [longitude, latitude] }
+	})
+	geoLocation!: Point; // { type: 'Point', coordinates: [longitude, latitude] }
 
 	@Column({ type: 'enum', enum: RestaurantApprovalStatus, nullable: false })
 	approvalStatus?: RestaurantApprovalStatus;
 
-	@Column({ type: 'enum', enum: RestaurantStatus,default: RestaurantStatus.closed, nullable: false })
+	@Column({ type: 'enum', enum: RestaurantStatus, default: RestaurantStatus.closed, nullable: false })
 	status?: RestaurantStatus;
 
 	@Column({ type: 'varchar', length: 100, nullable: true })

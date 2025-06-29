@@ -119,7 +119,7 @@ const addressSeedData: SeedData<Address> = {
 		area: faker.location.continent(),
 		building: faker.location.buildingNumber(),
 		floor: faker.number.int({ min: 1, max: 10 }).toString(),
-		geo: {
+		geoLocation: {
 			type: 'Point',
 			coordinates: [parseFloat(faker.location.longitude().toString()), parseFloat(faker.location.latitude().toString())]
 		},
@@ -197,11 +197,8 @@ const restaurantSeedData: SeedData<Restaurant> = {
 				city: faker.location.city(),
 				area: faker.location.continent(),
 				street: faker.location.streetAddress(),
-				geo: {
-					type: 'Point',
-					coordinates: [parseFloat(faker.location.longitude().toString()), parseFloat(faker.location.latitude().toString())]
-				}
 			},
+			geoLocation: { type: 'Point', coordinates: [parseFloat(faker.location.longitude().toString()), parseFloat(faker.location.latitude().toString())] },
 			status: RestaurantStatus.open,
 			approvalStatus: RestaurantApprovalStatus.pending,
 			isActive: faker.datatype.boolean(),

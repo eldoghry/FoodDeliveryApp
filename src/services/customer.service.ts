@@ -10,6 +10,7 @@ import { CreateRatingDto } from '../dtos/rating.dto';
 import { OrderService } from './order.service';
 import { SettingService } from './setting.service';
 import { SettingKey } from '../enums/setting.enum';
+import { Point } from 'geojson';
 
 export class CustomerService {
 	private customerRepo = new CustomerRepository();
@@ -39,10 +40,20 @@ export class CustomerService {
 	}
 
 	@Transactional()
-	async createCustomerAddress(customerId: number, payload: Partial<Address>) {
+	async createCustomerAddress(customerId: number, payload: Address & { coordinates: { lng: number; lat: number } }) {
+		const { coordinates, ...rest } = payload;
+		const geoLocation: Point = { type: 'Point', coordinates: [coordinates.lng , coordinates.lat] };
+
+		const payloadData = {
+			...rest,
+			geoLocation,
+			customerId,
+			isDefault: true
+		};
+
 		await this.ensureAddressLimitNotExceeded(customerId);
 		await this.customerRepo.unsetCustomerDefaultAddress(customerId);
-		await this.customerRepo.addAddress({ ...payload, customerId, isDefault: true });
+		await this.customerRepo.addAddress(payloadData);
 	}
 
 	@Transactional()
