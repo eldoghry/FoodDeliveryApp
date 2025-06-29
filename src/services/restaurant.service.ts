@@ -78,7 +78,12 @@ export class RestaurantService {
 			name: payload.name,
 			logoUrl: payload.logoUrl,
 			bannerUrl: payload.bannerUrl,
-			location: payload.location,
+			location: {
+				city: payload.location.city,
+				area: payload.location.area,
+				street: payload.location.street,
+			},
+			geoLocation: { type: 'Point', coordinates: [payload.location.coordinates.lng, payload.location.coordinates.lat] },
 			approvalStatus: RestaurantApprovalStatus.pending
 		};
 
