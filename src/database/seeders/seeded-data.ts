@@ -119,9 +119,9 @@ const addressSeedData: SeedData<Address> = {
 		area: faker.location.continent(),
 		building: faker.location.buildingNumber(),
 		floor: faker.number.int({ min: 1, max: 10 }).toString(),
-		coordinates: {
-			lng: parseFloat(faker.location.longitude().toString()),
-			lat: parseFloat(faker.location.latitude().toString())
+		geo: {
+			type: 'Point',
+			coordinates: [parseFloat(faker.location.longitude().toString()), parseFloat(faker.location.latitude().toString())]
 		},
 		isDefault: false,
 		label: faker.lorem.word()
@@ -197,9 +197,9 @@ const restaurantSeedData: SeedData<Restaurant> = {
 				city: faker.location.city(),
 				area: faker.location.continent(),
 				street: faker.location.streetAddress(),
-				coordinates: {
-					lng: parseFloat(faker.location.longitude().toString()),
-					lat: parseFloat(faker.location.latitude().toString())
+				geo: {
+					type: 'Point',
+					coordinates: [parseFloat(faker.location.longitude().toString()), parseFloat(faker.location.latitude().toString())]
 				}
 			},
 			status: RestaurantStatus.open,
@@ -282,8 +282,8 @@ const settingSeedData: SeedData<Setting> = {
 			description: 'Maintenance mode message'
 		},
 
-		{ key: SettingKey.MIN_ORDER_AMOUNT, value: 5, description: 'Minimum amount required to place an order' },
-		{ key: SettingKey.MAX_ORDER_ITEMS, value: 50, description: 'Maximum number of items per order' },
+		{ key: SettingKey.MIN_ORDER_AMOUNT, value: 30, description: 'Minimum amount required to place an order' },
+		{ key: SettingKey.MAX_ORDER_ITEMS, value: 100, description: 'Maximum number of items per order' },
 		{ key: SettingKey.ORDER_CANCELLATION_WINDOW_MIN, value: 10, description: 'Minutes allowed to cancel an order' },
 		{ key: SettingKey.ORDER_EXPIRED_AFTER_WINDOW_MIN, value: 120, description: 'Expire an order after minute' },
 		{ key: SettingKey.ORDER_RATING_WINDOW_MIN, value: 7 * 24 * 60, description: 'Minutes allowed to rate an order' },
@@ -346,7 +346,9 @@ const settingSeedData: SeedData<Setting> = {
 				projectId: faker.string.uuid()
 			},
 			description: 'Firebase project configuration'
-		}
+		},
+		{ key: SettingKey.MAX_DISTANCE_IN_METERS, value: 5000, description: 'Max distance in meters' },
+		{ key: SettingKey.MAX_CUSTOMER_ADDRESSES, value: 10, description: 'Max customer addresses' },
 	]
 };
 

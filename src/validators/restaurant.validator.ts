@@ -55,9 +55,9 @@ export const restaurantStatusBodySchema = Joi.object({
 export const searchRestaurantQuerySchema = Joi.object({
 	keyword: Joi.string().required(),
 	limit: Joi.number().integer().min(1).max(100).default(20),
-	cursor: Joi.string().default(null)
-	// lat: Joi.number().required(),
-	// lng: Joi.number().required()
+	cursor: Joi.string().default(null),
+	lat: Joi.number().required(),
+	lng: Joi.number().required()
 }).required();
 
 
