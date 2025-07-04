@@ -1,6 +1,5 @@
 import Joi from 'joi';
 import { RestaurantStatus } from '../models';
-import { query } from 'winston';
 
 export const listRestaurantsQuerySchema = Joi.object({
 	// page: Joi.number().integer().min(1).default(1),

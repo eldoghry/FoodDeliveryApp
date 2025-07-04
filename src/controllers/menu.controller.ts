@@ -12,4 +12,11 @@ export class MenuController {
         const data = await this.menuService.getMenuDetails(restaurantId!);
         sendResponse(res, StatusCodes.OK, 'Restaurant Menu details retrieved successfully', data);
     }
+
+    async createMenuCategory(req: Request, res: Response) {
+        const { restaurantId } = req.user as AuthorizedUser;
+        const payload = req.validated?.body;
+        const data = await this.menuService.createMenuCategory(restaurantId!, payload);
+        sendResponse(res, StatusCodes.CREATED, 'Menu category created successfully', data);
+    }
 }
