@@ -115,6 +115,9 @@ const ErrMessages = {
 		ItemNotBelongToActiveMenu: 'Item does not belong to an active menu of this restaurant',
 		CategoryNotFound: 'Category Not Found',
 		CategoryNotBelongsToMenu: 'Category does not belong to the specified restaurant menu',
+		CategoryTitleAlreadyExists: 'Category title already exists',
+		CategoryAlreadyActive: 'Category is already active',
+		CategoryAlreadyInactive: 'Category is already inactive',
 	},
 
 	payment: {

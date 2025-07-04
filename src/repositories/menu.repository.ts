@@ -55,7 +55,7 @@ export class MenuRepository {
 		}); 
 	}
 
-	async getCategoryBy(filter: { menuId?: number; categoryId?: number , relations?: CategoryRelations[] }): Promise<Category | null> {
+	async getCategoryBy(filter: { menuId?: number; categoryId?: number , title?: string, relations?: CategoryRelations[] }): Promise<Category | null> {
 		const { relations, ...whereOptions } = filter;
 		return await this.categoryRepo.findOne({
 			where: whereOptions,
@@ -63,7 +63,7 @@ export class MenuRepository {
 		});
 	}
 	async getCategoryById(categoryId: number): Promise<Category | null> {
-		return await this.getCategoryBy({ categoryId , relations: ['items'] });
+		return await this.getCategoryBy({ categoryId });
 	}
 
 	// Item operations

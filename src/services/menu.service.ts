@@ -30,14 +30,21 @@ export class MenuService {
 	}
 
 	@Transactional()
-	async createMenuCategory(restaurantId: number, payload: Partial<Category>) {
+	async createMenuCategory(restaurantId: number, payload: { title: string }) {
 		const menu = await this.getMenuOrFail(restaurantId);
+		await this.ensureCategoryTitleUniqueness(menu.menuId, payload.title!);
 		return await this.menuRepo.addCategory({ ...payload, menuId: menu.menuId });
 	}
 
 	@Transactional()
-	async updateMenuCategory(restaurantId: number, categoryId: number, payload: Partial<Category>) {
+	async updateMenuCategory(restaurantId: number, categoryId: number, payload: { title: string }) {
 		await this.ensureCategoryBelongsToMenu(restaurantId, categoryId);
+		return await this.menuRepo.updateCategory(categoryId, payload);
+	}
+
+	@Transactional()
+	async updateMenuCategoryStatus(restaurantId: number, categoryId: number, payload: { isActive: boolean }) {
+		await this.validateCategoryStatusChange(restaurantId, categoryId, payload.isActive!);
 		return await this.menuRepo.updateCategory(categoryId, payload);
 	}
 
@@ -49,6 +56,22 @@ export class MenuService {
 		const category = await this.menuRepo.getCategoryBy({ menuId: menu.menuId, categoryId, relations: ['items'] });
 		if (!category) throw new ApplicationError(ErrMessages.menu.CategoryNotBelongsToMenu, StatusCodes.BAD_REQUEST);
 		return category;
+	}
+
+	private async ensureCategoryTitleUniqueness(menuId: number,title: string) {
+		const category = await this.menuRepo.getCategoryBy({ menuId, title });
+		if (category) throw new ApplicationError(ErrMessages.menu.CategoryTitleAlreadyExists, StatusCodes.BAD_REQUEST);
+	}
+
+	private async validateCategoryStatusChange(restaurantId: number, categoryId: number, isActive: boolean) {
+		const category = await this.ensureCategoryBelongsToMenu(restaurantId, categoryId);
+		if (category.isActive === isActive){
+			if(isActive === true){
+				throw new ApplicationError(ErrMessages.menu.CategoryAlreadyActive, StatusCodes.BAD_REQUEST);
+			}else{
+				throw new ApplicationError(ErrMessages.menu.CategoryAlreadyInactive, StatusCodes.BAD_REQUEST);
+			}
+		}
 	}
 
 	/* Helper Methods */
