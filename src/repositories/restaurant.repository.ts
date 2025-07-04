@@ -82,16 +82,16 @@ export class RestaurantRepository {
 	}
 
 	async getRestaurantByFilteredRelations(restaurantId: number) {
-		return this.restaurantRepo
+
+		const restaurant = await this.restaurantRepo
 			.createQueryBuilder('restaurant')
 			.leftJoinAndSelect('restaurant.chain', 'chain')
 			.leftJoinAndSelect('restaurant.ratings', 'ratings')
 			.leftJoinAndSelect('restaurant.cuisines', 'cuisines')
-			.leftJoinAndSelect('restaurant.menus', 'menu', 'menu.isActive = :menuActive', {
+			.leftJoinAndSelect('restaurant.menu', 'menu', 'menu.isActive = :menuActive', {
 				menuActive: true
 			})
-			.leftJoinAndSelect('menu.menuCategories', 'menuCategory')
-			.leftJoinAndSelect('menuCategory.category', 'category', 'category.isActive = :categoryActive', {
+			.leftJoinAndSelect('menu.categories', 'category', 'category.isActive = :categoryActive', {
 				categoryActive: true
 			})
 			.leftJoinAndSelect('category.items', 'item', 'item.isAvailable = :itemAvailable', {
@@ -99,6 +99,9 @@ export class RestaurantRepository {
 			})
 			.where('restaurant.restaurantId = :restaurantId', { restaurantId })
 			.getOne();
+
+			console.log('restaurant repo', restaurant);
+			return restaurant;
 	}
 
 	async getAllRestaurants(filter: ListRestaurantsDto): Promise<any[]> {

@@ -8,7 +8,6 @@ export * from './restaurant/restaurant.entity';
 
 // Menu related entities
 export * from './menu/menu.entity';
-export * from './menu/menu-category.entity';
 export * from './menu/item.entity';
 export * from './menu/menu-item.entity';
 
