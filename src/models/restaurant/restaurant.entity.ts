@@ -70,6 +70,9 @@ export class Restaurant extends AbstractEntity {
 	})
 	geoLocation!: Point; // { type: 'Point', coordinates: [longitude, latitude] }
 
+	@Column({ type: 'integer', nullable: false, default: 5000 }) // 5,000 meters = 5km
+	maxDeliveryDistance!: number; 
+
 	@Column({ type: 'enum', enum: RestaurantApprovalStatus, nullable: false })
 	approvalStatus?: RestaurantApprovalStatus;
 
@@ -142,4 +145,10 @@ export class Restaurant extends AbstractEntity {
 		inverseJoinColumn: { name: 'cuisine_id', referencedColumnName: 'cuisineId' }
 	})
 	cuisines!: Cuisine[];
+
+	static calculateRestaurantAverageRating(ratings: Rating[]) {
+		const totalRatings = ratings.length;
+		const totalRating = ratings.reduce((total, rating) => total + rating.rating, 0);
+		return totalRatings > 0 ? totalRating / totalRatings : 0;
+	}
 }

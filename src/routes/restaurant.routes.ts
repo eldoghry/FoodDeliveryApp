@@ -4,6 +4,7 @@ import { validateRequest } from '../middlewares/validate-request.middleware';
 import { RestaurantController } from '../controllers';
 import { verifyActor } from '../middlewares/verifyActor.middleware';
 import {
+	listRecommendedRestaurantsQuerySchema,
 	listRestaurantsQuerySchema,
 	listTopRatedRestaurantsQuerySchema,
 	registerRestaurantBodySchema,
@@ -24,7 +25,7 @@ RestaurantRouter.get(
 RestaurantRouter.post('/register', validateRequest({ body: registerRestaurantBodySchema }), controller.registerRestaurant.bind(controller));
 RestaurantRouter.get('/search', validateRequest({ query: searchRestaurantQuerySchema }), controller.searchRestaurant.bind(controller));
 RestaurantRouter.get('/top-rated', validateRequest({ query: listTopRatedRestaurantsQuerySchema }), controller.getTopRatedRestaurants.bind(controller));
-RestaurantRouter.get('/recommended', controller.getRecommendedRestaurant.bind(controller));
+RestaurantRouter.get('/recommendations', validateRequest({ query: listRecommendedRestaurantsQuerySchema }), controller.getRecommendedRestaurants.bind(controller));
 
 RestaurantRouter.get('/:restaurantId', validateRequest({ params: restaurantParamsSchema }), controller.viewRestaurant.bind(controller));
 RestaurantRouter.put('/:restaurantId', controller.updateRestaurant.bind(controller));

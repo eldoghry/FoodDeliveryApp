@@ -9,7 +9,7 @@ import { StatusCodes } from 'http-status-codes';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { RestaurantRepository } from '../repositories';
-import { ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
+import { ListRecommendedRestaurantsDto, ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
 import { cursorPaginate } from '../utils/helper';
 import { Transactional } from 'typeorm-transactional';
 import { Chain } from '../models/restaurant/chain.entity';
@@ -50,6 +50,12 @@ export class RestaurantService {
 		const { limit } = filter;
 		const restaurants = await this.restaurantRepo.getTopRatedRestaurants({ ...filter, limit: limit! + 1 });
 		return cursorPaginate(restaurants, limit, 'restaurantId');
+	}
+
+	async getRecommendedRestaurants(filter: ListRecommendedRestaurantsDto) {
+		const { limit } = filter;
+		const restaurants = await this.restaurantRepo.getRecommendedRestaurants({ ...filter, limit: limit! + 1 });
+		return restaurants
 	}
 
 	@Transactional()
@@ -292,7 +298,7 @@ export class RestaurantService {
 		return {
 			restaurantId: restaurant.restaurantId,
 			name: restaurant.name,
-			avarageRating: this.calculateAverageRating(restaurant.ratings),
+			avarageRating: Restaurant.calculateRestaurantAverageRating(restaurant.ratings),
 			ratingCount: restaurant.ratings?.length || 0,
 			status: restaurant.status,
 			chain: this.formatChainInfo(restaurant.chain),
@@ -307,12 +313,6 @@ export class RestaurantService {
 			minEstimatedDeliveryTime: await SettingService.get(SettingKey.MIN_ESTIMATED_DELIVERY_TIME),
 			maxEstimatedDeliveryTime: await SettingService.get(SettingKey.MAX_ESTIMATED_DELIVERY_TIME)
 		};
-	}
-
-	private calculateAverageRating(ratings: Rating[]) {
-		if (ratings.length === 0) return 0;
-		const averageRating = ratings.reduce((acc, rating) => acc + Number(rating.rating), 0) / ratings?.length;
-		return averageRating;
 	}
 
 	private formatChainInfo(chain: any) {

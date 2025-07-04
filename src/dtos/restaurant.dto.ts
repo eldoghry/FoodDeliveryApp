@@ -17,3 +17,12 @@ export class ListTopRatedRestaurantsDto extends PaginationDto {
 export class SearchRestaurantsResponseDto extends PaginationDto {
 	keyword?: string;
 }
+
+export class ListRecommendedRestaurantsDto {
+	lat!: number;
+	lng!: number;
+	cuisines?: number[];
+	sort?: 'rating' | 'createdAt';
+	limit?: number;
+}
+

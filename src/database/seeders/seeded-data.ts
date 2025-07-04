@@ -199,6 +199,7 @@ const restaurantSeedData: SeedData<Restaurant> = {
 				street: faker.location.streetAddress(),
 			},
 			geoLocation: { type: 'Point', coordinates: [parseFloat(faker.location.longitude().toString()), parseFloat(faker.location.latitude().toString())] },
+			maxDeliveryDistance: faker.number.int({ min: 500, max: 5000 }),
 			status: RestaurantStatus.open,
 			approvalStatus: RestaurantApprovalStatus.pending,
 			isActive: faker.datatype.boolean(),
