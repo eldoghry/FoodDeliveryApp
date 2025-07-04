@@ -118,7 +118,7 @@ export class Restaurant extends AbstractEntity {
 	@JoinColumn({ name: 'chain_id' })
 	chain?: Chain;
 
-	@ManyToMany(() => User, (user) => user.restaurants)
+	@ManyToMany(() => User, (user) => user.restaurant)
 	@JoinTable({
 		name: 'restaurant_user',
 		joinColumn: { name: 'restaurant_id', referencedColumnName: 'restaurantId' },

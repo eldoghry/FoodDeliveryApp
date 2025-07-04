@@ -345,7 +345,6 @@ export class RestaurantService {
 	private formatMenu(menu: Menu) {
 		return {
 			menuId: menu.menuId,
-			menuTitle: menu.menuTitle,
 			categories: menu.categories?.map((category:Category) => this.formatMenuCategory(category))
 		};
 	}

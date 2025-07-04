@@ -21,15 +21,16 @@ export class MenuRepository {
 		return await this.menuRepo.save(menu);
 	}
 
-	async getMenuById(menuId: number): Promise<Menu | null> {
+	async getMenuByRestaurantId(restaurantId: number): Promise<Menu | null> {
 		return await this.menuRepo.findOne({
-			where: { menuId }
+			where: { restaurantId },
+			relations: ['categories', 'categories.items']
 		});
 	}
 
 	async updateMenu(menuId: number, data: Partial<Menu>): Promise<Menu | null> {
 		await this.menuRepo.update(menuId, data);
-		return await this.getMenuById(menuId);
+		return await this.getMenuByRestaurantId(menuId);
 	}
 
 	async deleteMenu(menuId: number): Promise<void> {
