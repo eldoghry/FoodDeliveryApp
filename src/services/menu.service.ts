@@ -24,6 +24,11 @@ export class MenuService {
 		return category;
 	}
 
+	async getMenuCategories(restaurantId: number) {
+		const menu = await this.getMenuOrFail(restaurantId);
+		return await this.menuRepo.getCategories(menu.menuId);
+	}
+
 	@Transactional()
 	async createMenuCategory(restaurantId: number, payload: Partial<Category>) {
 		const menu = await this.getMenuOrFail(restaurantId);

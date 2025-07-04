@@ -48,11 +48,11 @@ export class MenuRepository {
 		return await this.getCategoryById(categoryId);
 	}
 
-	async getCategories(categoryId: number): Promise<Category[]> {
+	async getCategories(menuId: number): Promise<Category[]> {
 		return await this.categoryRepo.find({
-			where: { categoryId },
+			where: { menuId },
 			relations: ['items']
-		});
+		}); 
 	}
 
 	async getCategoryBy(filter: { menuId?: number; categoryId?: number , relations?: CategoryRelations[] }): Promise<Category | null> {

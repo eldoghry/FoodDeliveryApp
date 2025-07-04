@@ -34,4 +34,10 @@ export class MenuController {
         const data = await this.menuService.updateMenuCategory(restaurantId!, categoryId!, payload);
         sendResponse(res, StatusCodes.OK, 'Menu category updated successfully', data);
     }
+
+    async getMenuCategories(req: Request, res: Response) {
+        const { restaurantId } = req.user as AuthorizedUser;
+        const data = await this.menuService.getMenuCategories(restaurantId!);
+        sendResponse(res, StatusCodes.OK, 'Menu categories retrieved successfully', data);
+    }
 }
