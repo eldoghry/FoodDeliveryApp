@@ -112,7 +112,9 @@ const ErrMessages = {
 
 	menu: {
 		NoActiveMenuFound: 'Sorry there is no active menu for current restaurant',
-		ItemNotBelongToActiveMenu: 'Item does not belong to an active menu of this restaurant'
+		ItemNotBelongToActiveMenu: 'Item does not belong to an active menu of this restaurant',
+		CategoryNotFound: 'Category Not Found',
+		CategoryNotBelongsToMenu: 'Category does not belong to the specified restaurant menu',
 	},
 
 	payment: {

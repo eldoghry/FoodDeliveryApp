@@ -1,6 +1,6 @@
 import { AppDataSource } from '../config/data-source';
 import { Menu } from '../models/menu/menu.entity';
-import { Category } from '../models/menu/category.entity';
+import { Category, CategoryRelations } from '../models/menu/category.entity';
 import { Item } from '../models/menu/item.entity';
 import { Repository } from 'typeorm';
 
@@ -43,6 +43,11 @@ export class MenuRepository {
 		return await this.categoryRepo.save(category);
 	}
 
+	async updateCategory(categoryId: number, data: Partial<Category>): Promise<Category | null> {
+		await this.categoryRepo.update(categoryId, data);
+		return await this.getCategoryById(categoryId);
+	}
+
 	async getCategories(categoryId: number): Promise<Category[]> {
 		return await this.categoryRepo.find({
 			where: { categoryId },
@@ -50,11 +55,15 @@ export class MenuRepository {
 		});
 	}
 
-	async getCategoryById(categoryId: number): Promise<Category | null> {
+	async getCategoryBy(filter: { menuId?: number; categoryId?: number , relations?: CategoryRelations[] }): Promise<Category | null> {
+		const { relations, ...whereOptions } = filter;
 		return await this.categoryRepo.findOne({
-			where: { categoryId },
-			relations: ['items']
+			where: whereOptions,
+			relations: relations || []
 		});
+	}
+	async getCategoryById(categoryId: number): Promise<Category | null> {
+		return await this.getCategoryBy({ categoryId , relations: ['items'] });
 	}
 
 	// Item operations
