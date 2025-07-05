@@ -38,8 +38,8 @@ export class MenuController {
     async updateMenuCategoryStatus(req: Request, res: Response) {
         const { restaurantId } = req.user as AuthorizedUser;
         const { categoryId } = req.validated?.params;
-        const { isActive } = req.validated?.body;
-        const data = await this.menuService.updateMenuCategoryStatus(restaurantId!, categoryId!, { isActive });
+        const payload = req.validated?.body;
+        const data = await this.menuService.updateMenuCategoryStatus(restaurantId!, categoryId!, payload);
         sendResponse(res, StatusCodes.OK, 'Menu category status updated successfully', data);
     }
 
@@ -47,5 +47,12 @@ export class MenuController {
         const { restaurantId } = req.user as AuthorizedUser;
         const data = await this.menuService.getMenuCategories(restaurantId!);
         sendResponse(res, StatusCodes.OK, 'Menu categories retrieved successfully', data);
+    }
+
+    async deleteMenuCategory(req: Request, res: Response) {
+        const { restaurantId } = req.user as AuthorizedUser;
+        const { categoryId } = req.validated?.params;
+        await this.menuService.deleteMenuCategory(restaurantId!, categoryId!);
+        sendResponse(res, StatusCodes.OK, 'Menu category deleted successfully');
     }
 }

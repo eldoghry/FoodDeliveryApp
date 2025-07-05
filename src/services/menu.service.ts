@@ -33,7 +33,7 @@ export class MenuService {
 	async createMenuCategory(restaurantId: number, payload: { title: string }) {
 		const menu = await this.getMenuOrFail(restaurantId);
 		await this.ensureCategoryTitleUniqueness(menu.menuId, payload.title!);
-		return await this.menuRepo.addCategory({ ...payload, menuId: menu.menuId });
+		return await this.menuRepo.addCategory({ ...payload, menuId: menu.menuId, isActive: true });
 	}
 
 	@Transactional()
@@ -44,8 +44,16 @@ export class MenuService {
 
 	@Transactional()
 	async updateMenuCategoryStatus(restaurantId: number, categoryId: number, payload: { isActive: boolean }) {
-		await this.validateCategoryStatusChange(restaurantId, categoryId, payload.isActive!);
+		const category = await this.ensureCategoryBelongsToMenu(restaurantId, categoryId);
+		this.validateCategoryStatusChange(category, payload.isActive!);
 		return await this.menuRepo.updateCategory(categoryId, payload);
+	}
+
+	@Transactional()
+	async deleteMenuCategory(restaurantId: number, categoryId: number) {
+		const category = await this.ensureCategoryBelongsToMenu(restaurantId, categoryId);
+		this.ensureCategoryIsEmpty(category);
+		await this.menuRepo.deleteCategory(categoryId);
 	}
 
 
@@ -63,14 +71,19 @@ export class MenuService {
 		if (category) throw new ApplicationError(ErrMessages.menu.CategoryTitleAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
 
-	private async validateCategoryStatusChange(restaurantId: number, categoryId: number, isActive: boolean) {
-		const category = await this.ensureCategoryBelongsToMenu(restaurantId, categoryId);
+	private validateCategoryStatusChange(category: Category, isActive: boolean) {
 		if (category.isActive === isActive){
 			if(isActive === true){
 				throw new ApplicationError(ErrMessages.menu.CategoryAlreadyActive, StatusCodes.BAD_REQUEST);
 			}else{
 				throw new ApplicationError(ErrMessages.menu.CategoryAlreadyInactive, StatusCodes.BAD_REQUEST);
 			}
+		}
+	}
+
+	private ensureCategoryIsEmpty(category: Category) {
+		if (category.items.length > 0) {
+			throw new ApplicationError(ErrMessages.menu.CategoryContainsItems, StatusCodes.BAD_REQUEST);
 		}
 	}
 

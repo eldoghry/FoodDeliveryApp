@@ -14,6 +14,6 @@ MenuRouter.post('/categories', isAuthenticated, verifyActor({ allowedActorTypes:
 MenuRouter.get('/categories/:categoryId', isAuthenticated, verifyActor({ allowedActorTypes: ['restaurant_owner', 'restaurant_user'] }), validateRequest({ params: categoryParamsSchema }), controller.getCategoryDetails.bind(controller));
 MenuRouter.put('/categories/:categoryId', isAuthenticated, verifyActor({ allowedActorTypes: ['restaurant_owner', 'restaurant_user'] }), validateRequest({ params: categoryParamsSchema, body: categoryBodySchema }), controller.updateMenuCategory.bind(controller));
 MenuRouter.patch('/categories/:categoryId', isAuthenticated, verifyActor({ allowedActorTypes: ['restaurant_owner', 'restaurant_user'] }), validateRequest({ params: categoryParamsSchema, body: categoryStatusBodySchema }), controller.updateMenuCategoryStatus.bind(controller));
-
+MenuRouter.delete('/categories/:categoryId', isAuthenticated, verifyActor({ allowedActorTypes: ['restaurant_owner', 'restaurant_user'] }), validateRequest({ params: categoryParamsSchema }), controller.deleteMenuCategory.bind(controller));
 
 export default MenuRouter;

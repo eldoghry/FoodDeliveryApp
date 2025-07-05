@@ -28,15 +28,6 @@ export class MenuRepository {
 		});
 	}
 
-	async updateMenu(menuId: number, data: Partial<Menu>): Promise<Menu | null> {
-		await this.menuRepo.update(menuId, data);
-		return await this.getMenuByRestaurantId(menuId);
-	}
-
-	async deleteMenu(menuId: number): Promise<void> {
-		await this.menuRepo.update(menuId, { isActive: false });
-	}
-
 	// Menu Category operations
 	async addCategory(data: Partial<Category>): Promise<Category> {
 		const category = this.categoryRepo.create(data);
@@ -50,7 +41,7 @@ export class MenuRepository {
 
 	async getCategories(menuId: number): Promise<Category[]> {
 		return await this.categoryRepo.find({
-			where: { menuId },
+			where: { menuId},
 			relations: ['items']
 		}); 
 	}
@@ -64,6 +55,10 @@ export class MenuRepository {
 	}
 	async getCategoryById(categoryId: number): Promise<Category | null> {
 		return await this.getCategoryBy({ categoryId });
+	}
+
+	async deleteCategory(categoryId: number): Promise<void> {
+		await this.categoryRepo.delete(categoryId);
 	}
 
 	// Item operations

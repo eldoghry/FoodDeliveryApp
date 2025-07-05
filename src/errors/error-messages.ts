@@ -118,6 +118,7 @@ const ErrMessages = {
 		CategoryTitleAlreadyExists: 'Category title already exists',
 		CategoryAlreadyActive: 'Category is already active',
 		CategoryAlreadyInactive: 'Category is already inactive',
+		CategoryContainsItems: 'Deletion not allowed - Category contains items'
 	},
 
 	payment: {
