@@ -5,16 +5,16 @@ import {
 	CreateDateColumn,
 	UpdateDateColumn,
 	OneToMany,
-	ManyToOne,
-	JoinColumn,
 	Check,
-	ManyToMany
+	ManyToMany,
+	ManyToOne,
+	JoinColumn
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { CartItem } from '../cart/cart-item.entity';
 import { OrderItem } from '../order/order-item.entity';
 import { Category } from './category.entity';
-import { MenuItem } from './menu-item.entity';
+import { Menu } from './menu.entity';
 
 @Check(`"price" >= 0.00`)
 @Check(`"energy_val_cal" >= 0.00`)
@@ -58,7 +58,4 @@ export class Item extends AbstractEntity {
 
 	@OneToMany(() => OrderItem, (orderItem) => orderItem.item)
 	ordersItem!: OrderItem[];
-
-	@OneToMany(() => MenuItem, (menuItem) => menuItem.item)
-	menuItems!: MenuItem[];
 }

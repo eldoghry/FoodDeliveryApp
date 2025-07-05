@@ -5,7 +5,6 @@ import {
 	Gender,
 	Item,
 	Menu,
-	MenuItem,
 	Order,
 	OrderStatusEnum,
 	PaymentMethod,
@@ -139,9 +138,8 @@ const customerSeedData: SeedData<Customer> = {
 const menuSeedData: SeedData<Menu> = {
 	entity: Menu,
 	data: Array.from({ length: 10 }).map((_, index) => ({
-		menuTitle: faker.food.spice() + `${index + 1}`,
-		isActive: index === 0,
-		restaurantId: index < 3 ? 1 : index + 1
+		isActive: true,
+		restaurantId: index + 1
 	}))
 };
 
@@ -208,14 +206,6 @@ const restaurantSeedData: SeedData<Restaurant> = {
 	})
 };
 
-const menuItemSeedData: SeedData<MenuItem> = {
-	entity: MenuItem,
-	data: Array.from({ length: 10 }).map((_, index) => ({
-		menuId: index <= 3 ? 1 : faker.number.int({ min: 1, max: 9 }), // assuming menuId 1-10 exists
-		itemId: index + 1
-	}))
-};
-
 // Seed data for PaymentMethod
 const paymentMethodSeedData: SeedData<PaymentMethod> = {
 	entity: PaymentMethod,
@@ -248,6 +238,7 @@ const categorySeedData: SeedData<Category> = {
 		updatedAt: new Date()
 	}))
 };
+
 
 const settingSeedData: SeedData<Setting> = {
 	entity: Setting,
@@ -409,7 +400,6 @@ const seedData = [
 	restaurantSeedData,
 	menuSeedData,
 	itemSeedData,
-	menuItemSeedData,
 
 	// payment methods
 	paymentMethodSeedData,

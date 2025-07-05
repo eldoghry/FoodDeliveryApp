@@ -59,6 +59,9 @@ export const searchRestaurantQuerySchema = Joi.object({
 	lng: Joi.number().required()
 }).required();
 
+export const searchItemsInMenuQuerySchema = Joi.object({
+	keyword: Joi.string().required()
+}).required();
 
 export const listTopRatedRestaurantsQuerySchema = Joi.object({
 	limit: Joi.number().integer().min(1).max(100).default(20),

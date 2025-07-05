@@ -1,21 +1,29 @@
 import { AppDataSource } from '../config/data-source';
-import { Restaurant, RestaurantRelations } from '../models/restaurant/restaurant.entity';
 import { Brackets, In, Not, Repository } from 'typeorm';
-import { RestaurantStatus } from '../models/restaurant/restaurant.entity';
-import { Chain } from '../models/restaurant/chain.entity';
-import { Cuisine } from '../models/restaurant/cuisine.entity';
 import { ListRecommendedRestaurantsDto, ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
-
+import {
+	Item,
+	Restaurant,
+	RestaurantRelations,
+	RestaurantStatus,
+	Chain,
+	Cuisine,
+	Menu
+} from '../models';
 
 export class RestaurantRepository {
 	private restaurantRepo: Repository<Restaurant>;
 	private chainRepo: Repository<Chain>;
 	private cuisineRepo: Repository<Cuisine>;
+	private menuRepo: Repository<Menu>;
+	private itemRepo: Repository<Item>;
 
 	constructor() {
 		this.restaurantRepo = AppDataSource.getRepository(Restaurant);
 		this.chainRepo = AppDataSource.getRepository(Chain);
 		this.cuisineRepo = AppDataSource.getRepository(Cuisine);
+		this.menuRepo = AppDataSource.getRepository(Menu);
+		this.itemRepo = AppDataSource.getRepository(Item);
 	}
 
 
@@ -100,8 +108,8 @@ export class RestaurantRepository {
 			.where('restaurant.restaurantId = :restaurantId', { restaurantId })
 			.getOne();
 
-			console.log('restaurant repo', restaurant);
-			return restaurant;
+		console.log('restaurant repo', restaurant);
+		return restaurant;
 	}
 
 	async getAllRestaurants(filter: ListRestaurantsDto): Promise<any[]> {
@@ -344,7 +352,7 @@ export class RestaurantRepository {
 		if (cuisines) {
 			queryBuilder.andWhere('cuisine.cuisineId IN (:...cuisinesIds)', { cuisinesIds: cuisines });
 		}
-		
+
 		if (sort && sort === 'rating') {
 			queryBuilder.orderBy('average_rating', 'DESC');
 		} else {

@@ -5,13 +5,11 @@ import {
 	CreateDateColumn,
 	UpdateDateColumn,
 	OneToMany,
-	ManyToOne,
 	JoinColumn,
 	OneToOne
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
-import { MenuItem } from './menu-item.entity';
 import { Category } from './category.entity';
 
 @Entity()
@@ -37,7 +35,4 @@ export class Menu extends AbstractEntity {
 
 	@OneToMany(() => Category, (category) => category.menu)
 	categories!: Category[];
-
-	@OneToMany(() => MenuItem, (menuItem) => menuItem.menu)
-	menuItems!: MenuItem[];
 }

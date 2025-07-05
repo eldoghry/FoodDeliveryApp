@@ -2,7 +2,7 @@ import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
 import logger from '../config/logger';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
-import { Cart, CartItem, CartRelations, Customer, Item, MenuItem } from '../models';
+import { Cart, CartItem, CartRelations, Customer, Item, Menu } from '../models';
 import { MenuRepository, CartRepository, CustomerRepository } from '../repositories';
 import { AppDataSource } from '../config/data-source';
 import { CartAddItemDto, CartItemResponse, CartResponse, FindCartItemFilter, RestaurantCart } from '../dtos/cart.dto';
@@ -229,14 +229,13 @@ export class CartService {
 
 	async isItemInActiveMenuOfRestaurant(restaurantId: number, itemId: number) {
 		const item = await this.dataSource
-			.getRepository(MenuItem)
-			.createQueryBuilder('menuItem')
-			.innerJoin('menuItem.menu', 'menu', 'menuItem.menuId = menu.menuId')
-			.innerJoin('menu.restaurant', 'restaurant', 'menu.restaurantId = restaurant.restaurantId')
-			.where('menuItem.itemId = :itemId', { itemId })
+			.getRepository(Menu)
+			.createQueryBuilder('menu')
+			.leftJoinAndSelect('menu.categories', 'category')
+			.leftJoinAndSelect('category.items', 'item')
+			.where('item.itemId = :itemId', { itemId }) 
 			.andWhere('menu.isActive = true')
-			.andWhere('restaurant.restaurantId  = :restaurantId', { restaurantId })
-			// .andWhere('restaurant.isActive = true')
+			.andWhere('menu.restaurantId  = :restaurantId', { restaurantId })
 			.getOne();
 
 		return item != null;

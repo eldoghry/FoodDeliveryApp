@@ -11,7 +11,8 @@ import {
 	restaurantDeactivateBodySchema,
 	restaurantParamsSchema,
 	restaurantStatusBodySchema,
-	searchRestaurantQuerySchema
+	searchRestaurantQuerySchema,
+	searchItemsInMenuQuerySchema
 } from '../validators/restaurant.validator';
 
 const RestaurantRouter = Router();
@@ -35,5 +36,6 @@ RestaurantRouter.patch('/:restaurantId/deactivate', isAuthenticated, verifyActor
 RestaurantRouter.patch('/:restaurantId/activate', isAuthenticated, verifyActor({ allowedActorTypes: ['restaurant_owner'] }), validateRequest({ params: restaurantParamsSchema }), controller.activateRestaurant.bind(controller));
 RestaurantRouter.patch('/:restaurantId/status', isAuthenticated, verifyActor({ allowedActorTypes: ['restaurant_owner', 'restaurant_user'] }), validateRequest({ params: restaurantParamsSchema, body: restaurantStatusBodySchema }), controller.updateRestaurantStatus.bind(controller));
 
+RestaurantRouter.get('/:restaurantId/menu/search', validateRequest({ params: restaurantParamsSchema, query: searchItemsInMenuQuerySchema }), controller.searchItemsInMenu.bind(controller));
 
 export default RestaurantRouter;

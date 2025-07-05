@@ -19,6 +19,8 @@ export class MenuService {
 		return await this.getMenuOrFail(restaurantId);
 	}
 
+	// Category CRUD Methods
+
 	async getCategoryDetails(restaurantId: number, categoryId: number) {
 		const category = await this.ensureCategoryBelongsToMenu(restaurantId, categoryId);
 		return category;
@@ -56,8 +58,10 @@ export class MenuService {
 		await this.menuRepo.deleteCategory(categoryId);
 	}
 
+	// Item CRUD Methods
 
-    /* Validation Methods */
+
+    /* === Validation Methods === */
 
 	private async ensureCategoryBelongsToMenu(restaurantId: number, categoryId: number) {
 		const menu = await this.getMenuOrFail(restaurantId);
@@ -87,6 +91,6 @@ export class MenuService {
 		}
 	}
 
-	/* Helper Methods */
+	/* === Helper Methods === */
     
 }

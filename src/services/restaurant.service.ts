@@ -20,9 +20,11 @@ import { SettingService } from './setting.service';
 import { SettingKey } from '../enums/setting.enum';
 import { OrderService } from './order.service';
 import { Category } from '../models/menu/category.entity';
+import { MenuRepository } from '../repositories/menu.repository';
 
 export class RestaurantService {
 	private restaurantRepo = new RestaurantRepository();
+	private menuRepo = new MenuRepository();
 	private userService = new UserService();
 	private _orderService: OrderService | undefined = undefined;
 
@@ -156,6 +158,11 @@ export class RestaurantService {
 	async searchRestaurants(query: any) {
 		const results = await this.restaurantRepo.searchRestaurants(query);
 		return cursorPaginate(results, query.limit, ['rank','name']);
+	}
+
+	async searchItemsInMenu(restaurantId: number, query: {keyword: string}) {
+		const results = await this.menuRepo.searchItemsInMenu(restaurantId,query);
+		return results;
 	}
 
 	/* === Validation Methods === */

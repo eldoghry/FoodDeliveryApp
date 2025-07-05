@@ -11,3 +11,4 @@ export const categoryStatusBodySchema = Joi.object({
 export const categoryParamsSchema = Joi.object({
 	categoryId: Joi.number().integer().min(1).required()
 }).required();
+
