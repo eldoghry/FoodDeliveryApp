@@ -1,5 +1,5 @@
 import { AppDataSource } from '../config/data-source';
-import { Menu,Category, CategoryRelations, Item } from '../models';
+import { Menu, Category, CategoryRelations, Item, ItemRelations } from '../models';
 import { Brackets, Repository } from 'typeorm';
 
 export class MenuRepository {
@@ -39,12 +39,12 @@ export class MenuRepository {
 
 	async getCategories(menuId: number): Promise<Category[]> {
 		return await this.categoryRepo.find({
-			where: { menuId},
+			where: { menuId },
 			relations: ['items']
-		}); 
+		});
 	}
 
-	async getCategoryBy(filter: { menuId?: number; categoryId?: number , title?: string, relations?: CategoryRelations[] }): Promise<Category | null> {
+	async getCategoryBy(filter: { menuId?: number; categoryId?: number, title?: string, relations?: CategoryRelations[] }): Promise<Category | null> {
 		const { relations, ...whereOptions } = filter;
 		return await this.categoryRepo.findOne({
 			where: whereOptions,
@@ -65,40 +65,41 @@ export class MenuRepository {
 		return await this.itemRepo.save(item);
 	}
 
-	async getItemById(itemId: number): Promise<Item | null> {
+	async getItemById(filter: { itemId: number, relations?: ItemRelations[] }): Promise<Item | null> {
 		return await this.itemRepo.findOne({
-			where: { itemId }
+			where: { itemId: filter.itemId },
+			relations: filter.relations || []
 		});
 	}
 
 	async updateItem(itemId: number, data: Partial<Item>): Promise<Item | null> {
-		await this.itemRepo.update(itemId, data);
-		return await this.getItemById(itemId);
+		// Save the updated item data (*note: use save here to can update categories for item specified)
+		return await this.itemRepo.save({ itemId, ...data });
 	}
 
 	async deleteItem(itemId: number): Promise<void> {
 		await this.itemRepo.update(itemId, { isAvailable: false });
 	}
 
-	async searchItemsInMenu(restaurantId: number,query: any) {
+	async searchItemsInMenu(restaurantId: number, query: any) {
 		const queryBuilder = this.itemRepo.createQueryBuilder('item')
-		    .innerJoinAndSelect('item.categories', 'category')
+			.innerJoinAndSelect('item.categories', 'category')
 			.innerJoin('category.menu', 'menu')
 			.where('menu.restaurantId = :restaurantId', { restaurantId })
 			.andWhere('category.isActive = :isActive', { isActive: true })
-		    .andWhere('item.isAvailable = :isAvailable', { isAvailable: true })
+			.andWhere('item.isAvailable = :isAvailable', { isAvailable: true })
 			.andWhere(
 				new Brackets(qb => {
-				  qb.where('item.name ILIKE :keyword', { keyword: `%${query.keyword}%` })
-					.orWhere('item.description ILIKE :keyword', { keyword: `%${query.keyword}%` });
+					qb.where('item.name ILIKE :keyword', { keyword: `%${query.keyword}%` })
+						.orWhere('item.description ILIKE :keyword', { keyword: `%${query.keyword}%` });
 				})
-			  )
+			)
 			.orderBy('item.name', 'ASC')
-			
-			const result = await queryBuilder.getMany();
-			return result;
+
+		const result = await queryBuilder.getMany();
+		return result;
 	}
-	
+
 
 	async getAvailableItems(): Promise<Item[]> {
 		return await this.itemRepo.find({

@@ -15,7 +15,9 @@ import { CartItem } from '../cart/cart-item.entity';
 import { OrderItem } from '../order/order-item.entity';
 import { Category } from './category.entity';
 import { Menu } from './menu.entity';
+import { Restaurant } from '../restaurant/restaurant.entity';
 
+export type ItemRelations = 'categories' | 'categories.menu' | 'cartItems' | 'ordersItem';
 @Check(`"price" >= 0.00`)
 @Check(`"energy_val_cal" >= 0.00`)
 @Entity()

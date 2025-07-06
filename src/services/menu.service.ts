@@ -44,6 +44,8 @@ export class MenuService {
 	@Transactional()
 	async updateMenuCategory(restaurantId: number, categoryId: number, payload: { title: string }) {
 		await this.ensureCategoryBelongsToMenu(restaurantId, categoryId);
+		const menu = await this.getMenuOrFail(restaurantId);
+		await this.ensureCategoryTitleUniqueness(menu.menuId, payload.title!);
 		return await this.menuRepo.updateCategory(categoryId, payload);
 	}
 
@@ -64,25 +66,17 @@ export class MenuService {
 	// Item CRUD Methods
 	@Transactional()
 	async createMenuItem(restaurantId: number, payload: Partial<Item>) {
-		const menu = await this.getMenuOrFail(restaurantId);
-		await this.ensureItemNameUniqueness(menu, payload.name!);
-
-		const categories = [] as Category[];
-		if (payload.categories?.length) {
-			await Promise.all(payload.categories?.map(async categoryId => {
-				const category = await this.ensureCategoryBelongsToMenu(restaurantId, Number(categoryId));
-				categories.push(category);
-				return category;
-			}));
-		}
-
-		const itemPayload = {
-			...payload,
-			categories,
-		};
-
+		const itemPayload = await this.buildItemPayload(restaurantId, payload);
 		const item = await this.menuRepo.createItem(itemPayload);
 		return this.formateItemResponse(item);
+	}
+
+	@Transactional()
+	async updateMenuItem(restaurantId: number, itemId: number, payload: Partial<Item>) {
+		await this.ensureItemBelongsToMenu(restaurantId, itemId);
+		const itemPayload = await this.buildItemPayload(restaurantId, { itemId, ...payload });
+		const item = await this.menuRepo.updateItem(itemId, itemPayload);
+		return this.formateItemResponse(item!);
 	}
 
 	/* === Validation Methods === */
@@ -115,11 +109,18 @@ export class MenuService {
 		}
 	}
 
-	private async ensureItemNameUniqueness(menu: Menu, name: string) {
+	private async ensureItemNameUniqueness(menu: Menu, name: string, itemId?: number) {
 		const existingItem = menu.categories.flatMap((category) => category.items)
-			.find(item => normalizeString(item.name) === normalizeString(name));
+			.find(item => (item.itemId !== itemId) && (normalizeString(item.name) === normalizeString(name)));
 
 		if (existingItem) throw new ApplicationError(ErrMessages.item.ItemNameAlreadyExists, StatusCodes.BAD_REQUEST);
+	}
+
+	private async ensureItemBelongsToMenu(restaurantId: number, itemId: number) {
+		const existingItem = await this.menuRepo.getItemById({ itemId, relations: ['categories.menu'] });
+		const isItemBelongsToMenu = existingItem?.categories.some((category) => category.menu.restaurantId === restaurantId);
+		if (!isItemBelongsToMenu) throw new ApplicationError(ErrMessages.item.ItemNotBelongsToMenu, StatusCodes.BAD_REQUEST);
+		return existingItem;
 	}
 
 	/* === Helper Methods === */
@@ -143,6 +144,31 @@ export class MenuService {
 			createdAt: item.createdAt,
 			updatedAt: item.updatedAt
 		}
+	}
+
+	private async buildItemPayload(restaurantId: number, payload: Partial<Item>) {
+		const menu = await this.getMenuOrFail(restaurantId);
+		if (payload.itemId) {
+			await this.ensureItemNameUniqueness(menu, payload.name!, payload.itemId);
+		} else {
+			await this.ensureItemNameUniqueness(menu, payload.name!);
+		}
+
+		const categories = [] as Category[];
+		if (payload.categories?.length) {
+			await Promise.all(payload.categories?.map(async categoryId => {
+				const category = await this.ensureCategoryBelongsToMenu(restaurantId, Number(categoryId));
+				categories.push(category);
+				return category;
+			}));
+		}
+
+		const itemPayload = {
+			...payload,
+			categories,
+		};
+
+		return itemPayload;
 	}
 
 }

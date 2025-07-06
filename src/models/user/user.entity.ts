@@ -77,7 +77,7 @@ export class User extends AbstractEntity {
 	roles!: Role[];
 
 	@ManyToMany(() => Restaurant, (restaurant) => restaurant.users)
-	restaurant!: Restaurant;
+	restaurant!: Restaurant[];
 
 	@OneToOne(() => Customer, (customer) => customer.user)
 	customer!: Customer;

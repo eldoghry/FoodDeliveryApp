@@ -29,7 +29,7 @@ export class AuthService {
 		if(userType.includes('restaurant')) {
 			loginPayload = {
 				...payload,
-				restaurantId: user.restaurant.restaurantId,
+				restaurantId: user.restaurant[0].restaurantId,
 			}
 		}else{
 			loginPayload = payload;
