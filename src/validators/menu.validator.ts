@@ -26,3 +26,7 @@ export const itemBodySchema = Joi.object({
 export const itemParamsSchema = Joi.object({
 	itemId: Joi.number().integer().min(1).required()
 }).required();
+
+export const itemAvailabilityBodySchema = Joi.object({
+	isAvailable: Joi.boolean().required(),
+}).required();

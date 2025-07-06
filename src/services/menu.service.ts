@@ -17,10 +17,24 @@ export class MenuService {
 		return menu;
 	}
 
-
 	async getMenuDetails(restaurantId: number) {
 		return await this.getMenuOrFail(restaurantId);
 	}
+
+	@Transactional()
+	async createMenu(restaurantId:number){
+		const menu = await this.menuRepo.getMenuByRestaurantId(restaurantId)
+		if(!menu){
+			const payload = {
+				restaurantId,
+				isActive:true
+			}
+			await this.menuRepo.createMenu(payload)
+		}else{
+			throw new ApplicationError(ErrMessages.menu.MenuAlreadyExist, StatusCodes.BAD_REQUEST);
+		}
+	}
+
 
 	// Category CRUD Methods
 
@@ -64,6 +78,11 @@ export class MenuService {
 	}
 
 	// Item CRUD Methods
+	async getMenuItemDetails(restaurantId: number, itemId: number) {
+		const existingItem = await this.ensureItemBelongsToMenu(restaurantId, itemId);
+		return this.formateItemResponse(existingItem!);
+	}
+
 	@Transactional()
 	async createMenuItem(restaurantId: number, payload: Partial<Item>) {
 		const itemPayload = await this.buildItemPayload(restaurantId, payload);
@@ -77,6 +96,26 @@ export class MenuService {
 		const itemPayload = await this.buildItemPayload(restaurantId, { itemId, ...payload });
 		const item = await this.menuRepo.updateItem(itemId, itemPayload);
 		return this.formateItemResponse(item!);
+	}
+
+	@Transactional()
+	async deleteMenuItem(restaurantId: number, itemId: number) {
+		await this.ensureItemBelongsToMenu(restaurantId, itemId);
+		await this.menuRepo.deleteItem(itemId)
+	}
+
+	@Transactional()
+	async setMenuItemAvailability(restaurantId: number, itemId: number, payload: { isAvailable: boolean }) {
+		const existingItem = await this.ensureItemBelongsToMenu(restaurantId, itemId);
+		this.validateItemAvailabilityChange(existingItem!, payload.isAvailable)
+
+		const item = await this.menuRepo.setItemAvailability(itemId, payload.isAvailable)
+		return this.formateItemAvailabilityResponse(item!)
+	}
+
+    async getMenuItemsHistory(restaurantId:number){
+		const deletedItems = await this.menuRepo.getDeletedItems(restaurantId)
+		return deletedItems
 	}
 
 	/* === Validation Methods === */
@@ -123,6 +162,16 @@ export class MenuService {
 		return existingItem;
 	}
 
+	private validateItemAvailabilityChange(item: Item, isAvailable: boolean) {
+		if (item.isAvailable === isAvailable) {
+			if (isAvailable === true) {
+				throw new ApplicationError(ErrMessages.item.ItemAlreadyAvailable, StatusCodes.BAD_REQUEST);
+			} else {
+				throw new ApplicationError(ErrMessages.item.ItemAlreadyUnAvailable, StatusCodes.BAD_REQUEST);
+			}
+		}
+	}
+
 	/* === Helper Methods === */
 
 	private formateItemResponse(item: Item) {
@@ -141,10 +190,22 @@ export class MenuService {
 					title: category.title
 				}
 			}),
+			menuId: item.categories[0].menuId,
 			createdAt: item.createdAt,
 			updatedAt: item.updatedAt
 		}
 	}
+
+	private formateItemAvailabilityResponse(item: Item) {
+		return {
+			itemId: item.itemId,
+			name: item.name,
+			isAvailable: item.isAvailable,
+			createdAt: item.createdAt,
+			updatedAt: item.updatedAt
+		}
+	}
+
 
 	private async buildItemPayload(restaurantId: number, payload: Partial<Item>) {
 		const menu = await this.getMenuOrFail(restaurantId);

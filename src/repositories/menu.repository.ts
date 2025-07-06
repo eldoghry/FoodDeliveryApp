@@ -1,6 +1,6 @@
 import { AppDataSource } from '../config/data-source';
 import { Menu, Category, CategoryRelations, Item, ItemRelations } from '../models';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, Not, Repository } from 'typeorm';
 
 export class MenuRepository {
 	private menuRepo: Repository<Menu>;
@@ -73,12 +73,29 @@ export class MenuRepository {
 	}
 
 	async updateItem(itemId: number, data: Partial<Item>): Promise<Item | null> {
-		// Save the updated item data (*note: use save here to can update categories for item specified)
+		// Save the updated item data (note: use save here to can update categories for item specified)
 		return await this.itemRepo.save({ itemId, ...data });
 	}
 
-	async deleteItem(itemId: number): Promise<void> {
-		await this.itemRepo.update(itemId, { isAvailable: false });
+	async setItemAvailability(itemId: number, isAvailable: boolean): Promise<Item | null> {
+		await this.itemRepo.update(itemId, { isAvailable });
+		return this.getItemById({ itemId })
+	}
+
+	async getDeletedItems(restaurantId: number): Promise<Item[]> {
+		const queryBuilder = this.itemRepo.createQueryBuilder('item')
+			.innerJoinAndSelect('item.categories', 'category')
+			.innerJoin('category.menu', 'menu')
+			.where('menu.restaurantId = :restaurantId', { restaurantId: restaurantId })
+			.withDeleted()
+			.where('item.deletedAt < :deletedAt', { deletedAt: new Date() })
+
+		return await queryBuilder.getMany()
+	}
+
+
+	async deleteItem(itemId: number) {
+		await this.itemRepo.softDelete(itemId);
 	}
 
 	async searchItemsInMenu(restaurantId: number, query: any) {

@@ -8,14 +8,13 @@ import {
 	Check,
 	ManyToMany,
 	ManyToOne,
-	JoinColumn
+	JoinColumn,
+	DeleteDateColumn
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { CartItem } from '../cart/cart-item.entity';
 import { OrderItem } from '../order/order-item.entity';
 import { Category } from './category.entity';
-import { Menu } from './menu.entity';
-import { Restaurant } from '../restaurant/restaurant.entity';
 
 export type ItemRelations = 'categories' | 'categories.menu' | 'cartItems' | 'ordersItem';
 @Check(`"price" >= 0.00`)
@@ -51,6 +50,9 @@ export class Item extends AbstractEntity {
 
 	@UpdateDateColumn()
 	updatedAt!: Date;
+
+	@DeleteDateColumn()
+	deletedAt!: Date;
 
 	@ManyToMany(() => Category, (category) => category.items)
 	categories!: Category[];
