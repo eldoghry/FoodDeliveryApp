@@ -4,6 +4,9 @@ import ErrMessages from "../errors/error-messages";
 import { MenuRepository } from "../repositories";
 import { Category, CategoryRelations } from "../models/menu/category.entity";
 import { Transactional } from "typeorm-transactional";
+import { Item, Menu } from "../models";
+import { ILike } from "typeorm";
+import { normalizeString } from "../utils/helper";
 
 export class MenuService {
 	private menuRepo = new MenuRepository();
@@ -59,9 +62,30 @@ export class MenuService {
 	}
 
 	// Item CRUD Methods
+	@Transactional()
+	async createMenuItem(restaurantId: number, payload: Partial<Item>) {
+		const menu = await this.getMenuOrFail(restaurantId);
+		await this.ensureItemNameUniqueness(menu, payload.name!);
 
+		const categories = [] as Category[];
+		if (payload.categories?.length) {
+			await Promise.all(payload.categories?.map(async categoryId => {
+				const category = await this.ensureCategoryBelongsToMenu(restaurantId, Number(categoryId));
+				categories.push(category);
+				return category;
+			}));
+		}
 
-    /* === Validation Methods === */
+		const itemPayload = {
+			...payload,
+			categories,
+		};
+
+		const item = await this.menuRepo.createItem(itemPayload);
+		return this.formateItemResponse(item);
+	}
+
+	/* === Validation Methods === */
 
 	private async ensureCategoryBelongsToMenu(restaurantId: number, categoryId: number) {
 		const menu = await this.getMenuOrFail(restaurantId);
@@ -70,16 +94,16 @@ export class MenuService {
 		return category;
 	}
 
-	private async ensureCategoryTitleUniqueness(menuId: number,title: string) {
-		const category = await this.menuRepo.getCategoryBy({ menuId, title });
+	private async ensureCategoryTitleUniqueness(menuId: number, title: string) {
+		const category = await this.menuRepo.getCategoryBy({ menuId, title: ILike(normalizeString(title)) as any });
 		if (category) throw new ApplicationError(ErrMessages.menu.CategoryTitleAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
 
 	private validateCategoryStatusChange(category: Category, isActive: boolean) {
-		if (category.isActive === isActive){
-			if(isActive === true){
+		if (category.isActive === isActive) {
+			if (isActive === true) {
 				throw new ApplicationError(ErrMessages.menu.CategoryAlreadyActive, StatusCodes.BAD_REQUEST);
-			}else{
+			} else {
 				throw new ApplicationError(ErrMessages.menu.CategoryAlreadyInactive, StatusCodes.BAD_REQUEST);
 			}
 		}
@@ -91,6 +115,34 @@ export class MenuService {
 		}
 	}
 
+	private async ensureItemNameUniqueness(menu: Menu, name: string) {
+		const existingItem = menu.categories.flatMap((category) => category.items)
+			.find(item => normalizeString(item.name) === normalizeString(name));
+
+		if (existingItem) throw new ApplicationError(ErrMessages.item.ItemNameAlreadyExists, StatusCodes.BAD_REQUEST);
+	}
+
 	/* === Helper Methods === */
-    
+
+	private formateItemResponse(item: Item) {
+		return {
+			itemId: item.itemId,
+			name: item.name,
+			imagePath: item.imagePath,
+			description: item.description,
+			price: item.price,
+			energyValCal: item.energyValCal,
+			notes: item.notes,
+			isAvailable: item.isAvailable,
+			categories: item.categories.map((category) => {
+				return {
+					categoryId: category.categoryId,
+					title: category.title
+				}
+			}),
+			createdAt: item.createdAt,
+			updatedAt: item.updatedAt
+		}
+	}
+
 }

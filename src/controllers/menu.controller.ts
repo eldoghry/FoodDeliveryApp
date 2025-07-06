@@ -23,7 +23,7 @@ export class MenuController {
     async getCategoryDetails(req: Request, res: Response) {
         const { restaurantId } = req.user as AuthorizedUser;
         const { categoryId } = req.validated?.params;
-        const data = await this.menuService.getCategoryDetails(restaurantId!, categoryId!);
+        const data = await this.menuService.getCategoryDetails(restaurantId!, categoryId);
         sendResponse(res, StatusCodes.OK, 'Menu category details retrieved successfully', data);
     }
 
@@ -31,7 +31,7 @@ export class MenuController {
         const { restaurantId } = req.user as AuthorizedUser;
         const { categoryId } = req.validated?.params;
         const payload = req.validated?.body;
-        const data = await this.menuService.updateMenuCategory(restaurantId!, categoryId!, payload);
+        const data = await this.menuService.updateMenuCategory(restaurantId!, categoryId, payload);
         sendResponse(res, StatusCodes.OK, 'Menu category updated successfully', data);
     }
 
@@ -39,7 +39,7 @@ export class MenuController {
         const { restaurantId } = req.user as AuthorizedUser;
         const { categoryId } = req.validated?.params;
         const payload = req.validated?.body;
-        const data = await this.menuService.updateMenuCategoryStatus(restaurantId!, categoryId!, payload);
+        const data = await this.menuService.updateMenuCategoryStatus(restaurantId!, categoryId, payload);
         sendResponse(res, StatusCodes.OK, 'Menu category status updated successfully', data);
     }
 
@@ -52,7 +52,14 @@ export class MenuController {
     async deleteMenuCategory(req: Request, res: Response) {
         const { restaurantId } = req.user as AuthorizedUser;
         const { categoryId } = req.validated?.params;
-        await this.menuService.deleteMenuCategory(restaurantId!, categoryId!);
+        await this.menuService.deleteMenuCategory(restaurantId!, categoryId);
         sendResponse(res, StatusCodes.OK, 'Menu category deleted successfully');
+    }
+
+    async createMenuItem(req: Request, res: Response) {
+        const { restaurantId } = req.user as AuthorizedUser;
+        const payload = req.validated?.body;
+        const data = await this.menuService.createMenuItem(restaurantId!, payload);
+        sendResponse(res, StatusCodes.CREATED, 'Menu item created successfully', data);
     }
 }

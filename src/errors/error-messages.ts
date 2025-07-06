@@ -107,7 +107,8 @@ const ErrMessages = {
 
 	item: {
 		ItemNotFound: 'Item Not Found',
-		ItemPriceNotFound: 'Item price not found'
+		ItemPriceNotFound: 'Item price not found',
+		ItemNameAlreadyExists: 'Item name already exists',
 	},
 
 	menu: {

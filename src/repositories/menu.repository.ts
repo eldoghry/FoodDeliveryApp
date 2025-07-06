@@ -1,7 +1,5 @@
 import { AppDataSource } from '../config/data-source';
-import { Menu } from '../models/menu/menu.entity';
-import { Category, CategoryRelations } from '../models/menu/category.entity';
-import { Item } from '../models/menu/item.entity';
+import { Menu,Category, CategoryRelations, Item } from '../models';
 import { Brackets, Repository } from 'typeorm';
 
 export class MenuRepository {
@@ -11,8 +9,8 @@ export class MenuRepository {
 
 	constructor() {
 		this.menuRepo = AppDataSource.getRepository(Menu);
-		this.itemRepo = AppDataSource.getRepository(Item);
 		this.categoryRepo = AppDataSource.getRepository(Category);
+		this.itemRepo = AppDataSource.getRepository(Item);
 	}
 
 	// Menu operations

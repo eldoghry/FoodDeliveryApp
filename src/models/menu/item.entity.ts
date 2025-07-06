@@ -36,10 +36,10 @@ export class Item extends AbstractEntity {
 	price!: number;
 
 	@Column({ type: 'decimal', precision: 10, scale: 2, default: 0.0, nullable: false })
-	energyValCal!: number;
+	energyValCal?: number;
 
 	@Column({ type: 'text', default: '' })
-	notes!: string;
+	notes?: string;
 
 	@Column({ type: 'boolean', default: true, nullable: false })
 	isAvailable!: boolean;

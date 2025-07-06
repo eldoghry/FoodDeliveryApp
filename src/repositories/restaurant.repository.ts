@@ -1,29 +1,24 @@
 import { AppDataSource } from '../config/data-source';
-import { Brackets, In, Not, Repository } from 'typeorm';
+import { Brackets, ILike, In, Repository } from 'typeorm';
 import { ListRecommendedRestaurantsDto, ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
 import {
-	Item,
 	Restaurant,
 	RestaurantRelations,
 	RestaurantStatus,
 	Chain,
-	Cuisine,
-	Menu
+	Cuisine
 } from '../models';
+import { normalizeString } from '../utils/helper';
 
 export class RestaurantRepository {
 	private restaurantRepo: Repository<Restaurant>;
 	private chainRepo: Repository<Chain>;
 	private cuisineRepo: Repository<Cuisine>;
-	private menuRepo: Repository<Menu>;
-	private itemRepo: Repository<Item>;
 
 	constructor() {
 		this.restaurantRepo = AppDataSource.getRepository(Restaurant);
 		this.chainRepo = AppDataSource.getRepository(Chain);
 		this.cuisineRepo = AppDataSource.getRepository(Cuisine);
-		this.menuRepo = AppDataSource.getRepository(Menu);
-		this.itemRepo = AppDataSource.getRepository(Item);
 	}
 
 
@@ -40,7 +35,7 @@ export class RestaurantRepository {
 	}
 
 	async getChainByName(name: string): Promise<Chain | null> {
-		return await this.chainRepo.findOne({ where: { name } });
+		return await this.chainRepo.findOne({ where: { name: ILike(normalizeString(name)) as any } });
 	}
 
 	async getChainByCommercialRegistrationNumber(commercialRegistrationNumber: string): Promise<Chain | null> {
@@ -86,7 +81,7 @@ export class RestaurantRepository {
 	}
 
 	async getRestaurantByName(name: string): Promise<Restaurant | null> {
-		return this.getRestaurantBy({ name });
+		return this.getRestaurantBy({ name: ILike(normalizeString(name)) as any });
 	}
 
 	async getRestaurantByFilteredRelations(restaurantId: number) {
@@ -368,7 +363,7 @@ export class RestaurantRepository {
 	/* === Helper methods === */
 
 	private handleSearchPattern(keyword: string) {
-		const originalKeyword = keyword.trim().toLowerCase();
+		const originalKeyword = normalizeString(keyword);
 
 		// Generate all possible search patterns
 		const searchPatterns = [
