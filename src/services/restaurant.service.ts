@@ -113,7 +113,7 @@ export class RestaurantService {
 	}
 
 	async viewRestaurant(restaurantId: number) {
-		const restaurant = await this.restaurantRepo.getRestaurantByFilteredRelations(restaurantId);
+		const restaurant = await this.restaurantRepo.getDetailedActiveRestaurantView(restaurantId);
 		return this.formatRestaurantDetailesResponse(restaurant!);
 	}
 

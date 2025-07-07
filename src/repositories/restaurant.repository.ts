@@ -66,7 +66,7 @@ export class RestaurantRepository {
 		});
 	}
 
-	async getRestaurantByFilteredRelations(restaurantId: number): Promise<any | null> {
+	async getDetailedActiveRestaurantView(restaurantId: number): Promise<any | null> {
 		const restaurant = await this.restaurantRepo
 			.createQueryBuilder('restaurant')
 			.leftJoinAndSelect('restaurant.chain', 'chain')
