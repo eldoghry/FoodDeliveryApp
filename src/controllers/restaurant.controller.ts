@@ -94,9 +94,9 @@ export class RestaurantController {
 		});
 	}
 
-	async getRecommendedRestaurant(req: Request, res: Response) {
-		// TODO: Implement getRecommendedRestaurant logic
-
-		throw new ApplicationError('Not implemented', StatusCodes.NOT_IMPLEMENTED);
+	async getRecommendedRestaurants(req: Request, res: Response) {
+		const query = req.validated?.query;
+		const data = await this.restaurantService.getRecommendedRestaurants(query);
+		sendResponse(res, StatusCodes.OK, 'List Recommended Restaurants Successfully', data);
 	}
 }

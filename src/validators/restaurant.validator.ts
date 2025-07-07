@@ -66,3 +66,11 @@ export const listTopRatedRestaurantsQuerySchema = Joi.object({
 	cursor: Joi.string().optional(),
 	cuisines: Joi.array().items(Joi.number().integer().min(1)).single().optional()
 });
+
+export const listRecommendedRestaurantsQuerySchema = Joi.object({
+	limit: Joi.number().integer().min(1).max(100).default(20),
+	lat: Joi.number().required(),
+	lng: Joi.number().required(),
+	cuisines: Joi.array().items(Joi.number().integer().min(1)).single().optional(),
+	sort: Joi.string().valid('rating', 'createdAt').default('createdAt'),
+});

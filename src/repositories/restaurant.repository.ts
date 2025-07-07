@@ -4,7 +4,7 @@ import { Brackets, In, Not, Repository } from 'typeorm';
 import { RestaurantStatus } from '../models/restaurant/restaurant.entity';
 import { Chain } from '../models/restaurant/chain.entity';
 import { Cuisine } from '../models/restaurant/cuisine.entity';
-import { ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
+import { ListRecommendedRestaurantsDto, ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
 
 
 export class RestaurantRepository {
@@ -201,6 +201,8 @@ export class RestaurantRepository {
 	private createBaseRestaurantQuery(query: any) {
 		return this.restaurantRepo.createQueryBuilder('restaurant')
 			.leftJoinAndSelect('restaurant.cuisines', 'cuisine')
+			.leftJoin('restaurant.ratings', 'ratings')
+			.addSelect('COALESCE(ROUND(AVG(ratings.rating), 2), 0)', 'average_rating')
 			.where('restaurant.isActive = :isActive', { isActive: true })
 			.andWhere('restaurant.status NOT IN (:...excludedStatuses)', {
 				excludedStatuses: [RestaurantStatus.pause]
@@ -209,14 +211,15 @@ export class RestaurantRepository {
 			ST_DWithin(
 			  restaurant.geoLocation,
 			  ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
-			  :distance
+			  restaurant."max_delivery_distance"
 			)
 		`)
 			.setParameters({
 				lat: query.lat,
 				lng: query.lng,
-				distance: 5000,
-			});
+			})
+			.groupBy('restaurant.restaurantId')
+			.addGroupBy('cuisine.cuisineId')
 	}
 	async searchRestaurantsByKeyword(query: any): Promise<any[]> {
 		const patterns = this.handleSearchPattern(query.keyword);
@@ -326,19 +329,32 @@ export class RestaurantRepository {
 		// Take limit + 1 to determine if there's a next page
 		queryBuilder.take(query.limit + 1);
 
-		const { entities, raw } = await queryBuilder.getRawAndEntities();
-		const results = entities.map((entity, index) => {
-			return {
-				...entity,
-				rank: raw[index].rank,
-			};
-		});
+		const results = await queryBuilder.getRawAndEntities();
+		return this.formatRestaurantsResults(results);
 
-		return results;
+	}
+
+	async getRecommendedRestaurants(filter: ListRecommendedRestaurantsDto) {
+		const { lat, lng, limit, cuisines, sort } = filter;
+		const queryBuilder = this.createBaseRestaurantQuery({ lat, lng });
+
+		if (cuisines) {
+			queryBuilder.andWhere('cuisine.cuisineId IN (:...cuisinesIds)', { cuisinesIds: cuisines });
+		}
+		
+		if (sort && sort === 'rating') {
+			queryBuilder.orderBy('average_rating', 'DESC');
+		} else {
+			queryBuilder.orderBy('restaurant.' + sort, 'DESC');
+		}
+
+		queryBuilder.take(limit);
+		const results = await queryBuilder.getRawAndEntities();
+		return this.formatRestaurantsResults(results);
 	}
 
 
-	/* === Handle Search pattern === */
+	/* === Helper methods === */
 
 	private handleSearchPattern(keyword: string) {
 		const originalKeyword = keyword.trim().toLowerCase();
@@ -361,6 +377,17 @@ export class RestaurantRepository {
 		// Remove duplicates
 		const uniquePatterns = [...new Set(searchPatterns.filter((p: string) => p))];
 		return uniquePatterns
+	}
+
+	private formatRestaurantsResults(results: { entities: Restaurant[], raw: any[] }) {
+		const { entities, raw } = results;
+		return entities.map((entity: Restaurant, index: number) => {
+			return {
+				...entity,
+				rank: raw[index].rank,
+				averageRating: Number(raw[index].average_rating),
+			};
+		});
 	}
 
 }
