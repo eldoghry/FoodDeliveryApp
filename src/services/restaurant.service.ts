@@ -3,24 +3,24 @@ import {
 	RestaurantApprovalStatus,
 	RestaurantDeactivatedBy,
 	RestaurantRelations,
-	RestaurantStatus
-} from './../models/restaurant/restaurant.entity';
+	RestaurantStatus,
+	Chain,
+	Item, Menu, User, UserTypeNames,
+	Category,
+	Cuisine
+} from './../models';
 import { StatusCodes } from 'http-status-codes';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
-import { RestaurantRepository } from '../repositories';
-import { ListRecommendedRestaurantsDto, ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
-import { cursorPaginate } from '../utils/helper';
+import { ListRecommendedRestaurantsFilterDto, ListRestaurantsFilterDto, ListTopRatedRestaurantsFilterDto, RegisterRestaurantPayloadDto, SearchRestaurantsQueryDto } from '../dtos/restaurant.dto';
+import { cursorPaginate, normalizeString } from '../utils/helper';
 import { Transactional } from 'typeorm-transactional';
-import { Chain } from '../models/restaurant/chain.entity';
 import { UserService } from './user.service';
-import { Item, Menu, User, UserTypeNames } from '../models';
-import { Rating } from '../models/rating/rating.entity';
 import { SettingService } from './setting.service';
 import { SettingKey } from '../enums/setting.enum';
 import { OrderService } from './order.service';
-import { Category } from '../models/menu/category.entity';
-import { MenuRepository } from '../repositories/menu.repository';
+import { RestaurantRepository, MenuRepository } from '../repositories';
+import { ILike } from 'typeorm';
 
 export class RestaurantService {
 	private restaurantRepo = new RestaurantRepository();
@@ -37,39 +37,43 @@ export class RestaurantService {
 
 	async getRestaurantOrFail(filter: { restaurantId?: number; userId?: number; relations?: RestaurantRelations[] }) {
 		const restaurant = await this.restaurantRepo.getRestaurantBy(filter);
-
 		if (!restaurant) throw new ApplicationError(ErrMessages.restaurant.RestaurantNotFound, StatusCodes.NOT_FOUND);
-
 		return restaurant;
 	}
 
-	async getAllRestaurants(filter: ListRestaurantsDto) {
+	async getAllRestaurants(filter: ListRestaurantsFilterDto) {
 		const { limit } = filter;
-		const restaurants = await this.restaurantRepo.getAllRestaurants({ ...filter, limit: limit! + 1 });
+		const restaurants = await this.restaurantRepo.getFilteredRestaurants(filter);
 		return cursorPaginate(restaurants, limit, 'restaurantId');
 	}
 
-	async getTopRatedRestaurants(filter: ListTopRatedRestaurantsDto) {
+	async getTopRatedRestaurants(filter: ListTopRatedRestaurantsFilterDto) {
 		const { limit } = filter;
-		const restaurants = await this.restaurantRepo.getTopRatedRestaurants({ ...filter, limit: limit! + 1 });
+		const restaurants = await this.restaurantRepo.getTopRatedRestaurants(filter);
 		return cursorPaginate(restaurants, limit, 'restaurantId');
 	}
 
-	async getRecommendedRestaurants(filter: ListRecommendedRestaurantsDto) {
-		const { limit } = filter;
-		const restaurants = await this.restaurantRepo.getRecommendedRestaurants({ ...filter, limit: limit! + 1 });
+	async getRecommendedRestaurants(filter: ListRecommendedRestaurantsFilterDto) {
+		const restaurants = await this.restaurantRepo.getRecommendedRestaurants(filter);
 		return restaurants
 	}
 
 	@Transactional()
 	async createChain(payload: Partial<Chain>) {
-		await this.validateChainUniqueness(payload);
+		await this.ensureChainUniqueness(payload);
 		const chain = await this.restaurantRepo.createChain(payload);
 		return chain;
 	}
 
 	@Transactional()
-	async registerRestaurant(payload: any) {
+	async createRestaurant(payload: Partial<Restaurant>) {
+		await this.ensureRestaurantNameUniqueness(payload.name!);
+		const restaurant = await this.restaurantRepo.createRestaurant(payload);
+		return restaurant;
+	}
+
+	@Transactional()
+	async registerRestaurant(payload: RegisterRestaurantPayloadDto) {
 		const userData: Partial<User> = {
 			name: payload.firstName + ' ' + payload.lastName,
 			phone: payload.businessPhone,
@@ -96,43 +100,43 @@ export class RestaurantService {
 			approvalStatus: RestaurantApprovalStatus.pending
 		};
 
-		await this.validateUserUniqueness(userData);
+		await this.ensureUserUniqueness(userData);
 
 		const chain = await this.createChain(chainData);
 		restaurantData.chainId = chain.chainId;
 
-		const cuisines = await this.getRestaurantCuisines(payload.cuisines);
+		const cuisines = await this.restaurantRepo.getCuisines(payload.cuisines);
 		restaurantData.cuisines = cuisines;
 
 		const restaurant = await this.createRestaurant(restaurantData);
-		return this.formatRegisterRestaurantResponse(restaurant!);
+		return this.formatRestaurantRegistrationResponse(restaurant!);
 	}
 
 	async viewRestaurant(restaurantId: number) {
 		const restaurant = await this.restaurantRepo.getRestaurantByFilteredRelations(restaurantId);
-		return this.formatViewRestaurantResponse(restaurant!);
+		return this.formatRestaurantDetailesResponse(restaurant!);
 	}
 
 	@Transactional()
 	async deactivateRestaurant(
-		actorId: number,
+		userId: number,
 		restaurantId: number,
 		payload: Partial<Restaurant['deactivationInfo']>,
 		deactivatedBy: RestaurantDeactivatedBy
 	) {
 		const deactivationInfo = { ...payload, deactivatedAt: new Date(), deactivatedBy };
-		await this.validateRestaurantDeactivation(actorId, restaurantId);
+		await this.ensureRestaurantCanBeDeactivated(userId, restaurantId);
 		const restaurant = await this.restaurantRepo.updateRestaurant(restaurantId, {
 			isActive: false,
 			status: RestaurantStatus.closed,
 			deactivationInfo
 		});
-		return this.formatActivationRestaurantResponse(restaurant!, 'deactivate');
+		return this.formatRestaurantActivationResponse(restaurant!, 'deactivate');
 	}
 
 	@Transactional()
-	async activateRestaurant(actorId: number, restaurantId: number, activatedBy: RestaurantDeactivatedBy) {
-		await this.validateRestaurantActivation(actorId, restaurantId);
+	async activateRestaurant(userId: number, restaurantId: number, activatedBy: RestaurantDeactivatedBy) {
+		await this.ensureRestaurantCanBeActivated(userId, restaurantId);
 
 		const activationInfo = { activatedAt: new Date(), activatedBy: activatedBy };
 		const restaurant = await this.restaurantRepo.updateRestaurant(restaurantId, {
@@ -140,51 +144,51 @@ export class RestaurantService {
 			status: RestaurantStatus.open,
 			activationInfo
 		});
-		return this.formatActivationRestaurantResponse(restaurant!, 'activate');
+		return this.formatRestaurantActivationResponse(restaurant!, 'activate');
 	}
 
 	@Transactional()
-	async updateRestaurantStatus(actorId: number, restaurantId: number, payload: { status: RestaurantStatus }) {
-		await this.validateRestaurantBelongsToUser(actorId, restaurantId);
-		await this.validateRestaurantIsActivated(restaurantId);
+	async updateRestaurantStatus(userId: number, restaurantId: number, payload: { status: RestaurantStatus }) {
+		await this.ensureRestaurantBelongsToUser(userId, restaurantId);
+		await this.ensureRestaurantIsActive(restaurantId);
 
 		if (payload.status === RestaurantStatus.closed || payload.status === RestaurantStatus.pause) {
-			await this.validateRestaurantHasActiveOrders(restaurantId);
+			await this.ensureRestaurantHasNoActiveOrders(restaurantId);
 		}
 		const restaurant = await this.restaurantRepo.updateRestaurant(restaurantId, { status: payload.status });
 		return this.formatRestaurantStatusResponse(restaurant!);
 	}
 
-	async searchRestaurants(query: any) {
+	async searchRestaurants(query: SearchRestaurantsQueryDto) {
 		const results = await this.restaurantRepo.searchRestaurants(query);
-		return cursorPaginate(results, query.limit, ['rank','name']);
+		return cursorPaginate(results, query.limit, ['rank', 'name']);
 	}
 
-	async searchItemsInMenu(restaurantId: number, query: {keyword: string}) {
-		const results = await this.menuRepo.searchItemsInMenu(restaurantId,query);
+	async searchItemsInMenu(restaurantId: number, query: { keyword: string }) {
+		const results = await this.menuRepo.searchItemsInMenu(restaurantId, query);
 		return results;
 	}
 
 	/* === Validation Methods === */
 
-	private async validateUserUniqueness(payload: Partial<User>) {
-		await this.userService.validateEmailUniqueness(payload.email!);
-		await this.userService.validatePhoneUniqueness(payload.phone!);
+	private async ensureUserUniqueness(payload: Partial<User>) {
+		await this.userService.ensureEmailUniqueness(payload.email!);
+		await this.userService.ensurePhoneUniqueness(payload.phone!);
 	}
 
-	private async validateChainUniqueness(payload: Partial<Chain>) {
-		await this.validateChainNameUniqueness(payload.name!);
-		await this.validateCommercialRegistrationNumberUniqueness(payload.commercialRegistrationNumber!);
-		await this.validateVatNumberUniqueness(payload.vatNumber!);
+	private async ensureChainUniqueness(payload: Partial<Chain>) {
+		await this.ensureChainNameUniqueness(payload.name!);
+		await this.ensureCommercialRegistrationNumberUniqueness(payload.commercialRegistrationNumber!);
+		await this.ensureVatNumberUniqueness(payload.vatNumber!);
 	}
 
-	private async validateChainNameUniqueness(name: string) {
-		const chain = await this.restaurantRepo.getChainByName(name);
+	private async ensureChainNameUniqueness(name: string) {
+		const chain = await this.restaurantRepo.getChainBy({ name: ILike(normalizeString(name)) as any });
 		if (chain) throw new ApplicationError(ErrMessages.restaurant.ChainNameAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
 
-	private async validateCommercialRegistrationNumberUniqueness(commercialRegistrationNumber: string) {
-		const chain = await this.restaurantRepo.getChainByCommercialRegistrationNumber(commercialRegistrationNumber);
+	private async ensureCommercialRegistrationNumberUniqueness(commercialRegistrationNumber: string) {
+		const chain = await this.restaurantRepo.getChainBy({ commercialRegistrationNumber });
 		if (chain)
 			throw new ApplicationError(
 				ErrMessages.restaurant.ChainCommercialRegistrationNumberAlreadyExists,
@@ -192,87 +196,69 @@ export class RestaurantService {
 			);
 	}
 
-	private async validateVatNumberUniqueness(vatNumber: string) {
-		const chain = await this.restaurantRepo.getChainByVatNumber(vatNumber);
+	private async ensureVatNumberUniqueness(vatNumber: string) {
+		const chain = await this.restaurantRepo.getChainBy({ vatNumber });
 		if (chain) throw new ApplicationError(ErrMessages.restaurant.ChainVatNumberAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
 
-	private async validateRestaurantNameUniqueness(name: string) {
-		const restaurant = await this.restaurantRepo.getRestaurantByName(name);
+	private async ensureRestaurantNameUniqueness(name: string) {
+		const restaurant = await this.restaurantRepo.getRestaurantBy({ name: ILike(normalizeString(name)) as any });
 		if (restaurant)
 			throw new ApplicationError(ErrMessages.restaurant.RestaurantNameAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
 
-	private async validateRestaurantDeactivation(actorId: number, restaurantId: number) {
-		await this.validateRestaurantBelongsToUser(actorId, restaurantId);
-		await this.validateRestaurantIsDeactivated(restaurantId);
-		await this.validateRestaurantHasActiveOrders(restaurantId);
+	private async ensureRestaurantCanBeDeactivated(userId: number, restaurantId: number) {
+		await this.ensureRestaurantBelongsToUser(userId, restaurantId);
+		await this.ensureRestaurantIsActive(restaurantId);
+		await this.ensureRestaurantHasNoActiveOrders(restaurantId);
 	}
 
-	private async validateRestaurantActivation(actorId: number, restaurantId: number) {
-		await this.validateRestaurantBelongsToUser(actorId, restaurantId);
-		await this.validateRestaurantDectivatedBySystemAdmin(restaurantId);
-		await this.validateRestaurantIsApproved(restaurantId);
-		await this.validateRestaurantIsActive(restaurantId);
+	private async ensureRestaurantCanBeActivated(userId: number, restaurantId: number) {
+		await this.ensureRestaurantBelongsToUser(userId, restaurantId);
+		await this.ensureNotDeactivatedBySystemAdmin(restaurantId);
+		await this.ensureRestaurantIsApproved(restaurantId);
+		await this.ensureRestaurantIsNotActive(restaurantId);
 	}
 
-	private async validateRestaurantIsApproved(restaurantId: number) {
+	private async ensureRestaurantIsApproved(restaurantId: number) {
 		const restaurant = await this.getRestaurantOrFail({ restaurantId });
 		if (restaurant.approvalStatus !== RestaurantApprovalStatus.approved)
 			throw new ApplicationError(ErrMessages.restaurant.RestaurantIsNotApproved, StatusCodes.BAD_REQUEST);
 	}
 
-	private async validateRestaurantDectivatedBySystemAdmin(restaurantId: number) {
+	private async ensureNotDeactivatedBySystemAdmin(restaurantId: number) {
 		const restaurant = await this.getRestaurantOrFail({ restaurantId });
 		if (restaurant.deactivationInfo?.deactivatedBy === RestaurantDeactivatedBy.system)
 			throw new ApplicationError(ErrMessages.restaurant.RestaurantDectivatedBySystemAdmin, StatusCodes.BAD_REQUEST);
 	}
 
-	private async validateRestaurantBelongsToUser(actorId: number, restaurantId: number) {
+	private async ensureRestaurantBelongsToUser(userId: number, restaurantId: number) {
 		const restaurant = await this.getRestaurantOrFail({ restaurantId, relations: ['users.restaurants'] });
-		console.log(restaurant.users);
-		if (restaurant.users.some((user) => user.userId !== actorId))
+		if (restaurant.users.some((user) => user.userId !== userId))
 			throw new ApplicationError(ErrMessages.restaurant.RestaurantDoesNotBelongToUser, StatusCodes.BAD_REQUEST);
 	}
 
-	private async validateRestaurantHasActiveOrders(restaurantId: number) {
+	private async ensureRestaurantHasNoActiveOrders(restaurantId: number) {
 		const activeOrder = await this.orderService.getActiveOrderByRestaurantId(restaurantId);
 		if (activeOrder)
 			throw new ApplicationError(ErrMessages.restaurant.RestaurantHasActiveOrders, StatusCodes.BAD_REQUEST);
 	}
 
-	private async validateRestaurantIsDeactivated(restaurantId: number) {
+	private async ensureRestaurantIsActive(restaurantId: number) {
 		const restaurant = await this.getRestaurantOrFail({ restaurantId });
 		if (!restaurant.isActive)
 			throw new ApplicationError(ErrMessages.restaurant.RestaurantIsNotActive, StatusCodes.BAD_REQUEST);
 	}
 
-	private async validateRestaurantIsActive(restaurantId: number) {
+	private async ensureRestaurantIsNotActive(restaurantId: number) {
 		const restaurant = await this.getRestaurantOrFail({ restaurantId });
 		if (restaurant.isActive)
 			throw new ApplicationError(ErrMessages.restaurant.RestaurantIsActive, StatusCodes.BAD_REQUEST);
 	}
 
-	private async validateRestaurantIsActivated(restaurantId: number) {
-		const restaurant = await this.getRestaurantOrFail({ restaurantId });
-		if (!restaurant.isActive)
-			throw new ApplicationError(ErrMessages.restaurant.RestaurantIsNotActivated, StatusCodes.BAD_REQUEST);
-	}
-
 	/* === Helper Methods === */
 
-	@Transactional()
-	async createRestaurant(payload: Partial<Restaurant>) {
-		await this.validateRestaurantNameUniqueness(payload.name!);
-		const restaurant = await this.restaurantRepo.createRestaurant(payload);
-		return restaurant;
-	}
-
-	async getRestaurantCuisines(cuisines: number[]) {
-		return await this.restaurantRepo.getCuisines(cuisines);
-	}
-
-	private async formatRegisterRestaurantResponse(restaurant: Restaurant) {
+	private async formatRestaurantRegistrationResponse(restaurant: Restaurant) {
 		return {
 			restaurantId: restaurant.restaurantId,
 			name: restaurant.name,
@@ -281,7 +267,7 @@ export class RestaurantService {
 		};
 	}
 
-	private async formatActivationRestaurantResponse(restaurant: Restaurant, action: 'activate' | 'deactivate') {
+	private async formatRestaurantActivationResponse(restaurant: Restaurant, action: 'activate' | 'deactivate') {
 		let activationData = {};
 		if (action === 'activate') {
 			activationData = {
@@ -303,12 +289,12 @@ export class RestaurantService {
 		};
 	}
 
-	private async formatViewRestaurantResponse(restaurant: Restaurant) {
+	private async formatRestaurantDetailesResponse(restaurant: Restaurant & { averageRating: number; ratingCount: number }) {
 		return {
 			restaurantId: restaurant.restaurantId,
 			name: restaurant.name,
-			avarageRating: Restaurant.calculateRestaurantAverageRating(restaurant.ratings),
-			ratingCount: restaurant.ratings?.length || 0,
+			averageRating: restaurant.averageRating,
+			ratingCount: restaurant.ratingCount,
 			status: restaurant.status,
 			chain: this.formatChainInfo(restaurant.chain),
 			cuisines: this.formatCuisines(restaurant.cuisines),
@@ -324,16 +310,16 @@ export class RestaurantService {
 		};
 	}
 
-	private formatChainInfo(chain: any) {
+	private formatChainInfo(chain: Chain) {
 		return chain
 			? {
-					chainId: chain.chainId,
-					name: chain.name
-				}
+				chainId: chain.chainId,
+				name: chain.name
+			}
 			: null;
 	}
 
-	private formatCuisines(cuisines: any[]) {
+	private formatCuisines(cuisines: Cuisine[]) {
 		return (
 			cuisines?.map((cuisine) => ({
 				cuisineId: cuisine.cuisineId,
@@ -352,7 +338,7 @@ export class RestaurantService {
 	private formatMenu(menu: Menu) {
 		return {
 			menuId: menu.menuId,
-			categories: menu.categories?.map((category:Category) => this.formatMenuCategory(category))
+			categories: menu.categories?.map((category: Category) => this.formatMenuCategory(category))
 		};
 	}
 
@@ -362,6 +348,7 @@ export class RestaurantService {
 		return {
 			categoryId: category.categoryId,
 			title: category.title,
+			isActive: category.isActive,
 			items: this.formatCategoryItems(category.items)
 		};
 	}
@@ -375,7 +362,8 @@ export class RestaurantService {
 				imagePath: item.imagePath,
 				price: item.price,
 				energyValCal: item.energyValCal,
-				notes: item.notes
+				notes: item.notes,
+				isAvailable: item.isAvailable
 			})) || []
 		);
 	}

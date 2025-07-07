@@ -10,7 +10,7 @@ export const isRestaurant = async (req: Request, _res: Response, next: NextFunct
 	const { actorId } = req?.user || {};
 
 	if (actorId) {
-		const actor = await restaurantRepo.getRestaurantById(actorId);
+		const actor = await restaurantRepo.getRestaurantBy({restaurantId:actorId});
 		if (!actor) throw new ApplicationError(ErrMessages.auth.forbidden, StatusCodes.FORBIDDEN);
 	}
 

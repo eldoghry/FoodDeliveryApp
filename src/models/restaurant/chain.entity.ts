@@ -10,6 +10,7 @@ import { AbstractEntity } from '../base.entity';
 import { Restaurant } from './restaurant.entity';
 
 
+export type ChainRelations = 'restaurants'
 @Entity()
 export class Chain extends AbstractEntity {
     @PrimaryGeneratedColumn()

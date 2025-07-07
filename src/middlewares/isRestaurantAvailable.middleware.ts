@@ -9,7 +9,7 @@ const restaurantRepo = new RestaurantRepository();
 export const isRestaurantAvailable = async (req: Request, _res: Response, next: NextFunction) => {
 	const { restaurantId } = req.validated?.body;
 
-	const restaurant = await restaurantRepo.getRestaurantById(restaurantId);
+	const restaurant = await restaurantRepo.getRestaurantBy({ restaurantId });
 
 	if (!restaurant) throw new ApplicationError(ErrMessages.restaurant.RestaurantNotFound, StatusCodes.NOT_FOUND);
 	else if (restaurant.status !== 'open')
