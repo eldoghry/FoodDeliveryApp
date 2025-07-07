@@ -1,6 +1,6 @@
 import { AppDataSource } from '../config/data-source';
 import { Menu } from '../models/menu/menu.entity';
-import { Category } from '../models/menu/category.entity';
+import { Category, CategoryRelations } from '../models/menu/category.entity';
 import { Item } from '../models/menu/item.entity';
 import { Repository } from 'typeorm';
 
@@ -28,33 +28,37 @@ export class MenuRepository {
 		});
 	}
 
-	async updateMenu(menuId: number, data: Partial<Menu>): Promise<Menu | null> {
-		await this.menuRepo.update(menuId, data);
-		return await this.getMenuByRestaurantId(menuId);
-	}
-
-	async deleteMenu(menuId: number): Promise<void> {
-		await this.menuRepo.update(menuId, { isActive: false });
-	}
-
 	// Menu Category operations
 	async addCategory(data: Partial<Category>): Promise<Category> {
 		const category = this.categoryRepo.create(data);
 		return await this.categoryRepo.save(category);
 	}
 
-	async getCategories(categoryId: number): Promise<Category[]> {
-		return await this.categoryRepo.find({
-			where: { categoryId },
-			relations: ['items']
-		});
+	async updateCategory(categoryId: number, data: Partial<Category>): Promise<Category | null> {
+		await this.categoryRepo.update(categoryId, data);
+		return await this.getCategoryById(categoryId);
 	}
 
-	async getCategoryById(categoryId: number): Promise<Category | null> {
-		return await this.categoryRepo.findOne({
-			where: { categoryId },
+	async getCategories(menuId: number): Promise<Category[]> {
+		return await this.categoryRepo.find({
+			where: { menuId},
 			relations: ['items']
+		}); 
+	}
+
+	async getCategoryBy(filter: { menuId?: number; categoryId?: number , title?: string, relations?: CategoryRelations[] }): Promise<Category | null> {
+		const { relations, ...whereOptions } = filter;
+		return await this.categoryRepo.findOne({
+			where: whereOptions,
+			relations: relations || []
 		});
+	}
+	async getCategoryById(categoryId: number): Promise<Category | null> {
+		return await this.getCategoryBy({ categoryId });
+	}
+
+	async deleteCategory(categoryId: number): Promise<void> {
+		await this.categoryRepo.delete(categoryId);
 	}
 
 	// Item operations

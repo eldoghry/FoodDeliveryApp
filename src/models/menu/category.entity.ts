@@ -13,6 +13,7 @@ import { AbstractEntity } from '../base.entity';
 import { Item } from './item.entity';
 import { Menu } from './menu.entity';
 
+export type CategoryRelations = 'menu' | 'items';
 @Entity()
 export class Category extends AbstractEntity {
 	@PrimaryGeneratedColumn()

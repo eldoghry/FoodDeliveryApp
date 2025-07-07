@@ -251,6 +251,7 @@ export class RestaurantService {
 		if (!restaurant.isActive)
 			throw new ApplicationError(ErrMessages.restaurant.RestaurantIsNotActivated, StatusCodes.BAD_REQUEST);
 	}
+
 	/* === Helper Methods === */
 
 	@Transactional()
@@ -296,7 +297,6 @@ export class RestaurantService {
 	}
 
 	private async formatViewRestaurantResponse(restaurant: Restaurant) {
-		// console.log(restaurant);
 		return {
 			restaurantId: restaurant.restaurantId,
 			name: restaurant.name,
