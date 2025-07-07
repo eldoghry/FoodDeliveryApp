@@ -1,10 +1,11 @@
 import { AppDataSource } from '../config/data-source';
 import { Restaurant, RestaurantRelations } from '../models/restaurant/restaurant.entity';
-import { In, Repository } from 'typeorm';
+import { Brackets, In, Not, Repository } from 'typeorm';
 import { RestaurantStatus } from '../models/restaurant/restaurant.entity';
 import { Chain } from '../models/restaurant/chain.entity';
 import { Cuisine } from '../models/restaurant/cuisine.entity';
 import { ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
+
 
 export class RestaurantRepository {
 	private restaurantRepo: Repository<Restaurant>;
@@ -16,6 +17,7 @@ export class RestaurantRepository {
 		this.chainRepo = AppDataSource.getRepository(Chain);
 		this.cuisineRepo = AppDataSource.getRepository(Cuisine);
 	}
+
 
 	async createChain(data: Partial<Chain>): Promise<Chain> {
 		const chain = this.chainRepo.create(data);
@@ -63,12 +65,7 @@ export class RestaurantRepository {
 		return await this.getRestaurantById(restaurant.restaurantId);
 	}
 
-	async getRestaurantBy(filter: {
-		restaurantId?: number;
-		userId?: number;
-		name?: string;
-		relations?: RestaurantRelations[];
-	}) {
+	async getRestaurantBy(filter: { restaurantId?: number; userId?: number; name?: string; relations?: RestaurantRelations[] }) {
 		const { relations, ...whereOptions } = filter;
 		return await this.restaurantRepo.findOne({
 			where: whereOptions,
@@ -159,15 +156,6 @@ export class RestaurantRepository {
 		await this.restaurantRepo.update(restaurantId, { isActive: false });
 	}
 
-	async searchRestaurants(query: string): Promise<Restaurant[]> {
-		return await this.restaurantRepo
-			.createQueryBuilder('restaurant')
-			.leftJoinAndSelect('restaurant.user', 'user')
-			.where('restaurant.name ILIKE :query', { query: `%${query}%` })
-			.andWhere('restaurant.isActive = :isActive', { isActive: true })
-			.getMany();
-	}
-
 	async getTopRatedRestaurants(filter: ListTopRatedRestaurantsDto): Promise<any[]> {
 		const avgRatingExpr = 'COALESCE(ROUND(AVG(ratings.rating),2),0)';
 
@@ -201,4 +189,178 @@ export class RestaurantRepository {
 			};
 		});
 	}
+
+	// searchRestaurants
+	async searchRestaurants(query: any) {
+		const restaurants = await this.searchRestaurantsByKeyword(query)
+		return restaurants
+	}
+
+
+	// Base query builder method (for SearchRestaurants)
+	private createBaseRestaurantQuery(query: any) {
+		return this.restaurantRepo.createQueryBuilder('restaurant')
+			.leftJoinAndSelect('restaurant.cuisines', 'cuisine')
+			.where('restaurant.isActive = :isActive', { isActive: true })
+			.andWhere('restaurant.status NOT IN (:...excludedStatuses)', {
+				excludedStatuses: [RestaurantStatus.pause]
+			})
+			.andWhere(`
+			ST_DWithin(
+			  restaurant.geoLocation,
+			  ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
+			  :distance
+			)
+		`)
+			.setParameters({
+				lat: query.lat,
+				lng: query.lng,
+				distance: 5000,
+			});
+	}
+	async searchRestaurantsByKeyword(query: any): Promise<any[]> {
+		const patterns = this.handleSearchPattern(query.keyword);
+		const queryBuilder = this.createBaseRestaurantQuery(query);
+
+		const exactPattern = patterns[0];
+		const partialPatterns = patterns.slice(1);
+
+		let cuisineIdsFromExactMatch: number[] = [];
+
+		// 1. Try to find cuisines of a restaurant with an exact name match
+		const exactMatch = await this.createBaseRestaurantQuery(query)
+			.andWhere('restaurant.name ILIKE :exactPattern', {
+				exactPattern: `%${exactPattern}%`
+			})
+			.getOne();
+
+		if (exactMatch?.cuisines?.length) {
+			cuisineIdsFromExactMatch = exactMatch.cuisines.map((c) => c.cuisineId);
+		}
+
+		// 2. Build the main query conditions
+		queryBuilder.andWhere(new Brackets((qb) => {
+			qb.where('restaurant.name ILIKE :exactPattern', { exactPattern: `%${exactPattern}%` });
+			qb.orWhere('cuisine.name ILIKE :exactPattern', { exactPattern: `%${exactPattern}%` });
+
+			partialPatterns.forEach((pattern, index) => {
+				const paramName = `pattern${index}`;
+				qb.orWhere(`restaurant.name ILIKE :${paramName}`, { [paramName]: `%${pattern}%` });
+				qb.orWhere(`cuisine.name ILIKE :${paramName}`, { [paramName]: `%${pattern}%` });
+			});
+
+			if (cuisineIdsFromExactMatch.length > 0) {
+				qb.orWhere('cuisine.cuisineId IN (:...cuisineIds)', { cuisineIds: cuisineIdsFromExactMatch });
+			}
+		}));
+
+		// 3. Build dynamic CASE statement for ranking
+		let caseConditions = '';
+		let caseParams: any = {};
+
+		// Add exact pattern conditions
+		caseConditions += `WHEN restaurant.name ILIKE :exactPatternCase THEN 0\n`;
+		caseConditions += `WHEN cuisine.name ILIKE :exactPatternCase THEN 2\n`;
+		caseParams.exactPatternCase = `%${exactPattern}%`;
+
+		// Add partial pattern conditions
+		partialPatterns.forEach((pattern, index) => {
+			const paramName = `patternCase${index}`;
+			caseConditions += `WHEN restaurant.name ILIKE :${paramName} THEN ${index + 1}\n`;
+			caseConditions += `WHEN cuisine.name ILIKE :${paramName} THEN ${index + 3}\n`;
+			caseParams[paramName] = `%${pattern}%`;
+		});
+
+		// Add cuisine ID condition only if we have cuisine IDs
+		if (cuisineIdsFromExactMatch.length > 0) {
+			caseConditions += `WHEN cuisine.cuisineId IN (:...cuisineIdsCase) THEN ${partialPatterns.length + 10}\n`;
+			caseParams.cuisineIdsCase = cuisineIdsFromExactMatch;
+		}
+
+		// Build the complete CASE statement
+		const rankCase = `
+			CASE 
+				${caseConditions}
+				ELSE ${partialPatterns.length + 20}
+			END
+		`;
+
+		queryBuilder.addSelect(rankCase, 'rank');
+
+		// Set all the case parameters
+		Object.keys(caseParams).forEach(key => {
+			queryBuilder.setParameter(key, caseParams[key]);
+		});
+
+		queryBuilder
+			.orderBy('rank', 'ASC')
+			.addOrderBy('restaurant.name', 'ASC');
+
+		// 4. Apply cursor filtering if provided
+		if (query.cursor) {
+			const cursorRow = query.cursor.split('|');
+			const cursorRank = cursorRow[0];
+			const cursorName = cursorRow[1];
+
+			// Build the same CASE statement for cursor comparison
+			const cursorCaseStatement = `
+				(
+					CASE 
+						${caseConditions}
+						ELSE ${partialPatterns.length + 20}
+					END
+				)
+			`;
+
+			queryBuilder.andWhere(
+				new Brackets((qb) => {
+					qb.where(`${cursorCaseStatement} > :cursorRank`, { cursorRank: cursorRank });
+					qb.orWhere(`${cursorCaseStatement} = :cursorRank AND restaurant.name > :cursorName`, {
+						cursorRank: cursorRank,
+						cursorName: cursorName,
+					});
+				})
+			);
+		}
+
+		// Take limit + 1 to determine if there's a next page
+		queryBuilder.take(query.limit + 1);
+
+		const { entities, raw } = await queryBuilder.getRawAndEntities();
+		const results = entities.map((entity, index) => {
+			return {
+				...entity,
+				rank: raw[index].rank,
+			};
+		});
+
+		return results;
+	}
+
+
+	/* === Handle Search pattern === */
+
+	private handleSearchPattern(keyword: string) {
+		const originalKeyword = keyword.trim().toLowerCase();
+
+		// Generate all possible search patterns
+		const searchPatterns = [
+			originalKeyword,
+			originalKeyword.replace(/[^a-zA-Z0-9]+/g, ''), // merge words by removing special chars (spaces & separators)
+		];
+
+		// Split into words (handling spaces & separators)
+		const words = originalKeyword.split(/[^a-zA-Z0-9]+/).filter((word: string) => word.length > 0);
+		searchPatterns.push(...words);
+
+		if (words.length > 1) {
+			searchPatterns.push(words.join(' ')); // "Kuvalis Hansen"
+			searchPatterns.push(words.join('')); // "Kuvalishansen"
+		}
+
+		// Remove duplicates
+		const uniquePatterns = [...new Set(searchPatterns.filter((p: string) => p))];
+		return uniquePatterns
+	}
+
 }

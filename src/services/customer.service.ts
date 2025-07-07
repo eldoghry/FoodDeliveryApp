@@ -8,6 +8,9 @@ import { Transactional } from 'typeorm-transactional';
 import { RatingService } from './rating.service';
 import { CreateRatingDto } from '../dtos/rating.dto';
 import { OrderService } from './order.service';
+import { SettingService } from './setting.service';
+import { SettingKey } from '../enums/setting.enum';
+import { Point } from 'geojson';
 
 export class CustomerService {
 	private customerRepo = new CustomerRepository();
@@ -37,15 +40,25 @@ export class CustomerService {
 	}
 
 	@Transactional()
-	async createCustomerAddress(customerId: number, payload: Partial<Address>) {
+	async createCustomerAddress(customerId: number, payload: Address & { coordinates: { lng: number; lat: number } }) {
+		const { coordinates, ...rest } = payload;
+		const geoLocation: Point = { type: 'Point', coordinates: [coordinates.lng , coordinates.lat] };
+
+		const payloadData = {
+			...rest,
+			geoLocation,
+			customerId,
+			isDefault: true
+		};
+
+		await this.ensureAddressLimitNotExceeded(customerId);
 		await this.customerRepo.unsetCustomerDefaultAddress(customerId);
-		await this.validateAddressLimit(customerId);
-		await this.customerRepo.addAddress({ ...payload, customerId, isDefault: true });
+		await this.customerRepo.addAddress(payloadData);
 	}
 
 	@Transactional()
 	async assignDefaultAddress(customerId: number, addressId: number) {
-		await this.validateCustomerAddress(customerId, addressId);
+		await this.ensureCustomerOwnsAddress(customerId, addressId);
 		await this.customerRepo.unsetCustomerDefaultAddress(customerId);
 		const address = await this.customerRepo.setDefaultAddress(addressId);
 		return address;
@@ -53,15 +66,17 @@ export class CustomerService {
 
 	@Transactional()
 	async updateCustomerAddress(customerId: number, addressId: number, payload: Partial<Address>) {
-		await this.validateAddressOperation(customerId, addressId);
-		await this.handleDefaultAddressChange(customerId, addressId, payload);
+		await this.ensureCustomerOwnsAddress(customerId, addressId);
+		await this.ensureAddressNotUsedInActiveOrder(addressId);
+		await this.handleDefaultAddressUpdateRules(customerId, addressId, payload);
 		const updatedAddress = await this.customerRepo.updateAddress(addressId, { ...payload, customerId });
 		return updatedAddress;
 	}
 
 	@Transactional()
 	async deleteCustomerAddress(customerId: number, addressId: number) {
-		await this.validateAddressOperation(customerId, addressId);
+		await this.ensureCustomerOwnsAddress(customerId, addressId);
+		await this.ensureAddressNotUsedInActiveOrder(addressId);
 		await this.customerRepo.deleteAddress(addressId);
 	}
 
@@ -70,68 +85,58 @@ export class CustomerService {
 	@Transactional()
 	async deactivateCustomer(userId: number, customerId: number, payload: Partial<User>, deactivatedBy: DeactivatedBy) {
 		const deactivationInfo = { ...payload, deactivatedAt: new Date(), deactivatedBy };
-		await this.validateCustomerDeactivation(customerId);
+		await this.ensureCustomerHasNoActiveOrders(customerId);
 		await this.userService.deactivateUser(userId, deactivationInfo);
 	}
 
 
 	/* === Validation Methods === */
 
-	async validateCustomerAddress(customerId: number, addressId: number) {
-		const address = await this.customerRepo.getAddressById(addressId);
+	async ensureCustomerOwnsAddress(customerId: number, addressId: number) {
+		const address = await this.customerRepo.getAddressBy({ customerId, addressId });
 		if (!address) {
-			throw new ApplicationError(ErrMessages.customer.AddressNotFound, HttpStatusCode.NOT_FOUND);
-		}
-
-		if (address.customerId !== customerId) {
-			throw new ApplicationError(ErrMessages.customer.AddressDoesntBelongToCustomer, HttpStatusCode.BAD_REQUEST);
+			throw new ApplicationError(ErrMessages.customer.AddressDoesntBelongToCustomer, HttpStatusCode.NOT_FOUND);
 		}
 		return address;
 	}
 
-	private async validateAddressLimit(customerId: number) {
+	private async ensureAddressLimitNotExceeded(customerId: number) {
 		const addresses = await this.getCustomerAddresses(customerId);
-		if (addresses.length === 10) {
+		if (addresses.length === Number(await SettingService.get(SettingKey.MAX_CUSTOMER_ADDRESSES))) {
 			throw new ApplicationError(ErrMessages.customer.ReachedAddressLimit, HttpStatusCode.BAD_REQUEST);
 		}
 	}
 
-	private async validateNotLastDefaultAddress(customerId: number, addressId: number) {
+	private async ensureNotRemovingOnlyDefaultAddress(customerId: number, addressId: number) {
 		const defaultAddress = await this.customerRepo.getDefaultAddress(customerId);
 		if (defaultAddress?.addressId === addressId) {
 			throw new ApplicationError(ErrMessages.customer.AtLeastOneDefaultAddress, HttpStatusCode.BAD_REQUEST);
 		}
 	}
 
-	private async validateAddressNotInActiveOrder(addressId: number) {
-		// TODO: check me
+	private async ensureAddressNotUsedInActiveOrder(addressId: number) {
 		const activeOrder = await this.orderService.getActiveOrderByAddressId(addressId);
 		if (activeOrder) {
-			throw new ApplicationError(ErrMessages.customer.AddressIsUsed, HttpStatusCode.BAD_REQUEST);
+			throw new ApplicationError(ErrMessages.customer.AddressUsedInActiveOrder, HttpStatusCode.BAD_REQUEST);
 		}
 	}
 
-	private async validateAddressOperation(customerId: number, addressId: number) {
-		await this.validateCustomerAddress(customerId, addressId);
-		await this.validateAddressNotInActiveOrder(addressId);
-	}
-
-	private async validateCustomerDeactivation(customerId: number) {
+	private async ensureCustomerHasNoActiveOrders(customerId: number) {
 		const activeOrder = await this.orderService.getActiveOrderByCustomerId(customerId);
 		if (activeOrder) {
-			throw new ApplicationError(ErrMessages.customer.CustomerIsUsed, HttpStatusCode.BAD_REQUEST);
+			throw new ApplicationError(ErrMessages.customer.CustomerHasActiveOrder, HttpStatusCode.BAD_REQUEST);
 		}
 	}
 
 	/* === Helper Methods === */
 
 	async getCustomerByIdOrFail(filter: { customerId: number; relations?: CustomerRelations[] }) {
-		const customer = await this.customerRepo.getCustomerById(filter);
+		const customer = await this.customerRepo.getCustomerBy(filter);
 		if (!customer) throw new ApplicationError(ErrMessages.customer.CustomerNotFound, HttpStatusCode.NOT_FOUND);
 		return customer;
 	}
 
-	private async handleDefaultAddressChange(
+	private async handleDefaultAddressUpdateRules(
 		customerId: number,
 		addressId: number,
 		payload: Partial<Address>
@@ -139,7 +144,7 @@ export class CustomerService {
 		if (payload?.isDefault) {
 			await this.customerRepo.unsetCustomerDefaultAddress(customerId);
 		} else {
-			await this.validateNotLastDefaultAddress(customerId, addressId);
+			await this.ensureNotRemovingOnlyDefaultAddress(customerId, addressId);
 		}
 	}
 }

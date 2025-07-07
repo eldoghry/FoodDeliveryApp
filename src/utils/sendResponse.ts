@@ -6,8 +6,13 @@ interface ApiResponse<T> {
 	status: StatusType;
 	message: string;
 	data?: T;
-	timestamp: string;
 	[key: string]: any;
+}
+
+interface ApiMetaResponse<T> {
+	limit: number;
+	nextCursor: string | null;
+	hasNextPage: boolean;
 }
 
 const getStatusFromCode = (statusCode: number) => {
@@ -35,7 +40,7 @@ export function sendPaginatedResponse<T>(
 	statusCode: number,
 	message: string,
 	data: T[],
-	meta?: { perPage: number, nextCursor: string | null, hasNextPage: boolean }
+	meta?: ApiMetaResponse<T>
 ): Response<ApiResponse<T[]>> {
 	return sendResponse(res, statusCode, message, data, { meta });
 }

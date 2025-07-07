@@ -5,8 +5,7 @@ import {
 	RestaurantRelations,
 	RestaurantStatus
 } from './../models/restaurant/restaurant.entity';
-import HttpStatusCodes, { StatusCodes } from 'http-status-codes';
-import logger from '../config/logger';
+import { StatusCodes } from 'http-status-codes';
 import ApplicationError from '../errors/application.error';
 import ErrMessages from '../errors/error-messages';
 import { RestaurantRepository } from '../repositories';
@@ -43,8 +42,14 @@ export class RestaurantService {
 
 	async getAllRestaurants(filter: ListRestaurantsDto) {
 		const { limit } = filter;
-		const restaurants = await this.restaurantRepo.getAllRestaurants({ ...filter, limit: limit + 1 });
-		return cursorPaginate(restaurants, limit, 'restaurantId' as any);
+		const restaurants = await this.restaurantRepo.getAllRestaurants({ ...filter, limit: limit! + 1 });
+		return cursorPaginate(restaurants, limit, 'restaurantId');
+	}
+
+	async getTopRatedRestaurants(filter: ListTopRatedRestaurantsDto) {
+		const { limit } = filter;
+		const restaurants = await this.restaurantRepo.getTopRatedRestaurants({ ...filter, limit: limit! + 1 });
+		return cursorPaginate(restaurants, limit, 'restaurantId');
 	}
 
 	@Transactional()
@@ -73,7 +78,12 @@ export class RestaurantService {
 			name: payload.name,
 			logoUrl: payload.logoUrl,
 			bannerUrl: payload.bannerUrl,
-			location: payload.location,
+			location: {
+				city: payload.location.city,
+				area: payload.location.area,
+				street: payload.location.street,
+			},
+			geoLocation: { type: 'Point', coordinates: [payload.location.coordinates.lng, payload.location.coordinates.lat] },
 			approvalStatus: RestaurantApprovalStatus.pending
 		};
 
@@ -134,6 +144,11 @@ export class RestaurantService {
 		}
 		const restaurant = await this.restaurantRepo.updateRestaurant(restaurantId, { status: payload.status });
 		return this.formatRestaurantStatusResponse(restaurant!);
+	}
+
+	async searchRestaurants(query: any) {
+		const results = await this.restaurantRepo.searchRestaurants(query);
+		return cursorPaginate(results, query.limit, ['rank','name']);
 	}
 
 	/* === Validation Methods === */
@@ -369,11 +384,5 @@ export class RestaurantService {
 			name: restaurant.name,
 			status: restaurant.status
 		};
-	}
-
-	async getTopRatedRestaurants(filter: ListTopRatedRestaurantsDto) {
-		const { limit } = filter;
-		const restaurants = await this.restaurantRepo.getTopRatedRestaurants({ ...filter, limit: limit + 1 });
-		return cursorPaginate(restaurants, limit, 'restaurantId' as any);
 	}
 }

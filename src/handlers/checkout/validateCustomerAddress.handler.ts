@@ -8,7 +8,7 @@ export class ValidateCustomerAddressHandler extends CheckoutHandler {
 
 	async handleRequest(context: CheckoutContext) {
 		const { customerId, addressId } = context.payload;
-		context.address = await this.customerService.validateCustomerAddress(customerId, addressId);
+		context.address = await this.customerService.ensureCustomerOwnsAddress(customerId, addressId);
 		return context;
 	}
 }

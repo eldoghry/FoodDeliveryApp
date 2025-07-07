@@ -5,6 +5,7 @@ import { OrderItem } from '../models/order/order-item.entity';
 import { OrderStatusEnum, OrderStatusLog } from '../models/order/order-status_log.entity';
 import { Order, OrderRelations } from '../models/order/order.entity';
 import { cursorPaginate } from '../utils/helper';
+import { PaginatedResultsDto } from '../dtos/shared.dto';
 
 export class OrderRepository {
 	private orderRepo: Repository<Order>;
@@ -29,7 +30,7 @@ export class OrderRepository {
 		actorType: string,
 		limit: number,
 		cursor?: string
-	): Promise<{ data: Order[]; nextCursor: string | null; hasNextPage: boolean }> {
+	): Promise<PaginatedResultsDto<Order>> {
 		const whereCondition = actorType === 'customer' ? { customerId: actorId } : { restaurantId: actorId };
 
 		// Build base where clause

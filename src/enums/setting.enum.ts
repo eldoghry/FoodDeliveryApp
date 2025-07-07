@@ -50,5 +50,9 @@ export enum SettingKey {
 
 	/* ─────────── Integrations / Secrets* ─────────── */
 	MAPS_API_CONFIG = 'MAPS_API_CONFIG',
-	FIREBASE_CONFIG = 'FIREBASE_CONFIG'
+	FIREBASE_CONFIG = 'FIREBASE_CONFIG',
+
+	/* ─────────── Customer Address ─────────── */
+	MAX_CUSTOMER_ADDRESSES = 'MAX_CUSTOMER_ADDRESSES',
+	MAX_DISTANCE_IN_METERS = 'MAX_DISTANCE_IN_METERS'
 }

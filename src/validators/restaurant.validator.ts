@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { RestaurantStatus } from '../models';
+import { query } from 'winston';
 
 export const listRestaurantsQuerySchema = Joi.object({
 	// page: Joi.number().integer().min(1).default(1),
@@ -50,6 +51,15 @@ export const restaurantStatusBodySchema = Joi.object({
 		.valid(...Object.values(RestaurantStatus))
 		.required()
 }).required();
+
+export const searchRestaurantQuerySchema = Joi.object({
+	keyword: Joi.string().required(),
+	limit: Joi.number().integer().min(1).max(100).default(20),
+	cursor: Joi.string().default(null),
+	lat: Joi.number().required(),
+	lng: Joi.number().required()
+}).required();
+
 
 export const listTopRatedRestaurantsQuerySchema = Joi.object({
 	limit: Joi.number().integer().min(1).max(100).default(20),

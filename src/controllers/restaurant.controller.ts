@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import { sendResponse } from '../utils/sendResponse';
+import { sendPaginatedResponse, sendResponse } from '../utils/sendResponse';
 import { Request, Response } from 'express';
 import { AuthorizedUser } from '../middlewares/auth.middleware';
 import { RestaurantService } from '../services/restaurant.service';
@@ -35,12 +35,21 @@ export class RestaurantController {
 		const query = req.validated?.query as ListRestaurantsDto;
 
 		const data = await this.restaurantService.getAllRestaurants(query);
-		sendResponse(res, StatusCodes.OK, 'List Restaurants Successfully', data);
+		sendPaginatedResponse(res, StatusCodes.OK, 'List Restaurants Successfully', data.data, {
+			limit: query.limit,
+			nextCursor: data.nextCursor,
+			hasNextPage: data.hasNextPage
+		});
 	}
 
 	async searchRestaurant(req: Request, res: Response) {
-		// TODO: Implement searchRestaurant logic
-		throw new ApplicationError('Not implemented', StatusCodes.NOT_IMPLEMENTED);
+		const query = req.validated?.query;
+		const data = await this.restaurantService.searchRestaurants(query);
+		sendPaginatedResponse(res, StatusCodes.OK, 'Search Restaurants Successfully', data.data, {
+			limit: query.limit,
+			nextCursor: data.nextCursor,
+			hasNextPage: data.hasNextPage
+		});
 	}
 
 	async deactivateRestaurant(req: Request, res: Response) {
@@ -78,7 +87,11 @@ export class RestaurantController {
 	async getTopRatedRestaurants(req: Request, res: Response) {
 		const query = req.validated?.query as ListTopRatedRestaurantsDto;
 		const data = await this.restaurantService.getTopRatedRestaurants(query);
-		sendResponse(res, StatusCodes.OK, 'List Top Rated Restaurants Successfully', data);
+		sendPaginatedResponse(res, StatusCodes.OK, 'List Top Rated Restaurants Successfully', data.data, {
+			limit: query.limit,
+			nextCursor: data.nextCursor,
+			hasNextPage: data.hasNextPage
+		});
 	}
 
 	async getRecommendedRestaurant(req: Request, res: Response) {

@@ -18,6 +18,7 @@ import { Order } from '../order/order.entity';
 import { Rating } from '../rating/rating.entity';
 import { Cuisine } from './cuisine.entity';
 import { Chain } from './chain.entity';
+import { Point } from 'geojson';
 
 export enum RestaurantStatus {
 	open = 'open',
@@ -60,16 +61,19 @@ export class Restaurant extends AbstractEntity {
 		city: string;
 		area: string;
 		street: string;
-		coordinates: {
-			lat: number;
-			lng: number;
-		};
 	};
+
+	@Column({
+		type: 'geography',
+		spatialFeatureType: 'Point',
+		srid: 4326,
+	})
+	geoLocation!: Point; // { type: 'Point', coordinates: [longitude, latitude] }
 
 	@Column({ type: 'enum', enum: RestaurantApprovalStatus, nullable: false })
 	approvalStatus?: RestaurantApprovalStatus;
 
-	@Column({ type: 'enum', enum: RestaurantStatus,default: RestaurantStatus.closed, nullable: false })
+	@Column({ type: 'enum', enum: RestaurantStatus, default: RestaurantStatus.closed, nullable: false })
 	status?: RestaurantStatus;
 
 	@Column({ type: 'varchar', length: 100, nullable: true })
