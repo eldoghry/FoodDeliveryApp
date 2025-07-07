@@ -110,3 +110,7 @@ export function generatePaymentReference(prefix = 'PAY') {
 	const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
 	return `${prefix}-${timestamp}-${randomPart}`;
 }
+
+export function normalizeString(str: string) {
+	return str.toLowerCase().trim().replace(/\s+/g, ' ');
+}

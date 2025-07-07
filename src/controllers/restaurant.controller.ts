@@ -99,4 +99,11 @@ export class RestaurantController {
 		const data = await this.restaurantService.getRecommendedRestaurants(query);
 		sendResponse(res, StatusCodes.OK, 'List Recommended Restaurants Successfully', data);
 	}
+
+	async searchItemsInMenu(req: Request, res: Response) {
+		const query = req.validated?.query;
+		const { restaurantId } = req.validated?.params;
+		const data = await this.restaurantService.searchItemsInMenu(restaurantId, query);
+		sendResponse(res, StatusCodes.OK, 'Search Items In Menu Successfully', data);
+	}
 }

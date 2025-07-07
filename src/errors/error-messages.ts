@@ -107,11 +107,16 @@ const ErrMessages = {
 
 	item: {
 		ItemNotFound: 'Item Not Found',
-		ItemPriceNotFound: 'Item price not found'
+		ItemPriceNotFound: 'Item price not found',
+		ItemNameAlreadyExists: 'Item name already exists',
+		ItemNotBelongsToMenu: 'Item does not belong to the specified restaurant menu',
+		ItemAlreadyAvailable:'Item Already Available',
+		ItemAlreadyUnAvailable:'Item Already UnAvailable'
 	},
 
 	menu: {
 		NoActiveMenuFound: 'Sorry there is no active menu for current restaurant',
+		MenuAlreadyExist:'Already Exist Active Menu For the Restaurant',
 		ItemNotBelongToActiveMenu: 'Item does not belong to an active menu of this restaurant',
 		CategoryNotFound: 'Category Not Found',
 		CategoryNotBelongsToMenu: 'Category does not belong to the specified restaurant menu',

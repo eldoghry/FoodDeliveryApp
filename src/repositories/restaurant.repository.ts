@@ -1,11 +1,14 @@
 import { AppDataSource } from '../config/data-source';
-import { Restaurant, RestaurantRelations } from '../models/restaurant/restaurant.entity';
-import { Brackets, In, Not, Repository } from 'typeorm';
-import { RestaurantStatus } from '../models/restaurant/restaurant.entity';
-import { Chain } from '../models/restaurant/chain.entity';
-import { Cuisine } from '../models/restaurant/cuisine.entity';
+import { Brackets, ILike, In, Repository } from 'typeorm';
 import { ListRecommendedRestaurantsDto, ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
-
+import {
+	Restaurant,
+	RestaurantRelations,
+	RestaurantStatus,
+	Chain,
+	Cuisine
+} from '../models';
+import { normalizeString } from '../utils/helper';
 
 export class RestaurantRepository {
 	private restaurantRepo: Repository<Restaurant>;
@@ -32,7 +35,7 @@ export class RestaurantRepository {
 	}
 
 	async getChainByName(name: string): Promise<Chain | null> {
-		return await this.chainRepo.findOne({ where: { name } });
+		return await this.chainRepo.findOne({ where: { name: ILike(normalizeString(name)) as any } });
 	}
 
 	async getChainByCommercialRegistrationNumber(commercialRegistrationNumber: string): Promise<Chain | null> {
@@ -78,7 +81,7 @@ export class RestaurantRepository {
 	}
 
 	async getRestaurantByName(name: string): Promise<Restaurant | null> {
-		return this.getRestaurantBy({ name });
+		return this.getRestaurantBy({ name: ILike(normalizeString(name)) as any });
 	}
 
 	async getRestaurantByFilteredRelations(restaurantId: number) {
@@ -100,8 +103,8 @@ export class RestaurantRepository {
 			.where('restaurant.restaurantId = :restaurantId', { restaurantId })
 			.getOne();
 
-			console.log('restaurant repo', restaurant);
-			return restaurant;
+		console.log('restaurant repo', restaurant);
+		return restaurant;
 	}
 
 	async getAllRestaurants(filter: ListRestaurantsDto): Promise<any[]> {
@@ -344,7 +347,7 @@ export class RestaurantRepository {
 		if (cuisines) {
 			queryBuilder.andWhere('cuisine.cuisineId IN (:...cuisinesIds)', { cuisinesIds: cuisines });
 		}
-		
+
 		if (sort && sort === 'rating') {
 			queryBuilder.orderBy('average_rating', 'DESC');
 		} else {
@@ -360,7 +363,7 @@ export class RestaurantRepository {
 	/* === Helper methods === */
 
 	private handleSearchPattern(keyword: string) {
-		const originalKeyword = keyword.trim().toLowerCase();
+		const originalKeyword = normalizeString(keyword);
 
 		// Generate all possible search patterns
 		const searchPatterns = [
