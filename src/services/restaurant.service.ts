@@ -100,7 +100,7 @@ export class RestaurantService {
 			approvalStatus: RestaurantApprovalStatus.pending
 		};
 
-		await this.ensureUserUniqueness(userData);
+		await this.ensureOwnerDataUniqueness(userData);
 
 		const chain = await this.createChain(chainData);
 		restaurantData.chainId = chain.chainId;
@@ -171,7 +171,7 @@ export class RestaurantService {
 
 	/* === Validation Methods === */
 
-	private async ensureUserUniqueness(payload: Partial<User>) {
+	private async ensureOwnerDataUniqueness(payload: Partial<User>) {
 		await this.userService.ensureEmailUniqueness(payload.email!);
 		await this.userService.ensurePhoneUniqueness(payload.phone!);
 	}
