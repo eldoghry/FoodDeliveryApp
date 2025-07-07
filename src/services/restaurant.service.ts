@@ -14,11 +14,12 @@ import { cursorPaginate } from '../utils/helper';
 import { Transactional } from 'typeorm-transactional';
 import { Chain } from '../models/restaurant/chain.entity';
 import { UserService } from './user.service';
-import { User, UserTypeNames } from '../models';
+import { Item, Menu, User, UserTypeNames } from '../models';
 import { Rating } from '../models/rating/rating.entity';
 import { SettingService } from './setting.service';
 import { SettingKey } from '../enums/setting.enum';
 import { OrderService } from './order.service';
+import { Category } from '../models/menu/category.entity';
 
 export class RestaurantService {
 	private restaurantRepo = new RestaurantRepository();
@@ -295,6 +296,7 @@ export class RestaurantService {
 	}
 
 	private async formatViewRestaurantResponse(restaurant: Restaurant) {
+		// console.log(restaurant);
 		return {
 			restaurantId: restaurant.restaurantId,
 			name: restaurant.name,
@@ -307,7 +309,7 @@ export class RestaurantService {
 			location: restaurant.location,
 			logoUrl: restaurant.logoUrl,
 			bannerUrl: restaurant.bannerUrl,
-			menus: this.formatMenus(restaurant.menus),
+			menu: this.formatMenu(restaurant.menu) || null,
 			deliveryFees: await SettingService.get(SettingKey.DELIVERY_BASE_FEE),
 			minOrderAmount: await SettingService.get(SettingKey.MIN_ORDER_AMOUNT),
 			minEstimatedDeliveryTime: await SettingService.get(SettingKey.MIN_ESTIMATED_DELIVERY_TIME),
@@ -340,21 +342,14 @@ export class RestaurantService {
 		};
 	}
 
-	private formatMenus(menus: any[]) {
-		return (
-			menus?.map((menu) => ({
-				menuId: menu.menuId,
-				menuTitle: menu.menuTitle,
-				categories: this.formatMenuCategories(menu.menuCategories)
-			})) || []
-		);
+	private formatMenu(menu: Menu) {
+		return {
+			menuId: menu.menuId,
+			categories: menu.categories?.map((category:Category) => this.formatMenuCategory(category))
+		};
 	}
 
-	private formatMenuCategories(menuCategories: any[]) {
-		return menuCategories?.map((menuCategory) => this.formatMenuCategory(menuCategory.category)).filter(Boolean) || [];
-	}
-
-	private formatMenuCategory(category: any) {
+	private formatMenuCategory(category: Category) {
 		if (!category) return null;
 
 		return {
@@ -364,7 +359,7 @@ export class RestaurantService {
 		};
 	}
 
-	private formatCategoryItems(items: any[]) {
+	private formatCategoryItems(items: Item[]) {
 		return (
 			items?.map((item) => ({
 				itemId: item.itemId,

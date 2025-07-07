@@ -9,6 +9,7 @@ import {
 	JoinTable,
 	ManyToMany,
 	ManyToOne,
+	OneToOne,
 } from 'typeorm';
 import { User } from '../user/user.entity';
 import { CartItem } from '../cart/cart-item.entity';
@@ -38,7 +39,7 @@ export enum RestaurantDeactivatedBy {
 	system = 'system'
 }
 
-export type RestaurantRelations = 'chain' | 'user' | 'menus' | 'cartItems' | 'orders' | 'ratings' | 'cuisines' | 'menus.menuCategories' | 'menus.menuCategories.category.items' | 'users.restaurants';
+export type RestaurantRelations = 'chain' | 'user' | 'menu' | 'cartItems' | 'orders' | 'ratings' | 'cuisines' | 'menu.categories' | 'menu.categories.items' | 'users.restaurants';
 @Entity()
 export class Restaurant extends AbstractEntity {
 	@PrimaryGeneratedColumn()
@@ -117,17 +118,13 @@ export class Restaurant extends AbstractEntity {
 	@JoinColumn({ name: 'chain_id' })
 	chain?: Chain;
 
-	@ManyToMany(() => User, (user) => user.restaurants)
+	@ManyToMany(() => User, (user) => user.restaurant)
 	@JoinTable({
 		name: 'restaurant_user',
 		joinColumn: { name: 'restaurant_id', referencedColumnName: 'restaurantId' },
 		inverseJoinColumn: { name: 'user_id', referencedColumnName: 'userId' }
 	})
 	users!: User[];
-
-
-	@OneToMany(() => Menu, (menu) => menu.restaurant)
-	menus!: Menu[];
 
 	@OneToMany(() => CartItem, (cartItem) => cartItem.restaurant)
 	cartItems!: CartItem[];
@@ -145,6 +142,9 @@ export class Restaurant extends AbstractEntity {
 		inverseJoinColumn: { name: 'cuisine_id', referencedColumnName: 'cuisineId' }
 	})
 	cuisines!: Cuisine[];
+
+	@OneToOne(() => Menu, (menu) => menu.restaurant)
+	menu!: Menu;
 
 	static calculateRestaurantAverageRating(ratings: Rating[]) {
 		const totalRatings = ratings.length;

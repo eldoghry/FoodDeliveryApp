@@ -5,12 +5,10 @@ import {
 	Gender,
 	Item,
 	Menu,
-	MenuCategory,
 	MenuItem,
 	Order,
 	OrderStatusEnum,
 	PaymentMethod,
-	PaymentMethodConfig,
 	PaymentMethodEnum,
 	Restaurant,
 	RestaurantApprovalStatus,
@@ -33,7 +31,6 @@ import { Chain } from '../../models/restaurant/chain.entity';
 const ITEMS_COUNT = 100;
 const RESTAURANTS_COUNT = 100;
 const ORDERS_COUNT = 200;
-const MENUS_COUNT = 10;
 const USERS_COUNT = 100;
 const ADDRESSES_COUNT = 10;
 const ROLES = [
@@ -244,16 +241,11 @@ const paymentMethodSeedData: SeedData<PaymentMethod> = {
 const categorySeedData: SeedData<Category> = {
 	entity: Category,
 	data: Array.from({ length: 10 }).map((_, i) => ({
+		menuId: i + 1,
 		title: faker.food.ethnicCategory() + i,
-		isActive: true
-	}))
-};
-
-const menuCategorySeedData: SeedData<MenuCategory> = {
-	entity: MenuCategory,
-	data: Array.from({ length: 10 }).map((_, i) => ({
-		menuId: i < 3 ? 1 : faker.number.int({ min: 1, max: 9 }),
-		categoryId: i + 1
+		isActive: true,
+		createdAt: new Date(),
+		updatedAt: new Date()
 	}))
 };
 
@@ -424,7 +416,6 @@ const seedData = [
 
 	// category
 	categorySeedData,
-	menuCategorySeedData,
 
 	// settings
 	settingSeedData,
