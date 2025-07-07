@@ -1,12 +1,13 @@
 import { AppDataSource } from '../config/data-source';
 import { Brackets, ILike, In, Repository } from 'typeorm';
-import { ListRecommendedRestaurantsDto, ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
+import { ListRecommendedRestaurantsFilterDto, ListRestaurantsFilterDto, ListTopRatedRestaurantsFilterDto, RestaurantResponseDto, SearchRestaurantsQueryDto } from '../dtos/restaurant.dto';
 import {
 	Restaurant,
 	RestaurantRelations,
 	RestaurantStatus,
 	Chain,
-	Cuisine
+	Cuisine,
+	ChainRelations
 } from '../models';
 import { normalizeString } from '../utils/helper';
 
@@ -27,28 +28,17 @@ export class RestaurantRepository {
 		return await this.chainRepo.save(chain);
 	}
 
-	async getChainById(chainId: number): Promise<Chain | null> {
+	async getChainBy(filter: { chainId?: number, name?: string, commercialRegistrationNumber?: string, vatNumber?: string, relations?: ChainRelations[] }): Promise<Chain | null> {
+		const { relations, ...whereOptions } = filter
 		return await this.chainRepo.findOne({
-			where: { chainId },
-			relations: ['restaurants']
+			where: whereOptions,
+			relations: relations || []
 		});
-	}
-
-	async getChainByName(name: string): Promise<Chain | null> {
-		return await this.chainRepo.findOne({ where: { name: ILike(normalizeString(name)) as any } });
-	}
-
-	async getChainByCommercialRegistrationNumber(commercialRegistrationNumber: string): Promise<Chain | null> {
-		return await this.chainRepo.findOne({ where: { commercialRegistrationNumber } });
-	}
-
-	async getChainByVatNumber(vatNumber: string): Promise<Chain | null> {
-		return await this.chainRepo.findOne({ where: { vatNumber } });
 	}
 
 	async updateChain(chainId: number, data: Partial<Chain>): Promise<Chain | null> {
 		await this.chainRepo.update(chainId, data);
-		return await this.getChainById(chainId);
+		return await this.getChainBy({ chainId, relations: ['restaurants'] });
 	}
 
 	async deleteChain(chainId: number): Promise<void> {
@@ -65,31 +55,22 @@ export class RestaurantRepository {
 	async createRestaurant(data: Partial<Restaurant>): Promise<Restaurant | null> {
 		const restaurant = this.restaurantRepo.create(data);
 		await this.restaurantRepo.save(restaurant);
-		return await this.getRestaurantById(restaurant.restaurantId);
+		return await this.getRestaurantBy({ restaurantId: restaurant.restaurantId });
 	}
 
-	async getRestaurantBy(filter: { restaurantId?: number; userId?: number; name?: string; relations?: RestaurantRelations[] }) {
+	async getRestaurantBy(filter: { restaurantId?: number; userId?: number; name?: string; relations?: RestaurantRelations[] }): Promise<Restaurant | null> {
 		const { relations, ...whereOptions } = filter;
 		return await this.restaurantRepo.findOne({
 			where: whereOptions,
-			relations: relations
+			relations: relations || []
 		});
 	}
 
-	async getRestaurantById(restaurantId: number): Promise<Restaurant | null> {
-		return this.getRestaurantBy({ restaurantId });
-	}
-
-	async getRestaurantByName(name: string): Promise<Restaurant | null> {
-		return this.getRestaurantBy({ name: ILike(normalizeString(name)) as any });
-	}
-
-	async getRestaurantByFilteredRelations(restaurantId: number) {
-
+	async getRestaurantByFilteredRelations(restaurantId: number): Promise<any | null> {
 		const restaurant = await this.restaurantRepo
 			.createQueryBuilder('restaurant')
 			.leftJoinAndSelect('restaurant.chain', 'chain')
-			.leftJoinAndSelect('restaurant.ratings', 'ratings')
+			.leftJoin('restaurant.ratings', 'ratings')
 			.leftJoinAndSelect('restaurant.cuisines', 'cuisines')
 			.leftJoinAndSelect('restaurant.menu', 'menu', 'menu.isActive = :menuActive', {
 				menuActive: true
@@ -100,115 +81,29 @@ export class RestaurantRepository {
 			.leftJoinAndSelect('category.items', 'item', 'item.isAvailable = :itemAvailable', {
 				itemAvailable: true
 			})
-			.where('restaurant.restaurantId = :restaurantId', { restaurantId })
-			.getOne();
-
-		console.log('restaurant repo', restaurant);
-		return restaurant;
-	}
-
-	async getAllRestaurants(filter: ListRestaurantsDto): Promise<any[]> {
-		const averageRating = 'COALESCE(ROUND(AVG(ratings.rating),2),0)';
-
-		const query = this.restaurantRepo
-			.createQueryBuilder('restaurant')
-			.leftJoin('restaurant.ratings', 'ratings')
-			.leftJoinAndSelect('restaurant.cuisines', 'cuisines')
 			.addSelect('COALESCE(ROUND(AVG(ratings.rating), 2), 0)', 'averageRating')
 			.addSelect('COUNT(ratings.rating)', 'ratingCount')
-			.where('restaurant.isActive = :isActive', { isActive: true });
-
-		if (filter?.search) {
-			query.andWhere('restaurant.name ILIKE :search', { search: `%${filter.search}%` });
-		}
-
-		if (filter?.cuisines) {
-			query.andWhere('cuisines.cuisineId IN (:...cuisinesIds)', { cuisinesIds: filter.cuisines });
-		}
-
-		if (filter?.rating) query.having(`${averageRating} >= :rating`, { rating: filter.rating });
-
-		if (filter?.cursor) query.andWhere('restaurant.restaurantId < :cursor', { cursor: filter.cursor });
-		if (filter?.limit) query.limit(filter.limit);
-
-		// const order: 'ASC' | 'DESC' = filter?.order?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
-		query.orderBy('restaurant.restaurantId', 'DESC');
-		query.groupBy('restaurant.restaurantId');
-		query.addGroupBy('cuisines.cuisineId');
-
-		const { entities, raw } = await query.getRawAndEntities();
-
-		return entities.map((restaurant, index) => {
-			return {
-				...restaurant,
-				cuisines: restaurant.cuisines.map((cuisine) => ({ id: cuisine.cuisineId, name: cuisine.name })),
-				averageRating: +raw[index].averageRating,
-				ratingCount: raw[index].ratingCount
-			};
-		});
-	}
-
-	async updateRestaurant(restaurantId: number, data: Partial<Restaurant>): Promise<Restaurant | null> {
-		await this.restaurantRepo.update(restaurantId, data);
-		return await this.getRestaurantById(restaurantId);
-	}
-
-	async updateRestaurantStatus(restaurantId: number, status: RestaurantStatus): Promise<Restaurant | null> {
-		await this.restaurantRepo.update(restaurantId, { status });
-		return await this.getRestaurantById(restaurantId);
-	}
-
-	async deleteRestaurant(restaurantId: number): Promise<void> {
-		await this.restaurantRepo.update(restaurantId, { isActive: false });
-	}
-
-	async getTopRatedRestaurants(filter: ListTopRatedRestaurantsDto): Promise<any[]> {
-		const avgRatingExpr = 'COALESCE(ROUND(AVG(ratings.rating),2),0)';
-
-		const query = this.restaurantRepo
-			.createQueryBuilder('restaurant')
-			.leftJoin('restaurant.ratings', 'ratings')
-			.leftJoinAndSelect('restaurant.cuisines', 'cuisines')
-			.addSelect(avgRatingExpr, 'averageRating')
-			.addSelect('COUNT(ratings.rating)', 'ratingCount')
-			.where('restaurant.isActive = :isActive', { isActive: true });
-
-		if (filter?.cuisines) {
-			query.andWhere('cuisines.cuisineId IN (:...cuisinesIds)', { cuisinesIds: filter.cuisines });
-		}
-
-		if (filter?.cursor) query.andWhere('restaurant.restaurantId < :cursor', { cursor: filter.cursor });
-		if (filter?.limit) query.limit(filter.limit);
-
-		query.orderBy(avgRatingExpr, 'DESC');
-		query.groupBy('restaurant.restaurantId');
-		query.addGroupBy('cuisines.cuisineId');
-
-		const { entities, raw } = await query.getRawAndEntities();
-
-		return entities.map((restaurant, index) => {
-			return {
-				...restaurant,
-				cuisines: restaurant.cuisines.map((cuisine) => ({ id: cuisine.cuisineId, name: cuisine.name })),
-				averageRating: +raw[index].averageRating,
-				ratingCount: raw[index].ratingCount
-			};
-		});
-	}
-
-	// searchRestaurants
-	async searchRestaurants(query: any) {
-		const restaurants = await this.searchRestaurantsByKeyword(query)
-		return restaurants
+			.where('restaurant.restaurantId = :restaurantId', { restaurantId })
+			.groupBy('restaurant.restaurantId')
+			.addGroupBy('chain.chainId')
+			.addGroupBy('cuisines.cuisineId')
+			.addGroupBy('menu.menuId')
+			.addGroupBy('category.categoryId')
+			.addGroupBy('item.itemId')
+			.take(1)
+			.getRawAndEntities();
+		const result = { ...restaurant.entities[0], averageRating: restaurant.raw[0].averageRating, ratingCount: restaurant.raw[0].ratingCount };
+		return result;
 	}
 
 
-	// Base query builder method (for SearchRestaurants)
-	private createBaseRestaurantQuery(query: any) {
+	// Base query builder method (depends on geoLocation)
+	private createBaseRestaurantQuery(query: { lat: number; lng: number }) {
 		return this.restaurantRepo.createQueryBuilder('restaurant')
 			.leftJoinAndSelect('restaurant.cuisines', 'cuisine')
 			.leftJoin('restaurant.ratings', 'ratings')
-			.addSelect('COALESCE(ROUND(AVG(ratings.rating), 2), 0)', 'average_rating')
+			.addSelect('COALESCE(ROUND(AVG(ratings.rating), 2), 0)', 'averageRating')
+			.addSelect('COUNT(ratings.rating)', 'ratingCount')
 			.where('restaurant.isActive = :isActive', { isActive: true })
 			.andWhere('restaurant.status NOT IN (:...excludedStatuses)', {
 				excludedStatuses: [RestaurantStatus.pause]
@@ -227,9 +122,63 @@ export class RestaurantRepository {
 			.groupBy('restaurant.restaurantId')
 			.addGroupBy('cuisine.cuisineId')
 	}
-	async searchRestaurantsByKeyword(query: any): Promise<any[]> {
-		const patterns = this.handleSearchPattern(query.keyword);
-		const queryBuilder = this.createBaseRestaurantQuery(query);
+
+	async getFilteredRestaurants(filter: ListRestaurantsFilterDto): Promise<Partial<RestaurantResponseDto>[]> {
+		const { lat, lng, limit, cuisines, rating, cursor } = filter;
+		const averageRating = 'COALESCE(ROUND(AVG(ratings.rating),2),0)';
+
+		const queryBuilder = this.createBaseRestaurantQuery({ lat, lng })
+
+		if (cuisines) queryBuilder.andWhere('cuisines.cuisineId IN (:...cuisinesIds)', { cuisinesIds: cuisines });
+		if (rating) queryBuilder.having(`${averageRating} >= :rating`, { rating });
+		if (cursor) queryBuilder.andWhere('restaurant.restaurantId < :cursor', { cursor });
+
+		queryBuilder.orderBy('restaurant.restaurantId', 'DESC').take(limit + 1)
+
+		const results = await queryBuilder.getRawAndEntities();
+		return this.formatRestaurantsResults(results);
+
+	}
+
+	async updateRestaurant(restaurantId: number, data: Partial<Restaurant>): Promise<Restaurant | null> {
+		await this.restaurantRepo.update(restaurantId, data);
+		return await this.getRestaurantBy({ restaurantId });
+	}
+
+	async updateRestaurantStatus(restaurantId: number, status: RestaurantStatus): Promise<Restaurant | null> {
+		await this.restaurantRepo.update(restaurantId, { status });
+		return await this.getRestaurantBy({ restaurantId });
+	}
+
+	async deleteRestaurant(restaurantId: number): Promise<void> {
+		await this.restaurantRepo.update(restaurantId, { isActive: false });
+	}
+
+	async getTopRatedRestaurants(filter: ListTopRatedRestaurantsFilterDto): Promise<Partial<RestaurantResponseDto>[]> {
+		const { lat, lng, limit, cuisines, cursor } = filter;
+		const avgRatingExpr = 'COALESCE(ROUND(AVG(ratings.rating),2),0)';
+
+		const queryBuilder = this.createBaseRestaurantQuery({ lat, lng })
+
+		if (cuisines) queryBuilder.andWhere('cuisines.cuisineId IN (:...cuisinesIds)', { cuisinesIds: cuisines });
+
+		if (cursor) queryBuilder.andWhere('restaurant.restaurantId < :cursor', { cursor });
+
+		queryBuilder.orderBy(avgRatingExpr, 'DESC').take(limit + 1)
+
+		const results = await queryBuilder.getRawAndEntities();
+		return this.formatRestaurantsResults(results);
+	}
+
+	async searchRestaurants(query: SearchRestaurantsQueryDto): Promise<Partial<RestaurantResponseDto>[]> {
+		const restaurants = await this.searchRestaurantsByKeyword(query)
+		return restaurants
+	}
+
+	async searchRestaurantsByKeyword(query: SearchRestaurantsQueryDto): Promise<Partial<RestaurantResponseDto>[]> {
+		const { lat, lng, keyword, limit, cursor } = query;
+		const patterns = this.handleSearchPattern(keyword);
+		const queryBuilder = this.createBaseRestaurantQuery({ lat, lng });
 
 		const exactPattern = patterns[0];
 		const partialPatterns = patterns.slice(1);
@@ -237,7 +186,7 @@ export class RestaurantRepository {
 		let cuisineIdsFromExactMatch: number[] = [];
 
 		// 1. Try to find cuisines of a restaurant with an exact name match
-		const exactMatch = await this.createBaseRestaurantQuery(query)
+		const exactMatch = await this.createBaseRestaurantQuery({ lat, lng })
 			.andWhere('restaurant.name ILIKE :exactPattern', {
 				exactPattern: `%${exactPattern}%`
 			})
@@ -265,19 +214,18 @@ export class RestaurantRepository {
 
 		// 3. Build dynamic CASE statement for ranking
 		let caseConditions = '';
-		let caseParams: any = {};
+		const caseParams: Record<string, any> = { exactPatternCase: `%${exactPattern}%` };
 
 		// Add exact pattern conditions
 		caseConditions += `WHEN restaurant.name ILIKE :exactPatternCase THEN 0\n`;
 		caseConditions += `WHEN cuisine.name ILIKE :exactPatternCase THEN 2\n`;
-		caseParams.exactPatternCase = `%${exactPattern}%`;
 
 		// Add partial pattern conditions
 		partialPatterns.forEach((pattern, index) => {
 			const paramName = `patternCase${index}`;
+			caseParams[paramName] = `%${pattern}%`;
 			caseConditions += `WHEN restaurant.name ILIKE :${paramName} THEN ${index + 1}\n`;
 			caseConditions += `WHEN cuisine.name ILIKE :${paramName} THEN ${index + 3}\n`;
-			caseParams[paramName] = `%${pattern}%`;
 		});
 
 		// Add cuisine ID condition only if we have cuisine IDs
@@ -287,13 +235,14 @@ export class RestaurantRepository {
 		}
 
 		// Build the complete CASE statement
-		const rankCase = `
+		const caseStatement = `
 			CASE 
 				${caseConditions}
 				ELSE ${partialPatterns.length + 20}
 			END
 		`;
 
+		const rankCase = caseStatement;
 		queryBuilder.addSelect(rankCase, 'rank');
 
 		// Set all the case parameters
@@ -301,55 +250,41 @@ export class RestaurantRepository {
 			queryBuilder.setParameter(key, caseParams[key]);
 		});
 
-		queryBuilder
-			.orderBy('rank', 'ASC')
-			.addOrderBy('restaurant.name', 'ASC');
-
 		// 4. Apply cursor filtering if provided
-		if (query.cursor) {
-			const cursorRow = query.cursor.split('|');
-			const cursorRank = cursorRow[0];
-			const cursorName = cursorRow[1];
+		if (cursor) {
+			const [cursorRank, cursorName] = cursor.split('|');
 
-			// Build the same CASE statement for cursor comparison
-			const cursorCaseStatement = `
-				(
-					CASE 
-						${caseConditions}
-						ELSE ${partialPatterns.length + 20}
-					END
-				)
-			`;
+			// Build the same CASE statement for cursor comparison (note: add () to use it inside WHERE)
+			const cursorCaseStatement = `(${caseStatement})`;
 
 			queryBuilder.andWhere(
 				new Brackets((qb) => {
-					qb.where(`${cursorCaseStatement} > :cursorRank`, { cursorRank: cursorRank });
+					qb.where(`${cursorCaseStatement} > :cursorRank`, { cursorRank });
 					qb.orWhere(`${cursorCaseStatement} = :cursorRank AND restaurant.name > :cursorName`, {
-						cursorRank: cursorRank,
-						cursorName: cursorName,
+						cursorRank,
+						cursorName,
 					});
 				})
 			);
 		}
 
-		// Take limit + 1 to determine if there's a next page
-		queryBuilder.take(query.limit + 1);
+		queryBuilder
+			.orderBy('rank', 'ASC')
+			.addOrderBy('restaurant.name', 'ASC')
+			.take(limit + 1); // Take limit + 1 to determine if there's a next page
 
 		const results = await queryBuilder.getRawAndEntities();
 		return this.formatRestaurantsResults(results);
-
 	}
 
-	async getRecommendedRestaurants(filter: ListRecommendedRestaurantsDto) {
+	async getRecommendedRestaurants(filter: ListRecommendedRestaurantsFilterDto): Promise<Partial<RestaurantResponseDto>[]> {
 		const { lat, lng, limit, cuisines, sort } = filter;
 		const queryBuilder = this.createBaseRestaurantQuery({ lat, lng });
 
-		if (cuisines) {
-			queryBuilder.andWhere('cuisine.cuisineId IN (:...cuisinesIds)', { cuisinesIds: cuisines });
-		}
+		if (cuisines) queryBuilder.andWhere('cuisine.cuisineId IN (:...cuisinesIds)', { cuisinesIds: cuisines });
 
 		if (sort && sort === 'rating') {
-			queryBuilder.orderBy('average_rating', 'DESC');
+			queryBuilder.orderBy('averageRating', 'DESC');
 		} else {
 			queryBuilder.orderBy('restaurant.' + sort, 'DESC');
 		}
@@ -385,13 +320,14 @@ export class RestaurantRepository {
 		return uniquePatterns
 	}
 
-	private formatRestaurantsResults(results: { entities: Restaurant[], raw: any[] }) {
+	private formatRestaurantsResults(results: { entities: Restaurant[], raw: any[] }): Partial<RestaurantResponseDto>[] {
 		const { entities, raw } = results;
 		return entities.map((entity: Restaurant, index: number) => {
 			return {
 				...entity,
 				rank: raw[index].rank,
-				averageRating: Number(raw[index].average_rating),
+				averageRating: Number(raw[index].averageRating),
+				ratingCount: Number(raw[index].ratingCount)
 			};
 		});
 	}

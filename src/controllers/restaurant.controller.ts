@@ -5,7 +5,6 @@ import { AuthorizedUser } from '../middlewares/auth.middleware';
 import { RestaurantService } from '../services/restaurant.service';
 import ApplicationError from '../errors/application.error';
 import { RestaurantDeactivatedBy } from '../models';
-import { ListRestaurantsDto, ListTopRatedRestaurantsDto } from '../dtos/restaurant.dto';
 
 export class RestaurantController {
 	private restaurantService = new RestaurantService();
@@ -29,11 +28,7 @@ export class RestaurantController {
 	}
 
 	async listRestaurant(req: Request, res: Response) {
-		// TODO: Implement listRestaurant logic
-		// throw new ApplicationError('Not implemented', StatusCodes.NOT_IMPLEMENTED);
-
-		const query = req.validated?.query as ListRestaurantsDto;
-
+		const query = req.validated?.query;
 		const data = await this.restaurantService.getAllRestaurants(query);
 		sendPaginatedResponse(res, StatusCodes.OK, 'List Restaurants Successfully', data.data, {
 			limit: query.limit,
@@ -53,11 +48,11 @@ export class RestaurantController {
 	}
 
 	async deactivateRestaurant(req: Request, res: Response) {
-		const { actorId } = req?.user as AuthorizedUser;
+		const { actorId: userId } = req?.user as AuthorizedUser;
 		const { restaurantId } = req.validated?.params;
 		const payload = req.validated?.body;
 		const restaurant = await this.restaurantService.deactivateRestaurant(
-			actorId,
+			userId,
 			restaurantId,
 			payload,
 			RestaurantDeactivatedBy.restaurant
@@ -66,10 +61,10 @@ export class RestaurantController {
 	}
 
 	async activateRestaurant(req: Request, res: Response) {
-		const { actorId } = req?.user as AuthorizedUser;
+		const { actorId: userId } = req?.user as AuthorizedUser;
 		const { restaurantId } = req.validated?.params;
 		const restaurant = await this.restaurantService.activateRestaurant(
-			actorId,
+			userId,
 			restaurantId,
 			RestaurantDeactivatedBy.restaurant
 		);
@@ -77,15 +72,15 @@ export class RestaurantController {
 	}
 
 	async updateRestaurantStatus(req: Request, res: Response) {
-		const { actorId } = req?.user as AuthorizedUser;
+		const { actorId: userId } = req?.user as AuthorizedUser;
 		const { restaurantId } = req.validated?.params;
 		const payload = req.validated?.body;
-		const restaurant = await this.restaurantService.updateRestaurantStatus(actorId, restaurantId, payload);
+		const restaurant = await this.restaurantService.updateRestaurantStatus(userId, restaurantId, payload);
 		sendResponse(res, StatusCodes.OK, 'Restaurant status updated successfully', restaurant);
 	}
 
 	async getTopRatedRestaurants(req: Request, res: Response) {
-		const query = req.validated?.query as ListTopRatedRestaurantsDto;
+		const query = req.validated?.query;
 		const data = await this.restaurantService.getTopRatedRestaurants(query);
 		sendPaginatedResponse(res, StatusCodes.OK, 'List Top Rated Restaurants Successfully', data.data, {
 			limit: query.limit,
@@ -104,6 +99,6 @@ export class RestaurantController {
 		const query = req.validated?.query;
 		const { restaurantId } = req.validated?.params;
 		const data = await this.restaurantService.searchItemsInMenu(restaurantId, query);
-		sendResponse(res, StatusCodes.OK, 'Search Items In Menu Successfully', data);
+		sendResponse(res, StatusCodes.OK, 'Search Menu Items retrived Successfully', data);
 	}
 }

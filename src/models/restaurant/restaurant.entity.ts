@@ -48,14 +48,14 @@ export class Restaurant extends AbstractEntity {
 	@Column({ type: 'varchar', length: 255, nullable: false })
 	name!: string;
 
-	@Column({ type: 'integer', nullable: true })
-	chainId?: number;
+	@Column({ type: 'integer', nullable: false })
+	chainId!: number;
 
 	@Column({ type: 'varchar', length: 512, default: '' })
-	logoUrl?: string;
+	logoUrl?: string | null;
 
 	@Column({ type: 'varchar', length: 512, default: '' })
-	bannerUrl?: string;
+	bannerUrl?: string | null;
 
 	@Column({ type: 'jsonb', nullable: false })
 	location!: {
@@ -75,16 +75,16 @@ export class Restaurant extends AbstractEntity {
 	maxDeliveryDistance!: number; 
 
 	@Column({ type: 'enum', enum: RestaurantApprovalStatus, nullable: false })
-	approvalStatus?: RestaurantApprovalStatus;
+	approvalStatus!: RestaurantApprovalStatus;
 
 	@Column({ type: 'enum', enum: RestaurantStatus, default: RestaurantStatus.closed, nullable: false })
-	status?: RestaurantStatus;
+	status!: RestaurantStatus;
 
 	@Column({ type: 'varchar', length: 100, nullable: true })
-	email?: string;
+	email?: string | null;
 
 	@Column({ type: 'varchar', length: 30, nullable: true })
-	phone?: string;
+	phone?: string | null;
 
 	@Column({ type: 'boolean', default: false, nullable: false })
 	isActive!: boolean;
@@ -94,29 +94,29 @@ export class Restaurant extends AbstractEntity {
 		deactivatedAt: Date;
 		reason?: string;
 		deactivatedBy?: RestaurantDeactivatedBy;
-	};
+	} | null;
 
 	@Column({ type: 'jsonb', nullable: true })
 	activationInfo?: {
 		activatedAt: Date;
 		activatedBy?: RestaurantDeactivatedBy;
-	};
+	} | null;
 
 	@CreateDateColumn()
 	createdAt!: Date;
 
 	@Column({ type: 'timestamp', nullable: true })
-	approvedAt?: Date;
+	approvedAt?: Date | null;
 
 	@Column({ type: 'timestamp', nullable: true })
-	rejectedAt?: Date;
+	rejectedAt?: Date | null;
 
 	@UpdateDateColumn()
 	updatedAt!: Date;
 
 	@ManyToOne(() => Chain, (chain) => chain.restaurants)
 	@JoinColumn({ name: 'chain_id' })
-	chain?: Chain;
+	chain!: Chain;
 
 	@ManyToMany(() => User, (user) => user.restaurant)
 	@JoinTable({
@@ -145,10 +145,4 @@ export class Restaurant extends AbstractEntity {
 
 	@OneToOne(() => Menu, (menu) => menu.restaurant)
 	menu!: Menu;
-
-	static calculateRestaurantAverageRating(ratings: Rating[]) {
-		const totalRatings = ratings.length;
-		const totalRating = ratings.reduce((total, rating) => total + rating.rating, 0);
-		return totalRatings > 0 ? totalRating / totalRatings : 0;
-	}
 }

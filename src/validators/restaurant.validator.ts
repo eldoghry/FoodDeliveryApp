@@ -2,17 +2,13 @@ import Joi from 'joi';
 import { RestaurantStatus } from '../models';
 
 export const listRestaurantsQuerySchema = Joi.object({
-	// page: Joi.number().integer().min(1).default(1),
 	limit: Joi.number().integer().min(1).max(100).default(20),
-	cursor: Joi.string().optional(),
-	search: Joi.string().optional(),
+	cursor: Joi.string().default(null),
 	cuisines: Joi.array().items(Joi.number().integer().min(1)).single().optional(),
-	rating: Joi.number().min(0).max(5).optional()
-	// status: Joi.string().valid('active', 'inactive').default('active'),
-	// radius: Joi.number().min(0).optional(),
-	// sort: Joi.string().valid('name', 'rating', 'distance', 'created_at').default('created_at'),
-	// order: Joi.string().valid('asc', 'desc').default('desc')
-});
+	rating: Joi.number().min(0).max(5).optional(),
+	lat: Joi.number().required(),
+	lng: Joi.number().required()
+}).required();
 
 export const registerRestaurantBodySchema = Joi.object({
 	firstName: Joi.string().required(),
@@ -65,9 +61,11 @@ export const searchItemsInMenuQuerySchema = Joi.object({
 
 export const listTopRatedRestaurantsQuerySchema = Joi.object({
 	limit: Joi.number().integer().min(1).max(100).default(20),
-	cursor: Joi.string().optional(),
-	cuisines: Joi.array().items(Joi.number().integer().min(1)).single().optional()
-});
+	cursor: Joi.string().default(null),
+	cuisines: Joi.array().items(Joi.number().integer().min(1)).single().optional(),
+	lat: Joi.number().required(),
+	lng: Joi.number().required()
+}).required();
 
 export const listRecommendedRestaurantsQuerySchema = Joi.object({
 	limit: Joi.number().integer().min(1).max(100).default(20),

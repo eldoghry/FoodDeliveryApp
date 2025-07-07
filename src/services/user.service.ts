@@ -60,12 +60,12 @@ export class UserService {
 		return this.repo.getUserTypeByName(name);
 	}
 
-	async validateEmailUniqueness(email: string) {
+	async ensureEmailUniqueness(email: string) {
 		const user = await this.repo.getUserByEmail(email);
 		if (user) throw new ApplicationError(ErrMessages.user.EmailAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
 
-	async validatePhoneUniqueness(phone: string) {
+	async ensurePhoneUniqueness(phone: string) {
 		const user = await this.repo.getUserByPhone(phone);
 		if (user) throw new ApplicationError(ErrMessages.user.PhoneAlreadyExists, StatusCodes.BAD_REQUEST);
 	}

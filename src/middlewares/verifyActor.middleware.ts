@@ -26,7 +26,7 @@ export const verifyActor =
             if (actorType.includes('customer')) {
                 actor = await customerRepo.getCustomerById(actorId);
             } else if (actorType.includes('restaurant')) {
-                actor = await restaurantRepo.getRestaurantById(actorId);
+                actor = await restaurantRepo.getRestaurantBy({ restaurantId: actorId });
             }
 
             if (!actor) {
