@@ -4,9 +4,12 @@ import {
 	Column,
 	CreateDateColumn,
 	UpdateDateColumn,
-	OneToOne,
 	JoinColumn,
-	OneToMany
+	OneToMany,
+	JoinTable,
+	ManyToMany,
+	ManyToOne,
+	OneToOne,
 } from 'typeorm';
 import { User } from '../user/user.entity';
 import { CartItem } from '../cart/cart-item.entity';
@@ -14,6 +17,9 @@ import { AbstractEntity } from '../base.entity';
 import { Menu } from '../menu/menu.entity';
 import { Order } from '../order/order.entity';
 import { Rating } from '../rating/rating.entity';
+import { Cuisine } from './cuisine.entity';
+import { Chain } from './chain.entity';
+import { Point } from 'geojson';
 
 export enum RestaurantStatus {
 	open = 'open',
@@ -22,54 +28,103 @@ export enum RestaurantStatus {
 	closed = 'closed'
 }
 
-export type RestaurantRelations = 'user' | 'menus' | 'cartItems' | 'orders' | 'ratings';
+export enum RestaurantApprovalStatus {
+	pending = 'pending_approval',
+	approved = 'approved',
+	rejected = 'rejected'
+}
+
+export enum RestaurantDeactivatedBy {
+	restaurant = 'restaurant',
+	system = 'system'
+}
+
+export type RestaurantRelations = 'chain' | 'user' | 'menu' | 'cartItems' | 'orders' | 'ratings' | 'cuisines' | 'menu.categories' | 'menu.categories.items' | 'users.restaurants';
 @Entity()
 export class Restaurant extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	restaurantId!: number;
 
-	@Column({ unique: true, nullable: false })
-	userId!: number;
-
 	@Column({ type: 'varchar', length: 255, nullable: false })
 	name!: string;
 
-	@Column({ type: 'varchar', length: 512, default: '' })
-	logoUrl!: string;
+	@Column({ type: 'integer', nullable: false })
+	chainId!: number;
 
 	@Column({ type: 'varchar', length: 512, default: '' })
-	bannerUrl!: string;
+	logoUrl?: string | null;
+
+	@Column({ type: 'varchar', length: 512, default: '' })
+	bannerUrl?: string | null;
 
 	@Column({ type: 'jsonb', nullable: false })
-	location!: Record<string, any>;
+	location!: {
+		city: string;
+		area: string;
+		street: string;
+	};
 
-	@Column({ type: 'enum', enum: RestaurantStatus, nullable: false })
+	@Column({
+		type: 'geography',
+		spatialFeatureType: 'Point',
+		srid: 4326,
+	})
+	geoLocation!: Point; // { type: 'Point', coordinates: [longitude, latitude] }
+
+	@Column({ type: 'integer', nullable: false, default: 5000 }) // 5,000 meters = 5km
+	maxDeliveryDistance!: number; 
+
+	@Column({ type: 'enum', enum: RestaurantApprovalStatus, nullable: false })
+	approvalStatus!: RestaurantApprovalStatus;
+
+	@Column({ type: 'enum', enum: RestaurantStatus, default: RestaurantStatus.closed, nullable: false })
 	status!: RestaurantStatus;
 
-	@Column({ type: 'varchar', length: 20, unique: true, nullable: false })
-	commercialRegistrationNumber!: string;
+	@Column({ type: 'varchar', length: 100, nullable: true })
+	email?: string | null;
 
-	@Column({ type: 'varchar', length: 15, unique: true, nullable: false })
-	vatNumber!: string;
+	@Column({ type: 'varchar', length: 30, nullable: true })
+	phone?: string | null;
 
-	@Column({ type: 'boolean', default: true, nullable: false })
+	@Column({ type: 'boolean', default: false, nullable: false })
 	isActive!: boolean;
 
-	@Column({ type: 'varchar', length: 100, unique: true })
-	email!: string;
+	@Column({ type: 'jsonb', nullable: true })
+	deactivationInfo?: {
+		deactivatedAt: Date;
+		reason?: string;
+		deactivatedBy?: RestaurantDeactivatedBy;
+	} | null;
+
+	@Column({ type: 'jsonb', nullable: true })
+	activationInfo?: {
+		activatedAt: Date;
+		activatedBy?: RestaurantDeactivatedBy;
+	} | null;
 
 	@CreateDateColumn()
 	createdAt!: Date;
 
+	@Column({ type: 'timestamp', nullable: true })
+	approvedAt?: Date | null;
+
+	@Column({ type: 'timestamp', nullable: true })
+	rejectedAt?: Date | null;
+
 	@UpdateDateColumn()
 	updatedAt!: Date;
 
-	@OneToOne(() => User)
-	@JoinColumn({ name: 'user_id' })
-	user!: User;
+	@ManyToOne(() => Chain, (chain) => chain.restaurants)
+	@JoinColumn({ name: 'chain_id' })
+	chain!: Chain;
 
-	@OneToMany(() => Menu, (menu) => menu.restaurant)
-	menus!: Menu[];
+	@ManyToMany(() => User, (user) => user.restaurant)
+	@JoinTable({
+		name: 'restaurant_user',
+		joinColumn: { name: 'restaurant_id', referencedColumnName: 'restaurantId' },
+		inverseJoinColumn: { name: 'user_id', referencedColumnName: 'userId' }
+	})
+	users!: User[];
 
 	@OneToMany(() => CartItem, (cartItem) => cartItem.restaurant)
 	cartItems!: CartItem[];
@@ -79,4 +134,15 @@ export class Restaurant extends AbstractEntity {
 
 	@OneToMany(() => Rating, (rating) => rating.restaurant)
 	ratings!: Rating[];
+
+	@ManyToMany(() => Cuisine, (cuisine) => cuisine.restaurants)
+	@JoinTable({
+		name: 'restaurant_cuisine',
+		joinColumn: { name: 'restaurant_id', referencedColumnName: 'restaurantId' },
+		inverseJoinColumn: { name: 'cuisine_id', referencedColumnName: 'cuisineId' }
+	})
+	cuisines!: Cuisine[];
+
+	@OneToOne(() => Menu, (menu) => menu.restaurant)
+	menu!: Menu;
 }

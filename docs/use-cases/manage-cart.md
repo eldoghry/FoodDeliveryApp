@@ -90,7 +90,7 @@ The customer can add, update, and remove items in their shopping cart before pla
 
 ## Data Model Description
 
-The data model for the **Manage Cart** use case includes core entities such as users, customers, restaurants, menus, items, and the cart itself. The following tables are used to support the cart operations:
+The data model for the **Manage Cart** use case includes core entities such as users, customers, restaurants, menu, categories, items, and the cart itself. The following tables are used to support the cart operations:
 
 
 ### `user_type`
@@ -142,30 +142,28 @@ Stores restaurant registration and profile details.
   
 
 ### `menu`
-Defines menus for restaurants. Each restaurant can have multiple menus.
+Defines menu for restaurants. Each restaurant can have One menu.
 
 - `menu_id` (PK)
 - `restaurant_id` – Foreign key to `restaurant`
-- `menu_title`
 - `is_active`
 - `created_at`, `updated_at`
 
-### `category` and `menu_category`
-Defines categories for menus. Each menu can have multiple categories.
+### `category`
+Defines categories for menu. menu can have multiple categories.
 
-- `category_id` (PK), `title`, `is_active`
+- `category_id` (PK), `menu_id` (Foreign key to `menu`), `title`, `is_active`
 - `created_at`, `updated_at`
 
-- `menu_category`: Composite table linking `menu_id` with `category_id`
 
-
-### `item`
+### `item` and `category_items`
 Defines items with pricing and availability.
 
 - `item_id` (PK)
-- `category_id` – Foreign key to `category`
 - `image_path`, `name`, `description`, `price`, `energy_val_cal`, `notes`
 - `is_available`, `created_at`, `updated_at`
+
+- `category_items`: Composite table linking `category_id` with `item_id`
 
 
 ### `cart`

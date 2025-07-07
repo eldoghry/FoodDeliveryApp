@@ -5,6 +5,7 @@ import { OrderItem } from '../models/order/order-item.entity';
 import { OrderStatusEnum, OrderStatusLog } from '../models/order/order-status_log.entity';
 import { Order, OrderRelations } from '../models/order/order.entity';
 import { cursorPaginate } from '../utils/helper';
+import { PaginatedResultsDto } from '../dtos/shared.dto';
 
 export class OrderRepository {
 	private orderRepo: Repository<Order>;
@@ -29,7 +30,7 @@ export class OrderRepository {
 		actorType: string,
 		limit: number,
 		cursor?: string
-	): Promise<{ data: Order[]; nextCursor: string | null; hasNextPage: boolean }> {
+	): Promise<PaginatedResultsDto<Order>> {
 		const whereCondition = actorType === 'customer' ? { customerId: actorId } : { restaurantId: actorId };
 
 		// Build base where clause
@@ -161,19 +162,13 @@ export class OrderRepository {
 		return query.getMany();
 	}
 
-	async getActiveOrderByAddressId(addressId: number): Promise<Order | null> {
+	async getActiveOrderBy(restaurantId?: number,customerId?: number,addressId?: number): Promise<Order | null> {
+		const whereClause: any = {};
+		if (restaurantId) whereClause.restaurantId = restaurantId;
+		if (customerId) whereClause.customerId = customerId;
+		if (addressId) whereClause.deliveryAddressId = addressId;
 		return await this.orderRepo.findOne({
-			where: { deliveryAddressId: addressId, status: Not(In([
-				OrderStatusEnum.delivered,
-				OrderStatusEnum.canceled,
-				OrderStatusEnum.failed
-			])) }
-		});
-	}
-
-	async getActiveOrderByCustomerId(customerId: number): Promise<Order | null> {
-		return await this.orderRepo.findOne({
-			where: { customerId, status: Not(In([
+			where: { ...whereClause, status: Not(In([
 				OrderStatusEnum.delivered,
 				OrderStatusEnum.canceled,
 				OrderStatusEnum.failed

@@ -10,6 +10,7 @@ export interface AuthorizedUser {
 	roles: string[];
 	actorType: string; // e.g., 'customer', 'restaurant_user'
 	actorId: number; // ID of the actor (e.g., customer or restaurant user)
+	restaurantId?: number;
 }
 
 declare module 'express-serve-static-core' {

@@ -49,6 +49,10 @@ export class SettingService {
 		await redisService.del(cachedKey);
 	}
 
+	static async clearCache(): Promise<void> {
+		await redisService.del(this.REDIS_PREFIX);
+	}
+
 	private static sanitizeKey(key: SettingKey): string {
 		return key.trim().toUpperCase();
 	}

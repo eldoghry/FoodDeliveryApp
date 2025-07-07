@@ -24,8 +24,19 @@ export class AuthService {
 			actorId // TODO: This should be replaced with actual actor ID after authentication
 		};
 
-		const token = this.jwtService.sign(payload);
-		const refresh = this.jwtService.sign(payload, {
+		let loginPayload = null;
+		
+		if(userType.includes('restaurant')) {
+			loginPayload = {
+				...payload,
+				restaurantId: user.restaurant[0].restaurantId,
+			}
+		}else{
+			loginPayload = payload;
+		}
+
+		const token = this.jwtService.sign(loginPayload);
+		const refresh = this.jwtService.sign(loginPayload, {
 			expiresIn: config.jwt.refreshTTL
 		});
 
@@ -36,7 +47,7 @@ export class AuthService {
 		const user = await this.userService.getOneOrFailBy({
 			email: dto.email,
 			withPassword: true,
-			relations: ['roles', 'userType', 'customer']
+			relations: ['roles', 'userType', 'customer', 'restaurant']
 		});
 
 		if (!user.isActive) throw new ApplicationError('User is inactive', StatusCodes.UNAUTHORIZED);
