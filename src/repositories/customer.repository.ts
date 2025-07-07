@@ -3,6 +3,18 @@ import { Customer, CustomerRelations } from '../models/customer/customer.entity'
 import { Address } from '../models/customer/address.entity';
 import { Repository } from 'typeorm';
 
+interface CustomerFilter {
+	customerId?: number;
+	userId?: number;
+	relations?: CustomerRelations[];
+}
+interface AddressFilter {
+	addressId?: number;
+	customerId?: number;
+	relations?: string[];
+	orderBy?: string;
+	isDefault?: boolean;
+}
 export class CustomerRepository {
 	private customerRepo: Repository<Customer>;
 	private addressRepo: Repository<Address>;
@@ -19,28 +31,25 @@ export class CustomerRepository {
 		return await this.customerRepo.save(customer);
 	}
 
-	async getCustomerById(filter: { customerId: number; relations?: CustomerRelations[] }): Promise<Customer | null> {
-		const query = this.customerRepo.createQueryBuilder('customer');
+	async getCustomerBy(filter: CustomerFilter): Promise<Customer | null> {
+		const { relations, ...whereOptions } = filter;
+		return await this.customerRepo.findOne({
+			where: whereOptions,
+			relations: relations
+		});
+	}
 
-		if (filter?.relations) {
-			filter.relations.forEach((relation) => query.leftJoinAndSelect(`customer.${relation}`, relation));
-		}
-
-		query.where('customer.customerId = :customerId', { customerId: filter.customerId });
-
-		return query.getOne();
+	async getCustomerById(customerId: number){
+		return await this.getCustomerBy({ customerId });
 	}
 
 	async getCustomerByUserId(userId: number): Promise<Customer | null> {
-		return await this.customerRepo.findOne({
-			where: { userId },
-			relations: ['user']
-		});
+		return await this.getCustomerBy({ userId });
 	}
 
 	async updateCustomer(customerId: number, data: Partial<Customer>): Promise<Customer | null> {
 		await this.customerRepo.update(customerId, data);
-		return await this.getCustomerById({ customerId });
+		return await this.getCustomerById(customerId);
 	}
 
 	/* === Address operations === */
@@ -50,10 +59,18 @@ export class CustomerRepository {
 		return await this.addressRepo.save(address);
 	}
 
-	async getAddressById(addressId: number): Promise<Address | null> {
+	async getAddressBy(filter: AddressFilter): Promise<Address | null> {
+		const { relations, orderBy, ...whereOptions } = filter;
+		console.log(whereOptions);
 		return await this.addressRepo.findOne({
-			where: { addressId }
-		});
+			where: whereOptions,
+			relations: relations,
+			order: { [orderBy || 'createdAt']: 'DESC' }
+		}); 
+	}
+
+	async getAddressById(addressId: number): Promise<Address | null> {
+		return await this.getAddressBy({ addressId });
 	}
 
 	async getAddressesByCustomerId(customerId: number): Promise<Address[]> {
@@ -64,9 +81,7 @@ export class CustomerRepository {
 	}
 
 	async getDefaultAddress(customerId: number) {
-		return await this.addressRepo.findOne({
-			where: { customerId, isDefault: true }
-		});
+		return await this.getAddressBy({ customerId, isDefault: true });
 	}
 
 	async unsetCustomerDefaultAddress(customerId: number) {

@@ -8,6 +8,8 @@ import PaymentRouter from './payment.routes';
 import SettingRouter from './setting.routes';
 import PaymentMethodRouter from './payment_method.routes';
 import CustomerRouter from './customer.routes';
+import RestaurantRouter from './restaurant.routes';
+import MenuRouter from './menu.routes';
 
 const ApiRouter = Router();
 
@@ -20,5 +22,7 @@ ApiRouter.use('/payment', PaymentRouter);
 ApiRouter.use('/setting', SettingRouter);
 ApiRouter.use('/payment_method', PaymentMethodRouter);
 ApiRouter.use('/customer', CustomerRouter);
+ApiRouter.use('/restaurants/menu', MenuRouter);
+ApiRouter.use('/restaurants', RestaurantRouter);
 
 export default ApiRouter;

@@ -1,33 +1,41 @@
-import { CartItem } from '../models/cart/cart-item.entity';
-import { OrderItem } from '../models/order/order-item.entity';
+import { PaginatedResultsDto } from '../dtos/shared.dto';
 import { Request } from 'express';
 
-export interface CursorPaginatedResult<T> {
-	data: T[];
-	nextCursor: string | null;
-	hasNextPage: boolean;
-}
 
 /**
  * Paginates an array of items using cursor-based pagination.
  *
  * @param items The array of items to paginate.
  * @param limit The maximum number of items per page.
- * @param cursorField The field to use as the cursor for pagination.
- * @returns A CursorPaginatedResult object containing the paginated data.
+ * @param cursorFields The field or fields to use as the cursor for pagination.
+ * @returns A CursorPaginatedResult object containing the paginated data and next cursor.
  */
-export function cursorPaginate<T>(items: T[], limit: number, cursorField: keyof T): CursorPaginatedResult<T> {
+export function cursorPaginate<T>(
+	items: T[],
+	limit: number,
+	cursorFields: keyof T | (keyof T)[]
+): PaginatedResultsDto<T> {
 	const hasNextPage = items.length > limit;
 	const data = hasNextPage ? items.slice(0, -1) : items;
 	const lastItem = data[data.length - 1];
-	const nextCursor = hasNextPage && lastItem ? lastItem[cursorField] : null;
+
+	let nextCursor: any | null = null;
+
+	if (hasNextPage && lastItem) {
+		if (Array.isArray(cursorFields)) {
+			nextCursor = cursorFields.map((field) => lastItem[field]).join('|');
+		} else {
+			nextCursor = lastItem[cursorFields];
+		}
+	}
 
 	return {
 		data,
-		nextCursor: nextCursor ? new Date(nextCursor as any).toISOString() : null,
+		nextCursor,
 		hasNextPage
 	};
 }
+
 
 /**
  * Checks if a given date is within a specified time limit.
@@ -101,4 +109,8 @@ export function generatePaymentReference(prefix = 'PAY') {
 	const timestamp = Date.now().toString(36).toUpperCase();
 	const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
 	return `${prefix}-${timestamp}-${randomPart}`;
+}
+
+export function normalizeString(str: string) {
+	return str.toLowerCase().trim().replace(/\s+/g, ' ');
 }

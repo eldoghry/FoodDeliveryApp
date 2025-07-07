@@ -7,7 +7,7 @@ import ErrMessages from '../errors/error-messages';
 const customerRepo = new CustomerRepository();
 const restaurantRepo = new RestaurantRepository();
 
-type actorType = 'customer' | 'restaurant_user';
+type actorType = 'customer' | 'restaurant_user' | 'restaurant_owner';
 interface actorTypeOptions {
     allowedActorTypes: actorType[];
 }
@@ -24,9 +24,9 @@ export const verifyActor =
             let actor = null;
 
             if (actorType.includes('customer')) {
-                actor = await customerRepo.getCustomerById({ customerId: actorId });
+                actor = await customerRepo.getCustomerById(actorId);
             } else if (actorType.includes('restaurant')) {
-                actor = await restaurantRepo.getRestaurantById(actorId);
+                actor = await restaurantRepo.getRestaurantBy({ restaurantId: actorId });
             }
 
             if (!actor) {

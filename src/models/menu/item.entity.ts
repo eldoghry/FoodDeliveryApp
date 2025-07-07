@@ -5,17 +5,18 @@ import {
 	CreateDateColumn,
 	UpdateDateColumn,
 	OneToMany,
+	Check,
+	ManyToMany,
 	ManyToOne,
 	JoinColumn,
-	Check,
-	ManyToMany
+	DeleteDateColumn
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { CartItem } from '../cart/cart-item.entity';
 import { OrderItem } from '../order/order-item.entity';
 import { Category } from './category.entity';
-import { MenuItem } from './menu-item.entity';
 
+export type ItemRelations = 'categories' | 'categories.menu' | 'cartItems' | 'ordersItem';
 @Check(`"price" >= 0.00`)
 @Check(`"energy_val_cal" >= 0.00`)
 @Entity()
@@ -36,10 +37,10 @@ export class Item extends AbstractEntity {
 	price!: number;
 
 	@Column({ type: 'decimal', precision: 10, scale: 2, default: 0.0, nullable: false })
-	energyValCal!: number;
+	energyValCal?: number;
 
 	@Column({ type: 'text', default: '' })
-	notes!: string;
+	notes?: string;
 
 	@Column({ type: 'boolean', default: true, nullable: false })
 	isAvailable!: boolean;
@@ -50,6 +51,9 @@ export class Item extends AbstractEntity {
 	@UpdateDateColumn()
 	updatedAt!: Date;
 
+	@DeleteDateColumn()
+	deletedAt!: Date;
+
 	@ManyToMany(() => Category, (category) => category.items)
 	categories!: Category[];
 
@@ -58,7 +62,4 @@ export class Item extends AbstractEntity {
 
 	@OneToMany(() => OrderItem, (orderItem) => orderItem.item)
 	ordersItem!: OrderItem[];
-
-	@OneToMany(() => MenuItem, (menuItem) => menuItem.item)
-	menuItems!: MenuItem[];
 }

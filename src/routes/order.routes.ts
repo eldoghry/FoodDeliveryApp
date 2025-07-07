@@ -184,7 +184,7 @@ OrderRouter.get(
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: perPage
+ *         name: limit
  *         description: Number of orders per page (default is 10)
  *         required: false
  *         schema:
@@ -206,9 +206,9 @@ OrderRouter.get(
  *       400:
  *         description: |
  *           - cursor must be a string
- *           - perPage must be a number
- *           - perPage must be greater than or equal to 1
- *           - perPage must be less than or equal to 25
+ *           - limit must be a number
+ *           - limit must be greater than or equal to 1
+ *           - limit must be less than or equal to 25
  *       401:
  *         description: Unauthorized
  *       403:

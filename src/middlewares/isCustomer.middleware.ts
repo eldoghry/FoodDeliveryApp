@@ -13,7 +13,7 @@ export const isCustomer = async (req: Request, _res: Response, next: NextFunctio
 		throw new ApplicationError(ErrMessages.auth.forbidden, StatusCodes.FORBIDDEN);
 
 	if (actorId) {
-		const actor = await customerRepo.getCustomerById({ customerId: actorId });
+		const actor = await customerRepo.getCustomerById(actorId);
 		if (!actor) throw new ApplicationError(ErrMessages.auth.forbidden, StatusCodes.FORBIDDEN);
 	}
 	next();

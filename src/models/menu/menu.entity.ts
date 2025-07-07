@@ -5,13 +5,12 @@ import {
 	CreateDateColumn,
 	UpdateDateColumn,
 	OneToMany,
-	ManyToOne,
-	JoinColumn
+	JoinColumn,
+	OneToOne
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
-import { MenuCategory } from './menu-category.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
-import { MenuItem } from './menu-item.entity';
+import { Category } from './category.entity';
 
 @Entity()
 export class Menu extends AbstractEntity {
@@ -20,9 +19,6 @@ export class Menu extends AbstractEntity {
 
 	@Column()
 	restaurantId!: number;
-
-	@Column({ type: 'varchar', length: 100, unique: true })
-	menuTitle!: string;
 
 	@Column({ type: 'boolean', default: true, nullable: false })
 	isActive!: boolean;
@@ -33,13 +29,10 @@ export class Menu extends AbstractEntity {
 	@UpdateDateColumn()
 	updatedAt!: Date;
 
-	@ManyToOne(() => Restaurant, (restaurant) => restaurant.menus)
+	@OneToOne(() => Restaurant, (restaurant) => restaurant.menu)
 	@JoinColumn({ name: 'restaurant_id' })
 	restaurant!: Restaurant;
 
-	@OneToMany(() => MenuCategory, (menuCategory) => menuCategory.menu)
-	menuCategories!: MenuCategory[];
-
-	@OneToMany(() => MenuItem, (menuItem) => menuItem.menu)
-	menuItems!: MenuItem[];
+	@OneToMany(() => Category, (category) => category.menu)
+	categories!: Category[];
 }

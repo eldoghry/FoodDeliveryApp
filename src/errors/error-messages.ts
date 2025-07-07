@@ -74,30 +74,56 @@ const ErrMessages = {
 		OrderNotCompleted: 'Order is not completed',
 		UnauthorizedOrderAccess: 'You are not authorized to access this order'
 	},
+	user:{
+		EmailAlreadyExists: 'Email Already Exists',
+		PhoneAlreadyExists: 'Phone Already Exists',
+	},
 	customer: {
 		CustomerNotFound: 'Customer not found',
 		AddressNotFound: 'Customer Address not found',
 		ReachedAddressLimit:'You\'ve reached your address limit. Please remove one to add a new address.',
 		AddressDoesntBelongToCustomer:'This address does not belong to the specified customer.',
 		AtLeastOneDefaultAddress:'There must be at least one default address',
-		AddressIsUsed:'Action not allowed - This address is being used in a current order.',
-		CustomerIsUsed:'Deactivation not allowed - This customer has active order'
+		AddressUsedInActiveOrder:'Action not allowed - This address is being used in a current order.',
+		CustomerHasActiveOrder:'Deactivation not allowed - This customer has active order'
 	},
 
 	restaurant: {
 		RestaurantNotFound: 'Restaurant not found',
 		RestaurantNotAvailable:
-			'Sorry restaurant cannot process your order right now, try again later or choose different one'
+			'Sorry restaurant cannot process your order right now, try again later or choose different one',
+		ChainNameAlreadyExists: 'Chain name already exists',
+		ChainCommercialRegistrationNumberAlreadyExists: 'Chain commercial registration number already exists',
+		ChainVatNumberAlreadyExists: 'Chain vat number already exists',
+		RestaurantNameAlreadyExists: 'Restaurant name already exists',
+		RestaurantHasActiveOrders: 'Deactivation not allowed - Restaurant has active orders',
+		RestaurantDoesNotBelongToUser: 'Action not allowed - Restaurant does not belong to user',
+		RestaurantIsNotActive: 'Action not allowed - Restaurant is already deactivated',
+		RestaurantIsActive: 'Action not allowed - Restaurant is already activated',
+		RestaurantIsNotApproved: 'Action not allowed - Restaurant is not approved',
+		RestaurantDectivatedBySystemAdmin: 'Restaurant is deactivated by system admin - please contact support',
+		RestaurantIsNotActivated: 'Action not allowed - Restaurant is not activated',
 	},
 
 	item: {
 		ItemNotFound: 'Item Not Found',
-		ItemPriceNotFound: 'Item price not found'
+		ItemPriceNotFound: 'Item price not found',
+		ItemNameAlreadyExists: 'Item name already exists',
+		ItemNotBelongsToMenu: 'Item does not belong to the specified restaurant menu',
+		ItemAlreadyAvailable:'Item Already Available',
+		ItemAlreadyUnAvailable:'Item Already UnAvailable'
 	},
 
 	menu: {
 		NoActiveMenuFound: 'Sorry there is no active menu for current restaurant',
-		ItemNotBelongToActiveMenu: 'Item does not belong to an active menu of this restaurant'
+		MenuAlreadyExist:'Already Exist Active Menu For the Restaurant',
+		ItemNotBelongToActiveMenu: 'Item does not belong to an active menu of this restaurant',
+		CategoryNotFound: 'Category Not Found',
+		CategoryNotBelongsToMenu: 'Category does not belong to the specified restaurant menu',
+		CategoryTitleAlreadyExists: 'Category title already exists',
+		CategoryAlreadyActive: 'Category is already active',
+		CategoryAlreadyInactive: 'Category is already inactive',
+		CategoryContainsItems: 'Deletion not allowed - Category contains items'
 	},
 
 	payment: {

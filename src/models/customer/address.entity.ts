@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { AbstractEntity } from '../base.entity';
 import { Customer } from './customer.entity';
 import { Order } from '../order/order.entity';
+import { Point } from 'geojson';
 
 @Entity()
 export class Address extends AbstractEntity {
@@ -29,8 +30,12 @@ export class Address extends AbstractEntity {
 	@Column({ type: 'varchar', length: 50, nullable: true })
 	floor?: string
 
-	@Column({ type: 'jsonb', nullable: false })
-	coordinates!: { lat: number; lng: number }
+	@Column({
+		type: 'geography',
+		spatialFeatureType: 'Point',
+		srid: 4326,
+	})
+	geoLocation!: Point // { type: 'Point', coordinates: [longitude, latitude] }
 
 	@Column({ type: 'boolean', default: true, nullable: false })
 	isDefault!: boolean;
