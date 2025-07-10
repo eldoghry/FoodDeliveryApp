@@ -22,6 +22,8 @@ export class Category extends AbstractEntity {
 	@Column()
 	menuId!: number;
 
+	// TODO: we can add restaurant id here to save joins in all menu operations
+
 	@Column({ type: 'varchar', length: 100, unique: true, nullable: false })
 	title!: string;
 
@@ -35,7 +37,7 @@ export class Category extends AbstractEntity {
 	updatedAt!: Date;
 
 	@ManyToOne(() => Menu, (menu) => menu.categories)
-	@JoinColumn({ name: 'menu_id'})
+	@JoinColumn({ name: 'menu_id' })
 	menu!: Menu;
 
 	@ManyToMany(() => Item, (item) => item.categories)
