@@ -12,6 +12,7 @@ import { AbstractEntity } from '../base.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
 import { Category } from './category.entity';
 
+//TODO: restaurant have multiple menus or have only one menu ?
 @Entity()
 export class Menu extends AbstractEntity {
 	@PrimaryGeneratedColumn()

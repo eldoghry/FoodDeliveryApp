@@ -24,6 +24,8 @@ export class Item extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	itemId!: number;
 
+	// TODO: we should add restaurantId
+
 	@Column({ type: 'varchar', length: 512, default: '' })
 	imagePath!: string;
 

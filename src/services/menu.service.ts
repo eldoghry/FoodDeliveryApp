@@ -1,12 +1,12 @@
-import { StatusCodes } from "http-status-codes";
-import ApplicationError from "../errors/application.error";
-import ErrMessages from "../errors/error-messages";
-import { MenuRepository } from "../repositories";
-import { Category, CategoryRelations } from "../models/menu/category.entity";
-import { Transactional } from "typeorm-transactional";
-import { Item, Menu } from "../models";
-import { ILike } from "typeorm";
-import { normalizeString } from "../utils/helper";
+import { StatusCodes } from 'http-status-codes';
+import ApplicationError from '../errors/application.error';
+import ErrMessages from '../errors/error-messages';
+import { MenuRepository } from '../repositories';
+import { Category, CategoryRelations } from '../models/menu/category.entity';
+import { Transactional } from 'typeorm-transactional';
+import { Item, Menu } from '../models';
+import { ILike } from 'typeorm';
+import { normalizeString } from '../utils/helper';
 
 export class MenuService {
 	private menuRepo = new MenuRepository();
@@ -22,19 +22,18 @@ export class MenuService {
 	}
 
 	@Transactional()
-	async createMenu(restaurantId:number){
-		const menu = await this.menuRepo.getMenuByRestaurantId(restaurantId)
-		if(!menu){
+	async createMenu(restaurantId: number) {
+		const menu = await this.menuRepo.getMenuByRestaurantId(restaurantId);
+		if (!menu) {
 			const payload = {
 				restaurantId,
-				isActive:true
-			}
-			await this.menuRepo.createMenu(payload)
-		}else{
+				isActive: true
+			};
+			await this.menuRepo.createMenu(payload);
+		} else {
 			throw new ApplicationError(ErrMessages.menu.MenuAlreadyExist, StatusCodes.BAD_REQUEST);
 		}
 	}
-
 
 	// Category CRUD Methods
 
@@ -44,6 +43,7 @@ export class MenuService {
 	}
 
 	async getMenuCategories(restaurantId: number) {
+		// TODO: I can get categories without getting menu
 		const menu = await this.getMenuOrFail(restaurantId);
 		return await this.menuRepo.getCategories(menu.menuId);
 	}
@@ -101,25 +101,26 @@ export class MenuService {
 	@Transactional()
 	async deleteMenuItem(restaurantId: number, itemId: number) {
 		await this.ensureItemBelongsToMenu(restaurantId, itemId);
-		await this.menuRepo.deleteItem(itemId)
+		await this.menuRepo.deleteItem(itemId);
 	}
 
 	@Transactional()
 	async setMenuItemAvailability(restaurantId: number, itemId: number, payload: { isAvailable: boolean }) {
 		const existingItem = await this.ensureItemBelongsToMenu(restaurantId, itemId);
-		this.validateItemAvailabilityChange(existingItem!, payload.isAvailable)
+		this.validateItemAvailabilityChange(existingItem!, payload.isAvailable);
 
-		const item = await this.menuRepo.setItemAvailability(itemId, payload.isAvailable)
-		return this.formateItemAvailabilityResponse(item!)
+		const item = await this.menuRepo.setItemAvailability(itemId, payload.isAvailable);
+		return this.formateItemAvailabilityResponse(item!);
 	}
 
-    async getMenuItemsHistory(restaurantId:number){
-		const deletedItems = await this.menuRepo.getDeletedItems(restaurantId)
-		return deletedItems
+	async getMenuItemsHistory(restaurantId: number) {
+		const deletedItems = await this.menuRepo.getDeletedItems(restaurantId);
+		return deletedItems;
 	}
 
 	/* === Validation Methods === */
 
+	// TODO: change name ex ensureCategoryBelongsToActiveMenuAndGetCategory
 	private async ensureCategoryBelongsToMenu(restaurantId: number, categoryId: number) {
 		const menu = await this.getMenuOrFail(restaurantId);
 		const category = await this.menuRepo.getCategoryBy({ menuId: menu.menuId, categoryId, relations: ['items'] });
@@ -128,6 +129,7 @@ export class MenuService {
 	}
 
 	private async ensureCategoryTitleUniqueness(menuId: number, title: string) {
+		// TODO: I should not use ILike here, because it not make us sure that title is unique
 		const category = await this.menuRepo.getCategoryBy({ menuId, title: ILike(normalizeString(title)) as any });
 		if (category) throw new ApplicationError(ErrMessages.menu.CategoryTitleAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
@@ -149,16 +151,20 @@ export class MenuService {
 	}
 
 	private async ensureItemNameUniqueness(menu: Menu, name: string, itemId?: number) {
-		const existingItem = menu.categories.flatMap((category) => category.items)
-			.find(item => (item.itemId !== itemId) && (normalizeString(item.name) === normalizeString(name)));
+		const existingItem = menu.categories
+			.flatMap((category) => category.items)
+			.find((item) => item.itemId !== itemId && normalizeString(item.name) === normalizeString(name));
 
 		if (existingItem) throw new ApplicationError(ErrMessages.item.ItemNameAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
 
 	private async ensureItemBelongsToMenu(restaurantId: number, itemId: number) {
 		const existingItem = await this.menuRepo.getItemById({ itemId, relations: ['categories.menu'] });
-		const isItemBelongsToMenu = existingItem?.categories.some((category) => category.menu.restaurantId === restaurantId);
-		if (!isItemBelongsToMenu) throw new ApplicationError(ErrMessages.item.ItemNotBelongsToMenu, StatusCodes.BAD_REQUEST);
+		const isItemBelongsToMenu = existingItem?.categories.some(
+			(category) => category.menu.restaurantId === restaurantId
+		);
+		if (!isItemBelongsToMenu)
+			throw new ApplicationError(ErrMessages.item.ItemNotBelongsToMenu, StatusCodes.BAD_REQUEST);
 		return existingItem;
 	}
 
@@ -188,12 +194,12 @@ export class MenuService {
 				return {
 					categoryId: category.categoryId,
 					title: category.title
-				}
+				};
 			}),
 			menuId: item.categories[0].menuId,
 			createdAt: item.createdAt,
 			updatedAt: item.updatedAt
-		}
+		};
 	}
 
 	private formateItemAvailabilityResponse(item: Item) {
@@ -203,9 +209,8 @@ export class MenuService {
 			isAvailable: item.isAvailable,
 			createdAt: item.createdAt,
 			updatedAt: item.updatedAt
-		}
+		};
 	}
-
 
 	private async buildItemPayload(restaurantId: number, payload: Partial<Item>) {
 		const menu = await this.getMenuOrFail(restaurantId);
@@ -217,19 +222,21 @@ export class MenuService {
 
 		const categories = [] as Category[];
 		if (payload.categories?.length) {
-			await Promise.all(payload.categories?.map(async categoryId => {
-				const category = await this.ensureCategoryBelongsToMenu(restaurantId, Number(categoryId));
-				categories.push(category);
-				return category;
-			}));
+			// TODO: I can get list of categories by their IDs and restaurant id once, instead of querying each one
+			await Promise.all(
+				payload.categories?.map(async (categoryId) => {
+					const category = await this.ensureCategoryBelongsToMenu(restaurantId, Number(categoryId));
+					categories.push(category);
+					return category;
+				})
+			);
 		}
 
 		const itemPayload = {
 			...payload,
-			categories,
+			categories
 		};
 
 		return itemPayload;
 	}
-
 }
