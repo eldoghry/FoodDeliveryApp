@@ -20,6 +20,7 @@ import { Rating } from '../rating/rating.entity';
 import { Cuisine } from './cuisine.entity';
 import { Chain } from './chain.entity';
 import { Point } from 'geojson';
+import { Item } from '../menu/item.entity';
 
 export enum RestaurantStatus {
 	open = 'open',
@@ -145,4 +146,7 @@ export class Restaurant extends AbstractEntity {
 
 	@OneToOne(() => Menu, (menu) => menu.restaurant)
 	menu!: Menu;
+
+	@OneToMany(() => Item, (item) => item.restaurant)
+	items!: Item[];
 }

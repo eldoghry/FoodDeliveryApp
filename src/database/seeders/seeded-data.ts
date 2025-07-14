@@ -146,6 +146,7 @@ const menuSeedData: SeedData<Menu> = {
 const itemSeedData: SeedData<Item> = {
 	entity: Item,
 	data: Array.from({ length: ITEMS_COUNT }).map((_, index) => ({
+		restaurantId: index + 1,
 		imagePath: faker.image.url(),
 		name: faker.food.dish() + `${index + 1}`,
 		description: faker.food.description(),
