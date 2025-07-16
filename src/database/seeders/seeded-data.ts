@@ -201,6 +201,8 @@ const restaurantSeedData: SeedData<Restaurant> = {
 			isActive: faker.datatype.boolean(),
 			email: `orders@restaurant${index + 1}.com`,
 			phone: faker.phone.number(),
+			totalRating: faker.number.int({ min: 0, max: 5 }),
+			ratingCount: faker.number.int({ min: 0, max: 5 }),
 			createdAt: new Date(),
 			updatedAt: new Date()
 		};

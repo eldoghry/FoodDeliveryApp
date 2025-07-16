@@ -9,16 +9,19 @@ import { CreateRatingDto } from '../dtos/rating.dto';
 import { RatingRepository } from '../repositories/rating.repository';
 import { Transactional } from 'typeorm-transactional';
 import { Rating } from '../models/rating/rating.entity';
+import { RestaurantService } from './restaurant.service';
 
 export class RatingService {
 	private ratingRepo = new RatingRepository();
-	// private orderService = new OrderService();
+	private restaurantService = new RestaurantService();
 
 	@Transactional()
 	async createRating(dto: CreateRatingDto & { restaurantId: number }): Promise<Rating> {
 		const rating = this.ratingRepo.createRating({ ...dto, restaurantId: dto.restaurantId });
-
+		
 		logger.info(`Rating created for order ${dto.orderId} with rating ${dto.rating}`);
+
+		await this.restaurantService.updateRestaurantRating(dto.restaurantId, dto.rating);
 
 		return rating;
 	}

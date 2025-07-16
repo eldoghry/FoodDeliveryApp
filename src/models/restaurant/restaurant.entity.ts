@@ -103,6 +103,15 @@ export class Restaurant extends AbstractEntity {
 		activatedBy?: RestaurantDeactivatedBy;
 	} | null;
 
+	@Column({ type: 'decimal', default: 0, nullable: false })
+	totalRating!: number;
+
+	@Column({ type: 'integer', default: 0, nullable: false })
+	ratingCount!: number;
+
+	@Column({ type: 'decimal', default: 0, nullable: false })
+	averageRating!: number;
+
 	@CreateDateColumn()
 	createdAt!: Date;
 
