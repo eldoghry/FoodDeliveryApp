@@ -162,17 +162,20 @@ export class OrderRepository {
 		return query.getMany();
 	}
 
-	async getActiveOrderBy(restaurantId?: number,customerId?: number,addressId?: number): Promise<Order | null> {
-		const whereClause: any = {};
-		if (restaurantId) whereClause.restaurantId = restaurantId;
-		if (customerId) whereClause.customerId = customerId;
-		if (addressId) whereClause.deliveryAddressId = addressId;
+	async getActiveOrderBy(orderId?: number, restaurantId?: number, customerId?: number, addressId?: number): Promise<Order | null> {
+		const excludedStatuses = [
+			OrderStatusEnum.delivered,
+			OrderStatusEnum.canceled,
+			OrderStatusEnum.failed
+		];
 		return await this.orderRepo.findOne({
-			where: { ...whereClause, status: Not(In([
-				OrderStatusEnum.delivered,
-				OrderStatusEnum.canceled,
-				OrderStatusEnum.failed
-			])) }
-		});
+			where: {
+			  ...(orderId && { orderId }),
+			  ...(restaurantId && { restaurantId }),
+			  ...(customerId && { customerId }),
+			  ...(addressId && { deliveryAddressId: addressId }),
+			  status: Not(In(excludedStatuses))
+			}
+		  });
 	}
 }

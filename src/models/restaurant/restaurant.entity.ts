@@ -20,6 +20,7 @@ import { Rating } from '../rating/rating.entity';
 import { Cuisine } from './cuisine.entity';
 import { Chain } from './chain.entity';
 import { Point } from 'geojson';
+import { Item } from '../menu/item.entity';
 
 export enum RestaurantStatus {
 	open = 'open',
@@ -102,6 +103,15 @@ export class Restaurant extends AbstractEntity {
 		activatedBy?: RestaurantDeactivatedBy;
 	} | null;
 
+	@Column({ type: 'decimal', default: 0, nullable: false })
+	totalRating!: number;
+
+	@Column({ type: 'integer', default: 0, nullable: false })
+	ratingCount!: number;
+
+	@Column({ type: 'decimal', default: 0, nullable: false })
+	averageRating!: number;
+
 	@CreateDateColumn()
 	createdAt!: Date;
 
@@ -145,4 +155,7 @@ export class Restaurant extends AbstractEntity {
 
 	@OneToOne(() => Menu, (menu) => menu.restaurant)
 	menu!: Menu;
+
+	@OneToMany(() => Item, (item) => item.restaurant)
+	items!: Item[];
 }
