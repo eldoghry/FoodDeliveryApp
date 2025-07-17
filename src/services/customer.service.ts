@@ -11,6 +11,7 @@ import { OrderService } from './order.service';
 import { SettingService } from './setting.service';
 import { SettingKey } from '../enums/setting.enum';
 import { Point } from 'geojson';
+import { CreateCustomerDto } from '../dtos/customer.dto';
 
 export class CustomerService {
 	private customerRepo = new CustomerRepository();
@@ -42,7 +43,7 @@ export class CustomerService {
 	@Transactional()
 	async createCustomerAddress(customerId: number, payload: Address & { coordinates: { lng: number; lat: number } }) {
 		const { coordinates, ...rest } = payload;
-		const geoLocation: Point = { type: 'Point', coordinates: [coordinates.lng , coordinates.lat] };
+		const geoLocation: Point = { type: 'Point', coordinates: [coordinates.lng, coordinates.lat] };
 
 		const payloadData = {
 			...rest,
@@ -88,7 +89,6 @@ export class CustomerService {
 		await this.ensureCustomerHasNoActiveOrders(customerId);
 		await this.userService.deactivateUser(userId, deactivationInfo);
 	}
-
 
 	/* === Validation Methods === */
 
@@ -146,5 +146,10 @@ export class CustomerService {
 		} else {
 			await this.ensureNotRemovingOnlyDefaultAddress(customerId, addressId);
 		}
+	}
+
+	async createCustomer(dto: CreateCustomerDto) {
+		const customer = await this.customerRepo.createCustomer(dto);
+		return customer;
 	}
 }
