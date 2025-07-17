@@ -3,18 +3,22 @@ import { config } from '../config/env';
 import { AuthorizedUser } from '../middlewares/auth.middleware';
 import { UserRepository } from '../repositories/user.repository';
 import { JwtService } from '../shared/jwt';
-import { AuthLoginDto, RegisterCustomerDto } from '../dtos/auth.dto';
+import { AuthLoginDto, RegisterCustomerDto, RegisterUserDto } from '../dtos/auth.dto';
 import { StatusCodes } from 'http-status-codes';
 import ApplicationError from '../errors/application.error';
 import { Transactional } from 'typeorm-transactional';
 import { CustomerService } from './customer.service';
 import { Gender, UserType } from '../models';
+import { OtpService } from '../shared/otpService';
+import { SmsService } from '../shared/smsService';
+import { RoleService } from './role.service';
 
 export class AuthService {
 	private repo = new UserRepository();
 	private jwtService = new JwtService();
 	private userService = new UserService();
 	private customerService = new CustomerService();
+	private roleService: RoleService = new RoleService();
 
 	async login(dto: AuthLoginDto) {
 		const user = await this.validateAndGetUser(dto);
@@ -68,10 +72,6 @@ export class AuthService {
 
 		const userWithOutPassword = { ...user, password: undefined };
 		return userWithOutPassword;
-	}
-
-	async logout() {
-		// todo
 	}
 
 	@Transactional()
@@ -134,5 +134,32 @@ export class AuthService {
 		await this.userService.updatePassword(user.userId, newPassword);
 		await OtpService.invalidateResetToken(phone);
 	}
+
+	@Transactional()
+	async registerRestaurantOwner(dto: RegisterUserDto) {
+		// 1) validate email or phone not exists
+		await this.userService.checkIfEmailOrPhoneExist(dto.email, dto.phone);
+
+		// 2) create user record
+		const userType = (await this.userService.getUserTypeByName('restaurant_user')) as UserType;
+		const newUser = await this.userService.createRestaurantOwnerUser({ ...dto, userTypeId: userType.userTypeId });
+
+		// 3) assign role to user
+		await this.roleService.assignRoleToUser(newUser.userId, 'restaurant_admin');
+
+		const updatedUser = await this.userService.getOneOrFailBy({ userId: newUser.userId, relations: ['roles'] });
+
+		// 4) create Authorize payload
+		const payload: AuthorizedUser = {
+			userId: updatedUser.userId,
+			roles: updatedUser?.roles?.map((role) => role.name) || [],
+			actorType: userType?.name,
+			actorId: updatedUser.userId
+		};
+
+		// 5) generate tokens
+		const tokens = this.generateTokens(payload);
+
+		return tokens;
 	}
 }

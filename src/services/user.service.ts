@@ -77,8 +77,20 @@ export class UserService {
 		if (user.email === email) throw new ApplicationError(ErrMessages.user.EmailAlreadyExists, StatusCodes.BAD_REQUEST);
 		if (user.phone === phone) throw new ApplicationError(ErrMessages.user.PhoneAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
+
 	async updatePassword(userId: number, newPassword: string) {
 		const hashedPassword = await HashingService.hash(newPassword);
 		return await this.userRepo.updateUser(userId, { password: hashedPassword });
+	}
+
+	async createRestaurantOwnerUser(dto: CreateUserDto) {
+		return this.createUser({ ...dto, isActive: false });
+	}
+
+	async updateUser(userId: number, dto: Partial<User>) {
+		const user = await this.userRepo.updateUser(userId, dto);
+		if (!user) throw new ApplicationError('User not found', HttpStatusCodes.NOT_FOUND);
+
+		return user;
 	}
 }

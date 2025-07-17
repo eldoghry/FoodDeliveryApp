@@ -2,7 +2,15 @@ import { validateRequest } from './../middlewares/validate-request.middleware';
 import { Router } from 'express';
 const AuthRouter = Router();
 import { AuthController } from '../controllers/auth.controller';
-import { authCustomerRegisterBodySchema, authLoginBodySchema } from '../validators/auth.validator';
+import {
+	authCustomerRegisterBodySchema,
+	authLoginBodySchema,
+	authRequestOtpBodySchema,
+	authVerifyOtpBodySchema,
+	authResetPasswordBodySchema,
+	authRestaurantOwnerRegisterBodySchema
+} from '../validators/auth.validator';
+import { customRateLimiter } from '../config/ratelimiter';
 
 const controller = new AuthController();
 
@@ -12,6 +20,7 @@ AuthRouter.post(
 	validateRequest({ body: authCustomerRegisterBodySchema }),
 	controller.registerCustomer.bind(controller)
 );
+
 AuthRouter.post(
 	'/request-otp',
 	customRateLimiter(1, 180000),
@@ -29,6 +38,12 @@ AuthRouter.post(
 	'/reset-password',
 	validateRequest({ body: authResetPasswordBodySchema }),
 	controller.resetPassword.bind(controller)
+);
+
+AuthRouter.post(
+	'/register-restaurant-owner',
+	validateRequest({ body: authRestaurantOwnerRegisterBodySchema }),
+	controller.registerRestaurantOwner.bind(controller)
 );
 
 export default AuthRouter;
