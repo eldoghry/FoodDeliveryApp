@@ -77,4 +77,8 @@ export class UserService {
 		if (user.email === email) throw new ApplicationError(ErrMessages.user.EmailAlreadyExists, StatusCodes.BAD_REQUEST);
 		if (user.phone === phone) throw new ApplicationError(ErrMessages.user.PhoneAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
+	async updatePassword(userId: number, newPassword: string) {
+		const hashedPassword = await HashingService.hash(newPassword);
+		return await this.userRepo.updateUser(userId, { password: hashedPassword });
+	}
 }

@@ -12,6 +12,23 @@ AuthRouter.post(
 	validateRequest({ body: authCustomerRegisterBodySchema }),
 	controller.registerCustomer.bind(controller)
 );
-// AuthRouter.post('/register-restaurant-owner', validateRequest({ body: authLoginBodySchema }), controller.registerRestaurantOwner.bind(controller));
+AuthRouter.post(
+	'/request-otp',
+	customRateLimiter(1, 180000),
+	validateRequest({ body: authRequestOtpBodySchema }),
+	controller.requestOtp.bind(controller)
+);
+
+AuthRouter.post(
+	'/verify-otp',
+	validateRequest({ body: authVerifyOtpBodySchema }),
+	controller.verifyOtp.bind(controller)
+);
+
+AuthRouter.post(
+	'/reset-password',
+	validateRequest({ body: authResetPasswordBodySchema }),
+	controller.resetPassword.bind(controller)
+);
 
 export default AuthRouter;

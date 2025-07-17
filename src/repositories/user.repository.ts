@@ -92,6 +92,7 @@ export class UserRepository {
 		if (withPassword) query.addSelect('user.password');
 		if (filter.userId) query.andWhere('user.userId = :userId', { userId: filter.userId });
 		if (filter.email) query.andWhere('user.email = :email', { email: filter.email });
+		if (filter.phone) query.andWhere('user.phone = :phone', { phone: filter.phone });
 
 		return await query.getOne();
 	}

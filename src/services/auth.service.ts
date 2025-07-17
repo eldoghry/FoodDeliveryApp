@@ -104,7 +104,35 @@ export class AuthService {
 		return tokens;
 	}
 
-	async forgetPassword() {
-		// todo
+	async requestOtp(phone: string) {
+		await this.userService.getOneOrFailBy({ phone });
+
+		const otp = OtpService.generateOtp();
+
+		await OtpService.saveOtp(phone, otp);
+
+		await SmsService.sendOtp(phone, otp);
+	}
+
+	async verifyOtp(phone: string, otp: string) {
+		const isValid = await OtpService.verifyOtp(phone, otp);
+		if (!isValid) throw new ApplicationError('Invalid OTP', StatusCodes.UNAUTHORIZED);
+
+		const resetToken = this.jwtService.sign({ phone }, { expiresIn: '5m' });
+
+		await OtpService.saveResetToken(phone, resetToken);
+
+		return { resetToken };
+	}
+
+	async resetPassword(phone: string, newPassword: string, resetToken: string) {
+		const valid = await OtpService.verifyResetToken(phone, resetToken);
+		if (!valid) throw new ApplicationError('Invalid or expired reset token', StatusCodes.UNAUTHORIZED);
+
+		const user = await this.userService.getOneOrFailBy({ phone });
+
+		await this.userService.updatePassword(user.userId, newPassword);
+		await OtpService.invalidateResetToken(phone);
+	}
 	}
 }

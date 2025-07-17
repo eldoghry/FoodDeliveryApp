@@ -191,9 +191,15 @@ const restaurantSeedData: SeedData<Restaurant> = {
 			location: {
 				city: faker.location.city(),
 				area: faker.location.continent(),
-				street: faker.location.streetAddress(),
+				street: faker.location.streetAddress()
 			},
-			geoLocation: { type: 'Point', coordinates: [parseFloat(faker.location.longitude().toString()), parseFloat(faker.location.latitude().toString())] },
+			geoLocation: {
+				type: 'Point',
+				coordinates: [
+					parseFloat(faker.location.longitude().toString()),
+					parseFloat(faker.location.latitude().toString())
+				]
+			},
 			maxDeliveryDistance: faker.number.int({ min: 500, max: 5000 }),
 			status: RestaurantStatus.open,
 			approvalStatus: RestaurantApprovalStatus.pending,
@@ -238,7 +244,6 @@ const categorySeedData: SeedData<Category> = {
 		updatedAt: new Date()
 	}))
 };
-
 
 const settingSeedData: SeedData<Setting> = {
 	entity: Setting,
@@ -330,6 +335,8 @@ const settingSeedData: SeedData<Setting> = {
 		},
 		{ key: SettingKey.MAX_DISTANCE_IN_METERS, value: 5000, description: 'Max distance in meters' },
 		{ key: SettingKey.MAX_CUSTOMER_ADDRESSES, value: 10, description: 'Max customer addresses' },
+		{ key: SettingKey.OTP_EXPIRATION_TIME_MS, value: 300000, description: 'OTP expiration time in seconds' },
+		{ key: SettingKey.RESET_TOKEN_EXPIRE_TIME_MS, value: 300000, description: 'Reset token expiration time in seconds' }
 	]
 };
 
