@@ -146,6 +146,7 @@ const menuSeedData: SeedData<Menu> = {
 const itemSeedData: SeedData<Item> = {
 	entity: Item,
 	data: Array.from({ length: ITEMS_COUNT }).map((_, index) => ({
+		restaurantId: index + 1,
 		imagePath: faker.image.url(),
 		name: faker.food.dish() + `${index + 1}`,
 		description: faker.food.description(),
@@ -200,6 +201,8 @@ const restaurantSeedData: SeedData<Restaurant> = {
 			isActive: faker.datatype.boolean(),
 			email: `orders@restaurant${index + 1}.com`,
 			phone: faker.phone.number(),
+			totalRating: faker.number.int({ min: 0, max: 5 }),
+			ratingCount: faker.number.int({ min: 0, max: 5 }),
 			createdAt: new Date(),
 			updatedAt: new Date()
 		};

@@ -2,6 +2,7 @@ CREATE TABLE "order" (
     order_id SERIAL PRIMARY KEY,
     customer_id INT NOT NULL REFERENCES customer(customer_id),
     delivery_address_id INT REFERENCES address(address_id),
+    delivery_address jsonb NOT NULL,
     restaurant_id INT NOT NULL REFERENCES restaurant(restaurant_id),
     "status" VARCHAR(30) NOT NULL CHECK ("status" IN ('initiated', 'pending', 'confirmed', 'onTheWay', 'delivered', 'canceled', 'failed')),
     customer_instructions TEXT DEFAULT '',

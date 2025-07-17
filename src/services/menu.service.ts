@@ -2,9 +2,9 @@ import { StatusCodes } from "http-status-codes";
 import ApplicationError from "../errors/application.error";
 import ErrMessages from "../errors/error-messages";
 import { MenuRepository } from "../repositories";
-import { Category, CategoryRelations } from "../models/menu/category.entity";
+import { Category } from "../models/menu/category.entity";
 import { Transactional } from "typeorm-transactional";
-import { Item, Menu } from "../models";
+import { Item, OrderStatusEnum } from "../models";
 import { ILike } from "typeorm";
 import { normalizeString } from "../utils/helper";
 
@@ -22,16 +22,14 @@ export class MenuService {
 	}
 
 	@Transactional()
-	async createMenu(restaurantId:number){
-		const menu = await this.menuRepo.getMenuByRestaurantId(restaurantId)
-		if(!menu){
+	async createMenu(restaurantId: number) {
+		const existingMenu = await this.menuRepo.getMenuByRestaurantId(restaurantId)
+		if (!existingMenu) {
 			const payload = {
 				restaurantId,
-				isActive:true
+				isActive: true
 			}
 			await this.menuRepo.createMenu(payload)
-		}else{
-			throw new ApplicationError(ErrMessages.menu.MenuAlreadyExist, StatusCodes.BAD_REQUEST);
 		}
 	}
 
@@ -79,7 +77,7 @@ export class MenuService {
 
 	// Item CRUD Methods
 	async getMenuItemDetails(restaurantId: number, itemId: number) {
-		const existingItem = await this.ensureItemBelongsToMenu(restaurantId, itemId);
+		const existingItem = await this.ensureItemBelongsToRestaurantMenu(restaurantId, itemId);
 		return this.formateItemResponse(existingItem!);
 	}
 
@@ -92,7 +90,8 @@ export class MenuService {
 
 	@Transactional()
 	async updateMenuItem(restaurantId: number, itemId: number, payload: Partial<Item>) {
-		await this.ensureItemBelongsToMenu(restaurantId, itemId);
+		await this.ensureItemBelongsToRestaurantMenu(restaurantId, itemId);
+		await this.ensureItemInActiveOrder(itemId)
 		const itemPayload = await this.buildItemPayload(restaurantId, { itemId, ...payload });
 		const item = await this.menuRepo.updateItem(itemId, itemPayload);
 		return this.formateItemResponse(item!);
@@ -100,22 +99,22 @@ export class MenuService {
 
 	@Transactional()
 	async deleteMenuItem(restaurantId: number, itemId: number) {
-		await this.ensureItemBelongsToMenu(restaurantId, itemId);
+		await this.ensureItemBelongsToRestaurantMenu(restaurantId, itemId);
+		await this.ensureItemInActiveOrder(itemId)
 		await this.menuRepo.deleteItem(itemId)
 	}
 
 	@Transactional()
 	async setMenuItemAvailability(restaurantId: number, itemId: number, payload: { isAvailable: boolean }) {
-		const existingItem = await this.ensureItemBelongsToMenu(restaurantId, itemId);
+		const existingItem = await this.ensureItemBelongsToRestaurantMenu(restaurantId, itemId);
 		this.validateItemAvailabilityChange(existingItem!, payload.isAvailable)
 
 		const item = await this.menuRepo.setItemAvailability(itemId, payload.isAvailable)
 		return this.formateItemAvailabilityResponse(item!)
 	}
 
-    async getMenuItemsHistory(restaurantId:number){
-		const deletedItems = await this.menuRepo.getDeletedItems(restaurantId)
-		return deletedItems
+	async getMenuItemsHistory(restaurantId: number) {
+		return this.menuRepo.getDeletedItems(restaurantId)
 	}
 
 	/* === Validation Methods === */
@@ -134,11 +133,10 @@ export class MenuService {
 
 	private validateCategoryStatusChange(category: Category, isActive: boolean) {
 		if (category.isActive === isActive) {
-			if (isActive === true) {
-				throw new ApplicationError(ErrMessages.menu.CategoryAlreadyActive, StatusCodes.BAD_REQUEST);
-			} else {
-				throw new ApplicationError(ErrMessages.menu.CategoryAlreadyInactive, StatusCodes.BAD_REQUEST);
-			}
+			const errorMessage = isActive
+				? ErrMessages.menu.CategoryAlreadyActive
+				: ErrMessages.menu.CategoryAlreadyInactive;
+			throw new ApplicationError(errorMessage, StatusCodes.BAD_REQUEST);
 		}
 	}
 
@@ -148,27 +146,37 @@ export class MenuService {
 		}
 	}
 
-	private async ensureItemNameUniqueness(menu: Menu, name: string, itemId?: number) {
-		const existingItem = menu.categories.flatMap((category) => category.items)
-			.find(item => (item.itemId !== itemId) && (normalizeString(item.name) === normalizeString(name)));
-
-		if (existingItem) throw new ApplicationError(ErrMessages.item.ItemNameAlreadyExists, StatusCodes.BAD_REQUEST);
+	private async ensureItemNameUniqueness(restaurantId: number, name: string, itemId?: number) {
+		const existingItems = await this.menuRepo.getItemsByRestaurantId(restaurantId);
+		const existingItemName = existingItems.find(item => (item.itemId !== itemId) && (normalizeString(item.name) === normalizeString(name)));
+		if (existingItemName) throw new ApplicationError(ErrMessages.item.ItemNameAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
 
-	private async ensureItemBelongsToMenu(restaurantId: number, itemId: number) {
-		const existingItem = await this.menuRepo.getItemById({ itemId, relations: ['categories.menu'] });
-		const isItemBelongsToMenu = existingItem?.categories.some((category) => category.menu.restaurantId === restaurantId);
-		if (!isItemBelongsToMenu) throw new ApplicationError(ErrMessages.item.ItemNotBelongsToMenu, StatusCodes.BAD_REQUEST);
+	private async ensureItemBelongsToRestaurantMenu(restaurantId: number, itemId: number) {
+		const existingItem = await this.menuRepo.getItemById({ itemId, restaurantId });
+		if (!existingItem) throw new ApplicationError(ErrMessages.item.ItemNotBelongsToMenu, StatusCodes.BAD_REQUEST);
 		return existingItem;
 	}
 
 	private validateItemAvailabilityChange(item: Item, isAvailable: boolean) {
 		if (item.isAvailable === isAvailable) {
-			if (isAvailable === true) {
-				throw new ApplicationError(ErrMessages.item.ItemAlreadyAvailable, StatusCodes.BAD_REQUEST);
-			} else {
-				throw new ApplicationError(ErrMessages.item.ItemAlreadyUnAvailable, StatusCodes.BAD_REQUEST);
-			}
+			const errorMessage = isAvailable
+				? ErrMessages.item.ItemAlreadyAvailable
+				: ErrMessages.item.ItemAlreadyUnAvailable;
+			throw new ApplicationError(errorMessage, StatusCodes.BAD_REQUEST);
+		}
+	}
+
+	private async ensureItemInActiveOrder(itemId: number) {
+		const item = await this.menuRepo.getItemById({ itemId, relations: ['ordersItem.order'] });
+		const excludedStatuses = [
+			OrderStatusEnum.delivered,
+			OrderStatusEnum.canceled,
+			OrderStatusEnum.failed
+		];
+		const itemInActiveOrder = item?.ordersItem?.some((orderItem) => !excludedStatuses.includes(orderItem.order.status));
+		if (itemInActiveOrder) {
+			throw new ApplicationError(ErrMessages.item.ItemInActiveOrder, StatusCodes.BAD_REQUEST);
 		}
 	}
 
@@ -208,12 +216,7 @@ export class MenuService {
 
 
 	private async buildItemPayload(restaurantId: number, payload: Partial<Item>) {
-		const menu = await this.getMenuOrFail(restaurantId);
-		if (payload.itemId) {
-			await this.ensureItemNameUniqueness(menu, payload.name!, payload.itemId);
-		} else {
-			await this.ensureItemNameUniqueness(menu, payload.name!);
-		}
+		await this.ensureItemNameUniqueness(restaurantId, payload.name!, payload.itemId)
 
 		const categories = [] as Category[];
 		if (payload.categories?.length) {
@@ -226,6 +229,7 @@ export class MenuService {
 
 		const itemPayload = {
 			...payload,
+			restaurantId,
 			categories,
 		};
 

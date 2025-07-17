@@ -1,6 +1,6 @@
-CREATE TABLE menu (
-    menu_id SERIAL PRIMARY KEY,
-    restaurant_id INT NOT NULL UNIQUE REFERENCES restaurant(restaurant_id),
+CREATE TABLE cuisine (
+    cuisine_id SERIAL PRIMARY KEY,
+    "name" VARCHAR(255) NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

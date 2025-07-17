@@ -1,6 +1,6 @@
 import { AppDataSource } from '../config/data-source';
 import { Menu, Category, CategoryRelations, Item, ItemRelations } from '../models';
-import { Brackets, Not, Repository } from 'typeorm';
+import { Brackets, IsNull, Not, Repository } from 'typeorm';
 
 export class MenuRepository {
 	private menuRepo: Repository<Menu>;
@@ -65,9 +65,9 @@ export class MenuRepository {
 		return await this.itemRepo.save(item);
 	}
 
-	async getItemById(filter: { itemId: number, relations?: ItemRelations[] }): Promise<Item | null> {
+	async getItemById(filter: { itemId: number, restaurantId?: number, relations?: ItemRelations[] }): Promise<Item | null> {
 		return await this.itemRepo.findOne({
-			where: { itemId: filter.itemId },
+			where: { itemId: filter.itemId, restaurantId: filter.restaurantId },
 			relations: filter.relations || []
 		});
 	}
@@ -84,11 +84,8 @@ export class MenuRepository {
 
 	async getDeletedItems(restaurantId: number): Promise<Item[]> {
 		const queryBuilder = this.itemRepo.createQueryBuilder('item')
-			.innerJoinAndSelect('item.categories', 'category')
-			.innerJoin('category.menu', 'menu')
-			.where('menu.restaurantId = :restaurantId', { restaurantId: restaurantId })
+			.where({ restaurantId, deletedAt: Not(IsNull()) })
 			.withDeleted()
-			.where('item.deletedAt < :deletedAt', { deletedAt: new Date() })
 
 		return await queryBuilder.getMany()
 	}
@@ -98,17 +95,18 @@ export class MenuRepository {
 		await this.itemRepo.softDelete(itemId);
 	}
 
-	async searchItemsInMenu(restaurantId: number, query: any) {
+	async searchItemsInMenu(restaurantId: number, query: { keyword: string }) {
+		const { keyword } = query;
+		const searchTerm = `%${keyword}%`;
 		const queryBuilder = this.itemRepo.createQueryBuilder('item')
 			.innerJoinAndSelect('item.categories', 'category')
-			.innerJoin('category.menu', 'menu')
-			.where('menu.restaurantId = :restaurantId', { restaurantId })
+			.where('item.restaurantId = :restaurantId', { restaurantId })
 			.andWhere('category.isActive = :isActive', { isActive: true })
 			.andWhere('item.isAvailable = :isAvailable', { isAvailable: true })
 			.andWhere(
 				new Brackets(qb => {
-					qb.where('item.name ILIKE :keyword', { keyword: `%${query.keyword}%` })
-						.orWhere('item.description ILIKE :keyword', { keyword: `%${query.keyword}%` });
+					qb.where('item.name ILIKE :searchTerm', { searchTerm })
+						.orWhere('item.description ILIKE :searchTerm', { searchTerm });
 				})
 			)
 			.orderBy('item.name', 'ASC')
@@ -139,5 +137,11 @@ export class MenuRepository {
 			relations: ['categories', 'categories.items']
 		});
 		return menu?.categories.flatMap((category) => category.items) || [];
+	}
+
+	async getItemsByRestaurantId(restaurantId: number): Promise<Item[]> {
+		return await this.itemRepo.find({
+			where: { restaurantId },
+		});
 	}
 }

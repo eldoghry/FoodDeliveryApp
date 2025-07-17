@@ -70,7 +70,6 @@ export class RestaurantRepository {
 		const restaurant = await this.restaurantRepo
 			.createQueryBuilder('restaurant')
 			.leftJoinAndSelect('restaurant.chain', 'chain')
-			.leftJoin('restaurant.ratings', 'ratings')
 			.leftJoinAndSelect('restaurant.cuisines', 'cuisines')
 			.leftJoinAndSelect('restaurant.menu', 'menu', 'menu.isActive = :menuActive', {
 				menuActive: true
@@ -81,8 +80,6 @@ export class RestaurantRepository {
 			.leftJoinAndSelect('category.items', 'item', 'item.isAvailable = :itemAvailable', {
 				itemAvailable: true
 			})
-			.addSelect('COALESCE(ROUND(AVG(ratings.rating), 2), 0)', 'averageRating')
-			.addSelect('COUNT(ratings.rating)', 'ratingCount')
 			.where('restaurant.restaurantId = :restaurantId', { restaurantId })
 			.groupBy('restaurant.restaurantId')
 			.addGroupBy('chain.chainId')
@@ -91,19 +88,15 @@ export class RestaurantRepository {
 			.addGroupBy('category.categoryId')
 			.addGroupBy('item.itemId')
 			.take(1)
-			.getRawAndEntities();
-		const result = { ...restaurant.entities[0], averageRating: restaurant.raw[0].averageRating, ratingCount: restaurant.raw[0].ratingCount };
-		return result;
-	}
-
+			.getOne();
+		return restaurant;
+	}	
 
 	// Base query builder method (depends on geoLocation)
 	private createBaseRestaurantQuery(query: { lat: number; lng: number }) {
+
 		return this.restaurantRepo.createQueryBuilder('restaurant')
 			.leftJoinAndSelect('restaurant.cuisines', 'cuisine')
-			.leftJoin('restaurant.ratings', 'ratings')
-			.addSelect('COALESCE(ROUND(AVG(ratings.rating), 2), 0)', 'averageRating')
-			.addSelect('COUNT(ratings.rating)', 'ratingCount')
 			.where('restaurant.isActive = :isActive', { isActive: true })
 			.andWhere('restaurant.status NOT IN (:...excludedStatuses)', {
 				excludedStatuses: [RestaurantStatus.pause]
@@ -125,18 +118,16 @@ export class RestaurantRepository {
 
 	async getFilteredRestaurants(filter: ListRestaurantsFilterDto): Promise<Partial<RestaurantResponseDto>[]> {
 		const { lat, lng, limit, cuisines, rating, cursor } = filter;
-		const averageRating = 'COALESCE(ROUND(AVG(ratings.rating),2),0)';
 
 		const queryBuilder = this.createBaseRestaurantQuery({ lat, lng })
 
-		if (cuisines) queryBuilder.andWhere('cuisines.cuisineId IN (:...cuisinesIds)', { cuisinesIds: cuisines });
-		if (rating) queryBuilder.having(`${averageRating} >= :rating`, { rating });
+		if (cuisines) queryBuilder.andWhere('cuisine.cuisineId IN (:...cuisinesIds)', { cuisinesIds: cuisines });
+		if (rating) queryBuilder.having(`restaurant.averageRating >= :rating`, { rating });
 		if (cursor) queryBuilder.andWhere('restaurant.restaurantId < :cursor', { cursor });
 
 		queryBuilder.orderBy('restaurant.restaurantId', 'DESC').take(limit + 1)
 
-		const results = await queryBuilder.getRawAndEntities();
-		return this.formatRestaurantsResults(results);
+		return await queryBuilder.getMany();
 
 	}
 
@@ -156,18 +147,16 @@ export class RestaurantRepository {
 
 	async getTopRatedRestaurants(filter: ListTopRatedRestaurantsFilterDto): Promise<Partial<RestaurantResponseDto>[]> {
 		const { lat, lng, limit, cuisines, cursor } = filter;
-		const avgRatingExpr = 'COALESCE(ROUND(AVG(ratings.rating),2),0)';
 
 		const queryBuilder = this.createBaseRestaurantQuery({ lat, lng })
-
-		if (cuisines) queryBuilder.andWhere('cuisines.cuisineId IN (:...cuisinesIds)', { cuisinesIds: cuisines });
+		
+		if (cuisines) queryBuilder.andWhere('cuisine.cuisineId IN (:...cuisinesIds)', { cuisinesIds: cuisines });
 
 		if (cursor) queryBuilder.andWhere('restaurant.restaurantId < :cursor', { cursor });
 
-		queryBuilder.orderBy(avgRatingExpr, 'DESC').take(limit + 1)
+		queryBuilder.orderBy("restaurant.averageRating", 'DESC').take(limit + 1)
 
-		const results = await queryBuilder.getRawAndEntities();
-		return this.formatRestaurantsResults(results);
+		return await queryBuilder.getMany();
 	}
 
 	async searchRestaurants(query: SearchRestaurantsQueryDto): Promise<Partial<RestaurantResponseDto>[]> {
@@ -274,7 +263,7 @@ export class RestaurantRepository {
 			.take(limit + 1); // Take limit + 1 to determine if there's a next page
 
 		const results = await queryBuilder.getRawAndEntities();
-		return this.formatRestaurantsResults(results);
+		return this.formatRestaurantsSearchResults(results);
 	}
 
 	async getRecommendedRestaurants(filter: ListRecommendedRestaurantsFilterDto): Promise<Partial<RestaurantResponseDto>[]> {
@@ -284,14 +273,13 @@ export class RestaurantRepository {
 		if (cuisines) queryBuilder.andWhere('cuisine.cuisineId IN (:...cuisinesIds)', { cuisinesIds: cuisines });
 
 		if (sort && sort === 'rating') {
-			queryBuilder.orderBy('averageRating', 'DESC');
+			queryBuilder.orderBy('restaurant.averageRating', 'DESC');
 		} else {
 			queryBuilder.orderBy('restaurant.' + sort, 'DESC');
 		}
 
 		queryBuilder.take(limit);
-		const results = await queryBuilder.getRawAndEntities();
-		return this.formatRestaurantsResults(results);
+		return await queryBuilder.getMany();
 	}
 
 
@@ -320,14 +308,12 @@ export class RestaurantRepository {
 		return uniquePatterns
 	}
 
-	private formatRestaurantsResults(results: { entities: Restaurant[], raw: any[] }): Partial<RestaurantResponseDto>[] {
+	private formatRestaurantsSearchResults(results: { entities: Restaurant[], raw: any[] }): Partial<RestaurantResponseDto>[] {
 		const { entities, raw } = results;
 		return entities.map((entity: Restaurant, index: number) => {
 			return {
 				...entity,
-				rank: raw[index].rank,
-				averageRating: Number(raw[index].averageRating),
-				ratingCount: Number(raw[index].ratingCount)
+				rank: raw[index].rank
 			};
 		});
 	}

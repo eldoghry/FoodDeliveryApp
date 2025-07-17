@@ -100,7 +100,7 @@ export class RestaurantService {
 			approvalStatus: RestaurantApprovalStatus.pending
 		};
 
-		await this.ensureOwnerDataUniqueness(userData);
+		await this.ensureOwnerContactUniqueness(userData);
 
 		const chain = await this.createChain(chainData);
 		restaurantData.chainId = chain.chainId;
@@ -169,9 +169,18 @@ export class RestaurantService {
 		return results;
 	}
 
+	@Transactional()
+	async updateRestaurantRating(restaurantId: number, rating: number) {
+		const restaurant = await this.getRestaurantOrFail({ restaurantId });
+		const totalRating = (restaurant!.totalRating + rating);
+		const ratingCount = (restaurant!.ratingCount + 1);
+		const averageRating = ratingCount > 0 ? Number((totalRating / ratingCount).toFixed(2)) : 0;
+		await this.restaurantRepo.updateRestaurant(restaurantId, { totalRating, ratingCount, averageRating });
+	}
+
 	/* === Validation Methods === */
 
-	private async ensureOwnerDataUniqueness(payload: Partial<User>) {
+	private async ensureOwnerContactUniqueness(payload: Partial<User>) {
 		await this.userService.ensureEmailUniqueness(payload.email!);
 		await this.userService.ensurePhoneUniqueness(payload.phone!);
 	}
@@ -289,7 +298,7 @@ export class RestaurantService {
 		};
 	}
 
-	private async formatRestaurantDetailesResponse(restaurant: Restaurant & { averageRating: number; ratingCount: number }) {
+	private async formatRestaurantDetailesResponse(restaurant: Restaurant) {
 		return {
 			restaurantId: restaurant.restaurantId,
 			name: restaurant.name,

@@ -137,21 +137,62 @@ Links the user to a customer profile, including optional personal data.
 Manages customer addresses. A customer may have multiple addresses with one marked as default.
 
 - `address_id` (PK)
-- `address_line1`, `address_line2`, `city`
+- `customer_id` – Foreign key to `customer`
+- `label` – Address label (e.g., "Home", "Work")
+- `city`, `area`, `street`, `building`, `floor`
+- `geoLocation` (JSON)
 - `is_default` – Indicates default delivery address
-- `created_at`, `updated_at`
+- `created_at`, `updated_at`, `deleted_at`
   
+
+### `chain`
+Stores chain registration and profile details. Each restaurant can be linked to a chain.
+
+- `chain_id` (PK)
+- `name` – Unique chain name
+- `commercial_registration_number` – Unique commercial registration number
+- `vat_number` – Unique VAT number
+- `storeCount` – Number of stores in the chain
+- `created_at`, `updated_at`
+
+
+### `cuisine` & `restaurant_cuisine`
+Stores cuisine details. Each restaurant can have multiple cuisines.
+
+- `cuisine_id` (PK)
+- `name` – Unique cuisine name
+- `is_active` – Indicates if the cuisine is active
+- `created_at`, `updated_at`
+
+- `restaurant_cuisine`: Composite table linking `restaurant_id` with `cuisine_id`
+
 
 ### `restaurant`
 Stores restaurant registration and profile details.
 
 - `restaurant_id` (PK)
-- `user_id` – Foreign key to `user`
-- `name`, `commercial_registration_number`, `vat_number`
-- `logo_url`, `banner_url`, `location` (contains location details)
+- `chain_id` – Foreign key to `chain`
+- `name`,`email`, `phone`
+- `logo_url`, `banner_url`
+- `location` (contains location details)
+- `geoLocation` (geography coordinates) 
+- `maxDeliveryDistance` – Maximum delivery distance in kilometers
+- `approvalStatus` (enum: pending_approval, approved, rejected)
 - `status` (enum: open, busy, pause, closed)
-- `is_active`, `created_at`, `updated_at`
+- `is_active`
+- `deactivationInfo` (contains deactivated_by, deactivation_reason, deactivated_at)
+- `activationInfo` (contains activated_by, activation_reason, activated_at)
+- `totalRating` , `ratingCount` ,`averageRating`
+- `created_at`, `updated_at`
+- `approvedAt`, `rejectedAt`
   
+
+### `restaurant_user`
+Stores the relationship between restaurants and users.
+
+- `restaurant_id` (PK)
+- `user_id` (PK)
+
 
 ### `menu`
 Defines menu for restaurants. Each restaurant can have one menu.
@@ -161,10 +202,14 @@ Defines menu for restaurants. Each restaurant can have one menu.
 - `is_active`
 - `created_at`, `updated_at`
 
+
 ### `category`
 Defines categories for menu. menu can have multiple categories.
 
-- `category_id` (PK), `menu_id` (Foreign key to `menu`), `title`, `is_active`
+- `category_id` (PK)
+- `menu_id` (Foreign key to `menu`)
+- `title`
+- `is_active`
 - `created_at`, `updated_at`
 
 
@@ -172,8 +217,10 @@ Defines categories for menu. menu can have multiple categories.
 Defines items with pricing and availability.
 
 - `item_id` (PK)
+- `restaurant_id` – Foreign key to `restaurant`
 - `image_path`, `name`, `description`, `price`, `energy_val_cal`, `notes`
-- `is_available`, `created_at`, `updated_at`
+- `is_available`
+- `created_at`, `updated_at`
 
 - `category_items`: Composite table linking `category_id` with `item_id`
 
@@ -205,6 +252,7 @@ Stores order details.
 - `customer_id` – Foreign key to `customer`
 - `restaurant_id` – Foreign key to `restaurant`
 - `delivery_address_id` – Foreign key to `address`
+- `delivery_address` (JSONB)
 - `status` (enum: initiated, pending, confirmed, onTheWay, delivered, canceled, failed)
 - `delivery_fees`,`service_fees`
 - `customer_instructions`
@@ -220,7 +268,7 @@ Stores individual items within an order along with pricing and quantity.
 - `order_item_id` (PK)
 - `order_id` – Foreign key to `order`
 - `item_id` – Foreign key to `item`
-- `quantity`, `item_price`, `total_price`
+- `quantity`, `price`, `total_price`
 - `created_at`, `updated_at`
 
 
@@ -232,6 +280,18 @@ Stores order status changes details.
 - `status` (enum: initiated, pending, confirmed, onTheWay, delivered, canceled, failed)
 - `change_by` (enum: system, restaurant, payment)
 - `created_at`
+
+
+### `rating`
+Stores rating details.
+
+- `rating_id` (PK)
+- `customer_id` – Foreign key to `customer`
+- `restaurant_id` – Foreign key to `restaurant`
+- `order_id` – Foreign key to `order`
+- `rating`
+- `comment`
+- `created_at`, `updated_at`
 
 
 ### `payment_method`
@@ -256,15 +316,6 @@ Stores payment method configuration details.
 - `created_at`, `updated_at`
 
 
-### `payment_status`
-Stores payment status details.
-
-- `payment_status_id` (PK)
-- `status_name`
-- `is_active`
-- `created_at`, `updated_at`
-
-
 ### `transaction`
 Stores transaction details.
 
@@ -273,8 +324,9 @@ Stores transaction details.
 - `order_id` – Foreign key to `order`
 - `payment_method_id` – Foreign key to `payment_method`
 - `amount`
-- `payment_status_id` – Foreign key to `payment_status`
-- `transaction_code`
+- `transaction_reference`
+- `payment_reference`
+- `status` (enum: initiated, pending, paid, failed, cancelled, refunded, partially_refunded, expired)
 - `created_at`, `updated_at`
 
 
@@ -283,10 +335,22 @@ Stores transaction details.
 
 - `transaction_detail_id` (PK)
 - `transaction_id` – Foreign key to `transaction`
-- `detail_key`
-- `detail_value`
+- `provider` (enum: cash, credit_card, stc_pay, apple_pay)
+- `action` (enum: charge, verify, refund)
+- `request_payload`
+- `response_payload`
+- `success`
+- `error_stack`
 - `created_at`
 
+
+### `transaction_status_log`
+Stores transaction status changes details.
+
+- `transaction_status_log_id` (PK)
+- `transaction_id` – Foreign key to `transaction`
+- `status` (enum: initiated, pending, paid, failed, cancelled, refunded, partially_refunded, expired)
+- `created_at`
 
 ### `auditing`
 Stores auditing details.
@@ -299,7 +363,7 @@ Stores auditing details.
 - `created_at`
 
 
-These entities together provide the full backend data structure for managing a customer's order, supporting features such as placing orders, tracking order status, payment processing, and auditing.
+These entities together provide the full backend data structure for managing a customer's order, supporting features such as placing orders, tracking order status, payment processing, transaction processing, rating and auditing.
 
 ---
 
@@ -317,10 +381,10 @@ CREATE TABLE "user" (
     user_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    phone VARCHAR(15) UNIQUE,
+    phone VARCHAR(30) UNIQUE,
     password VARCHAR(250) NOT NULL CHECK (CHAR_LENGTH(password) BETWEEN 8 AND 250),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    user_type_id INT REFERENCES user_type(user_type_id),
+    user_type_id INT REFERENCES user_type(user_type_id) ON DELETE SET NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -328,12 +392,17 @@ CREATE TABLE "user" (
 CREATE TABLE address (
     address_id SERIAL PRIMARY KEY,
     customer_id INT NOT NULL REFERENCES customer(customer_id),
-    address_line1 TEXT NOT NULL,
-    address_line2 TEXT NOT NULL,
+    label VARCHAR(50) NULL,
     city VARCHAR(255) NOT NULL,
+    area VARCHAR(255) NOT NULL,
+    street TEXT NOT NULL,
+    building VARCHAR(50) NULL,
+    floor VARCHAR(50) NULL,
+    geoLocation geography(Point, 4326) NOT NULL,
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP DEFAULT NULL
 );
 
 CREATE TABLE customer (
@@ -345,26 +414,63 @@ CREATE TABLE customer (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE restaurant (
-    restaurant_id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL UNIQUE REFERENCES "user"(user_id),
+CREATE TABLE chain (
+    chain_id SERIAL PRIMARY KEY,
     "name" VARCHAR(255) NOT NULL,
-    logo_url VARCHAR(512) DEFAULT '',
-    banner_url VARCHAR(512) NOT NULL DEFAULT '',
-    "location" JSONB,
-    "status" VARCHAR(6) NOT NULL CHECK (status IN ('open', 'busy', 'pause', 'closed')),
     commercial_registration_number VARCHAR(20) UNIQUE NOT NULL,
     vat_number VARCHAR(15) UNIQUE NOT NULL,
-    email VARCHAR(255),
+    store_count INT DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE cuisine (
+    cuisine_id SERIAL PRIMARY KEY,
+    "name" VARCHAR(255) NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE restaurant (
+    restaurant_id SERIAL PRIMARY KEY,
+    chain_id INT NOT NULL UNIQUE REFERENCES "chain"(chain_id),
+    "name" VARCHAR(255) NOT NULL,
+    logo_url VARCHAR(512) DEFAULT '',
+    banner_url VARCHAR(512) NOT NULL DEFAULT '',
+    "location" JSONB NOT NULL,
+    geoLocation GEOGRAPHY(POINT, 4326) NOT NULL,
+    max_delivery_distance INT NOT NULL DEFAULT 5000,
+    approval_status VARCHAR(6) NOT NULL CHECK (approval_status IN ('pending_approval', 'approved', 'rejected')),
+    "status" VARCHAR(6) NOT NULL CHECK ("status" IN ('open', 'busy', 'pause', 'closed')),
+    email VARCHAR(255) DEFAULT '',
+    phone VARCHAR(30) DEFAULT '',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    deactivation_info JSONB DEFAULT NULL,
+    activation_info JSONB DEFAULT NULL,
+    total_rating DECIMAL NOT NULL DEFAULT 0,
+    rating_count INT NOT NULL DEFAULT 0,
+    average_rating DECIMAL NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    approved_at TIMESTAMP DEFAULT NULL,
+    rejected_at TIMESTAMP DEFAULT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE restaurant_user (
+    restaurant_id INT NOT NULL REFERENCES restaurant(restaurant_id),
+    user_id INT NOT NULL REFERENCES user(user_id)
+);
+
+CREATE TABLE restaurant_cuisine (
+    restaurant_id INT NOT NULL UNIQUE REFERENCES "restaurant"(restaurant_id),
+    cuisine_id INT NOT NULL UNIQUE REFERENCES "cuisine"(cuisine_id)
+);
+
+
 CREATE TABLE menu (
     menu_id SERIAL PRIMARY KEY,
     restaurant_id INT NOT NULL UNIQUE REFERENCES restaurant(restaurant_id),
-    menu_title VARCHAR(100) NOT NULL UNIQUE CHECK (CHAR_LENGTH(menu_title) BETWEEN 2 AND 100),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -372,21 +478,21 @@ CREATE TABLE menu (
 
 CREATE TABLE category (
     category_id SERIAL PRIMARY KEY,
+    menu_id INT NOT NULL UNIQUE REFERENCES menu(menu_id),
     title VARCHAR(100) NOT NULL UNIQUE CHECK (CHAR_LENGTH(title) BETWEEN 2 AND 100),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE menu_category (
-    menu_category_id SERIAL PRIMARY KEY,
-    menu_id INT NOT NULL REFERENCES menu(menu_id),
-    category_id INT NOT NULL REFERENCES category(category_id)
+CREATE TABLE category_items (
+    category_id INT NOT NULL REFERENCES category(category_id),
+    item_id INT NOT NULL REFERENCES item(item_id)
 );
 
 CREATE TABLE item (
     item_id SERIAL PRIMARY KEY,
-    category_id INT NOT NULL REFERENCES category(category_id),
+    restaurant_id INT NOT NULL UNIQUE REFERENCES restaurant(restaurant_id),
     image_path VARCHAR(512) NOT NULL DEFAULT '',
     "name" VARCHAR(100) NOT NULL UNIQUE CHECK (CHAR_LENGTH("name") BETWEEN 2 AND 100),
     "description" TEXT DEFAULT '',
@@ -395,13 +501,8 @@ CREATE TABLE item (
     notes TEXT DEFAULT '',
     is_available BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE category_items (
-    category_id INT NOT NULL REFERENCES category(category_id),
-    item_id INT NOT NULL REFERENCES item(item_id)
-    PRIMARY KEY (category_id, item_id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP DEFAULT NULL
 );
 
 CREATE TABLE cart (
@@ -427,6 +528,7 @@ CREATE TABLE "order" (
     order_id SERIAL PRIMARY KEY,
     customer_id INT NOT NULL REFERENCES customer(customer_id),
     delivery_address_id INT REFERENCES address(address_id),
+    delivery_address jsonb NOT NULL,
     restaurant_id INT NOT NULL REFERENCES restaurant(restaurant_id),
     "status" VARCHAR(30) NOT NULL CHECK ("status" IN ('initiated', 'pending', 'confirmed', 'onTheWay', 'delivered', 'canceled', 'failed')),
     customer_instructions TEXT DEFAULT '',
@@ -458,6 +560,16 @@ CREATE TABLE order_status_log (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE rating (
+    rating_id SERIAL PRIMARY KEY   ,
+    customer_id INT NOT NULL REFERENCES customer(customer_id),
+    restaurant_id INT NOT NULL REFERENCES restaurant(restaurant_id),
+    order_id INT NOT NULL REFERENCES order(order_id),
+    rating smallint NOT NULL,
+    comment text,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE payment_method (
     payment_method_id SERIAL PRIMARY KEY,
     method_name VARCHAR(100) NOT NULL CHECK (CHAR_LENGTH(method_name) BETWEEN 2 AND 100),
@@ -478,22 +590,15 @@ CREATE TABLE payment_method_config (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE payment_status (
-    payment_status_id SERIAL PRIMARY KEY,
-    status_name VARCHAR(20) NOT NULL CHECK ( CHAR_LENGTH(status_name) BETWEEN 2 AND 20),
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE transaction (
     transaction_id SERIAL PRIMARY KEY,
     customer_id INT NOT NULL REFERENCES customer(customer_id),
     order_id INT NOT NULL REFERENCES "order"(order_id),
     payment_method_id INT NOT NULL REFERENCES payment_method(payment_method_id),
     amount DECIMAL(10,2) NOT NULL CHECK (amount >= 0.00),
-    payment_status_id INT NOT NULL REFERENCES payment_status(payment_status_id),
-    transaction_code VARCHAR(100) NOT NULL,
+    transaction_reference VARCHAR(100) NOT NULL,
+    payment_reference VARCHAR(100) NOT NULL,
+    status VARCHAR(50) NOT NULL CHECK (status IN ('initiated', 'pending', 'paid', 'failed', 'cancelled', 'refunded', 'partially_refunded', 'expired')),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -501,8 +606,12 @@ CREATE TABLE transaction (
 CREATE TABLE transaction_detail (
     transaction_detail_id SERIAL PRIMARY KEY,
     transaction_id INT NOT NULL REFERENCES transaction(transaction_id),
-    detail_key JSONB NOT NULL,
-    detail_value JSONB NOT NULL,
+    provider VARCHAR(20) NOT NULL,
+    action VARCHAR(20) NOT NULL,
+    request_payload JSONB NOT NULL,
+    response_payload JSONB NOT NULL,
+    success BOOLEAN NOT NULL,
+    error_stack JSONB,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

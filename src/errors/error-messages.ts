@@ -111,7 +111,8 @@ const ErrMessages = {
 		ItemNameAlreadyExists: 'Item name already exists',
 		ItemNotBelongsToMenu: 'Item does not belong to the specified restaurant menu',
 		ItemAlreadyAvailable:'Item Already Available',
-		ItemAlreadyUnAvailable:'Item Already UnAvailable'
+		ItemAlreadyUnAvailable:'Item Already UnAvailable',
+		ItemInActiveOrder:'Action not allowed - Item is in active order'
 	},
 
 	menu: {

@@ -22,7 +22,7 @@ export class Category extends AbstractEntity {
 	@Column()
 	menuId!: number;
 
-	@Column({ type: 'varchar', length: 100, unique: true, nullable: false })
+	@Column({ type: 'varchar', length: 100, nullable: false })
 	title!: string;
 
 	@Column({ type: 'boolean', default: true, nullable: false })
