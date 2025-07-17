@@ -7,13 +7,13 @@ export class Setting extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	id!: number;
 
-	@Column({ unique: true })
+	@Column({ type: 'varchar', length: 255, nullable: false, unique: true })
 	key!: string;
 
-	@Column({ type: 'jsonb', nullable: true })
+	@Column({ type: 'jsonb', nullable: false })
 	value!: any;
 
-	@Column({ nullable: true })
+	@Column({ type: 'text', nullable: true })
 	description?: string;
 
 	@CreateDateColumn()

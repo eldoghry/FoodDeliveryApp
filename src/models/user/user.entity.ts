@@ -30,7 +30,7 @@ export class User extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	userId!: number;
 
-	@Column({ type: 'varchar', length: 100 })
+	@Column({ type: 'varchar', length: 225 })
 	name!: string;
 
 	@Column({ type: 'varchar', length: 100, unique: true, nullable: false })

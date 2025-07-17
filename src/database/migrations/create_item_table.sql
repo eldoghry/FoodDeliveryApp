@@ -1,7 +1,7 @@
 
 CREATE TABLE item (
     item_id SERIAL PRIMARY KEY,
-    category_id INT NOT NULL REFERENCES category(category_id),
+    restaurant_id INT NOT NULL UNIQUE REFERENCES restaurant(restaurant_id),
     image_path VARCHAR(512) NOT NULL DEFAULT '',
     "name" VARCHAR(100) NOT NULL UNIQUE CHECK (CHAR_LENGTH("name") BETWEEN 2 AND 100),
     "description" TEXT DEFAULT '',
@@ -10,5 +10,6 @@ CREATE TABLE item (
     notes TEXT DEFAULT '',
     is_available BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP DEFAULT NULL
 );
