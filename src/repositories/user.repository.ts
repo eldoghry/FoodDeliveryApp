@@ -3,6 +3,9 @@ import { GetOneUserByDto } from '../dtos/user.dto';
 import { User } from '../models/user/user.entity';
 import { Repository } from 'typeorm';
 import { UserType } from '../models/user/user-type.entity';
+import { Gender } from '../models';
+import { RegisterCustomerDto } from '../dtos/auth.dto';
+import { Transactional } from 'typeorm-transactional';
 
 export class UserRepository {
 	private userRepo: Repository<User>;
@@ -89,7 +92,15 @@ export class UserRepository {
 		if (withPassword) query.addSelect('user.password');
 		if (filter.userId) query.andWhere('user.userId = :userId', { userId: filter.userId });
 		if (filter.email) query.andWhere('user.email = :email', { email: filter.email });
+		if (filter.phone) query.andWhere('user.phone = :phone', { phone: filter.phone });
 
 		return await query.getOne();
+	}
+
+	async getUserByEmailOrPhone(email: string, phone: string) {
+		const query = this.userRepo.createQueryBuilder('user');
+		query.where('user.email = :email OR user.phone = :phone', { email, phone });
+		const user = await query.getOne();
+		return user;
 	}
 }

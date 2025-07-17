@@ -29,7 +29,7 @@ services:
       - node-app
 
   postgres-srv:
-    image: postgres
+    image: postgis/postgis:17-3.4
     restart: always
     # set shared memory limit when using docker-compose
     shm_size: 128mb
