@@ -2,7 +2,7 @@ CREATE TABLE "user" (
     user_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    phone VARCHAR(15) UNIQUE,
+    phone VARCHAR(30) UNIQUE,
     password VARCHAR(250) NOT NULL CHECK (CHAR_LENGTH(password) BETWEEN 8 AND 250),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     user_type_id INT REFERENCES user_type(user_type_id) ON DELETE SET NULL,

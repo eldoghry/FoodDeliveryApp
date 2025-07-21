@@ -8,12 +8,12 @@ import { CreateUserDto, GetOneUserByDto } from '../dtos/user.dto';
 import ErrMessages from '../errors/error-messages';
 
 export class UserService {
-	private repo = new UserRepository();
+	private userRepo = new UserRepository();
 
 	async createUser(dto: CreateUserDto) {
 		const hashedPassword = await HashingService.hash(dto.password);
 
-		const newUser = await this.repo.createUser({ ...dto, password: hashedPassword });
+		const newUser = await this.userRepo.createUser({ ...dto, password: hashedPassword });
 
 		logger.info(`User created with ID: ${newUser.userId}`);
 
@@ -21,11 +21,11 @@ export class UserService {
 	}
 
 	async getActiveUsers(data: any) {
-		return this.repo.getActiveUsers();
+		return this.userRepo.getActiveUsers();
 	}
 
 	async getOne(id: number) {
-		const user = await this.repo.getUserById(id);
+		const user = await this.userRepo.getUserById(id);
 		if (!user) throw new ApplicationError('User not found', HttpStatusCodes.NOT_FOUND);
 		return user;
 	}
@@ -33,7 +33,7 @@ export class UserService {
 	async getOneOrFailBy(filter: GetOneUserByDto) {
 		if (Object.keys(filter).length === 0) throw new ApplicationError('Invalid filter', HttpStatusCodes.BAD_REQUEST);
 
-		const user = await this.repo.getOneBy(filter);
+		const user = await this.userRepo.getOneBy(filter);
 
 		if (!user) throw new ApplicationError('User not found', HttpStatusCodes.NOT_FOUND);
 
@@ -43,7 +43,7 @@ export class UserService {
 	async getOneBy(filter: GetOneUserByDto) {
 		if (Object.keys(filter).length === 0) return null;
 
-		const user = await this.repo.getOneBy(filter);
+		const user = await this.userRepo.getOneBy(filter);
 
 		return user || null;
 	}
@@ -53,20 +53,44 @@ export class UserService {
 	}
 
 	async deactivateUser(userId: number, deactivationInfo: User['deactivationInfo']): Promise<void> {
-		await this.repo.deactivateUser(userId, deactivationInfo);
+		await this.userRepo.deactivateUser(userId, deactivationInfo);
 	}
 
 	async getUserTypeByName(name: string) {
-		return this.repo.getUserTypeByName(name);
+		return await this.userRepo.getUserTypeByName(name);
 	}
 
 	async ensureEmailUniqueness(email: string) {
-		const user = await this.repo.getUserByEmail(email);
+		const user = await this.userRepo.getUserByEmail(email);
 		if (user) throw new ApplicationError(ErrMessages.user.EmailAlreadyExists, StatusCodes.BAD_REQUEST);
 	}
 
 	async ensurePhoneUniqueness(phone: string) {
-		const user = await this.repo.getUserByPhone(phone);
+		const user = await this.userRepo.getUserByPhone(phone);
 		if (user) throw new ApplicationError(ErrMessages.user.PhoneAlreadyExists, StatusCodes.BAD_REQUEST);
+	}
+
+	async checkIfEmailOrPhoneExist(email: string, phone: string): Promise<void> {
+		const user = await this.userRepo.getUserByEmailOrPhone(email, phone);
+
+		if (!user) return;
+		if (user.email === email) throw new ApplicationError(ErrMessages.user.EmailAlreadyExists, StatusCodes.BAD_REQUEST);
+		if (user.phone === phone) throw new ApplicationError(ErrMessages.user.PhoneAlreadyExists, StatusCodes.BAD_REQUEST);
+	}
+
+	async updatePassword(userId: number, newPassword: string) {
+		const hashedPassword = await HashingService.hash(newPassword);
+		return await this.userRepo.updateUser(userId, { password: hashedPassword });
+	}
+
+	async createRestaurantOwnerUser(dto: CreateUserDto) {
+		return this.createUser({ ...dto, isActive: false });
+	}
+
+	async updateUser(userId: number, dto: Partial<User>) {
+		const user = await this.userRepo.updateUser(userId, dto);
+		if (!user) throw new ApplicationError('User not found', HttpStatusCodes.NOT_FOUND);
+
+		return user;
 	}
 }

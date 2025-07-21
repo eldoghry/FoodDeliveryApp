@@ -146,6 +146,7 @@ const menuSeedData: SeedData<Menu> = {
 const itemSeedData: SeedData<Item> = {
 	entity: Item,
 	data: Array.from({ length: ITEMS_COUNT }).map((_, index) => ({
+		restaurantId: index + 1,
 		imagePath: faker.image.url(),
 		name: faker.food.dish() + `${index + 1}`,
 		description: faker.food.description(),
@@ -191,15 +192,23 @@ const restaurantSeedData: SeedData<Restaurant> = {
 			location: {
 				city: faker.location.city(),
 				area: faker.location.continent(),
-				street: faker.location.streetAddress(),
+				street: faker.location.streetAddress()
 			},
-			geoLocation: { type: 'Point', coordinates: [parseFloat(faker.location.longitude().toString()), parseFloat(faker.location.latitude().toString())] },
+			geoLocation: {
+				type: 'Point',
+				coordinates: [
+					parseFloat(faker.location.longitude().toString()),
+					parseFloat(faker.location.latitude().toString())
+				]
+			},
 			maxDeliveryDistance: faker.number.int({ min: 500, max: 5000 }),
 			status: RestaurantStatus.open,
 			approvalStatus: RestaurantApprovalStatus.pending,
 			isActive: faker.datatype.boolean(),
 			email: `orders@restaurant${index + 1}.com`,
 			phone: faker.phone.number(),
+			totalRating: faker.number.int({ min: 0, max: 5 }),
+			ratingCount: faker.number.int({ min: 0, max: 5 }),
 			createdAt: new Date(),
 			updatedAt: new Date()
 		};
@@ -238,7 +247,6 @@ const categorySeedData: SeedData<Category> = {
 		updatedAt: new Date()
 	}))
 };
-
 
 const settingSeedData: SeedData<Setting> = {
 	entity: Setting,
@@ -330,6 +338,8 @@ const settingSeedData: SeedData<Setting> = {
 		},
 		{ key: SettingKey.MAX_DISTANCE_IN_METERS, value: 5000, description: 'Max distance in meters' },
 		{ key: SettingKey.MAX_CUSTOMER_ADDRESSES, value: 10, description: 'Max customer addresses' },
+		{ key: SettingKey.OTP_EXPIRATION_TIME_MS, value: 300000, description: 'OTP expiration time in seconds' },
+		{ key: SettingKey.RESET_TOKEN_EXPIRE_TIME_MS, value: 300000, description: 'Reset token expiration time in seconds' }
 	]
 };
 
