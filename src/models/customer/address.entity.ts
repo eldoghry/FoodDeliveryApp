@@ -52,7 +52,4 @@ export class Address extends AbstractEntity {
 	@ManyToOne(() => Customer, (customer) => customer.addresses)
 	@JoinColumn({ name: 'customer_id' })
 	customer!: Customer;
-
-	// @OneToMany(() => Order, (order) => order.deliveryAddress)
-	// orders!: Order[];
 }
