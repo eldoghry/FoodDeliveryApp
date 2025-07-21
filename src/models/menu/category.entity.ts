@@ -7,7 +7,8 @@ import {
 	ManyToMany,
 	JoinTable,
 	ManyToOne,
-	JoinColumn
+	JoinColumn,
+	Index
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { Item } from './item.entity';
@@ -15,6 +16,7 @@ import { Menu } from './menu.entity';
 
 export type CategoryRelations = 'menu' | 'items';
 @Entity()
+@Index('idx_category_active_menu', ['menuId', 'isActive'])
 export class Category extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	categoryId!: number;

@@ -11,7 +11,7 @@
 		"lint:fix": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
 		"format": "prettier --write \"src/**/*.ts\"",
 		"format:check": "prettier --check \"src/**/*.ts\"",
-		"seed": "cross-env NODE_ENV=development npx ts-node ./src/database/seeders/index.ts",
+		"seed": "cross-env NODE_ENV=development node --max-old-space-size=16384 ./node_modules/ts-node/dist/bin.js ./src/database/seeders/index.ts",
 		"test": "cross-env NODE_ENV=test jest",
 		"test:watch": "cross-env NODE_ENV=test jest --watch",
 		"test:cov": "cross-env NODE_ENV=test jest --coverage",

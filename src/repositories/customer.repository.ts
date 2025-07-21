@@ -34,6 +34,7 @@ export class CustomerRepository {
 	async getCustomerBy(filter: CustomerFilter): Promise<Customer | null> {
 		const { relations, ...whereOptions } = filter;
 		return await this.customerRepo.findOne({
+			select: ['customerId'],
 			where: whereOptions,
 			relations: relations
 		});
@@ -61,7 +62,6 @@ export class CustomerRepository {
 
 	async getAddressBy(filter: AddressFilter): Promise<Address | null> {
 		const { relations, orderBy, ...whereOptions } = filter;
-		console.log(whereOptions);
 		return await this.addressRepo.findOne({
 			where: whereOptions,
 			relations: relations,

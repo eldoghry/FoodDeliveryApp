@@ -3,6 +3,7 @@ import { AbstractEntity } from '../base.entity';
 import { Transaction } from '../transaction/transaction.entity';
 import { PaymentMethodConfig } from './payment-method-config.entity';
 import { PaymentMethodStatus } from '../../enums/payment_method.enum';
+import { Order } from '../order/order.entity';
 
 export enum PaymentMethodEnum {
 	CARD = 'CARD',
@@ -41,4 +42,7 @@ export class PaymentMethod extends AbstractEntity {
 
 	@OneToMany(() => PaymentMethodConfig, (config) => config.paymentMethod)
 	configs!: PaymentMethodConfig[];
+
+	@OneToMany(() => Order, (order) => order.paymentMethod)
+	orders!: Order[];
 }

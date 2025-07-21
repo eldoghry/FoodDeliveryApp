@@ -7,7 +7,8 @@ import {
 	ManyToOne,
 	JoinColumn,
 	Unique,
-	Check
+	Check,
+	Index
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { Cart } from './cart.entity';
@@ -17,8 +18,10 @@ import { Restaurant } from '../restaurant/restaurant.entity';
 @Check(`"quantity" > 0`)
 @Check(`"price" >= 0.00`)
 @Check(`"total_price" >= 0.00`)
+
 @Entity()
 @Unique(['cartId', 'itemId'])
+@Index('idx_cart_id_restaurant_id',['cartId', 'restaurantId'])
 export class CartItem extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	cartItemId!: number;
