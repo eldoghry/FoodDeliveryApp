@@ -191,7 +191,6 @@ OrderRouter.get(
  *           type: integer
  *       - in: query
  *         name: cursor
- *         description: Cursor for pagination
  *         required: false
  *         schema:
  *           type: string
@@ -225,7 +224,7 @@ OrderRouter.get(
 
 /**
  * @swagger
- * /orders/{order_id}:
+ * /orders/{orderId}:
  *   get:
  *     summary: Get order details by ID
  *     tags:
@@ -234,7 +233,7 @@ OrderRouter.get(
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: order_id
+ *         name: orderId
  *         required: true
  *         schema:
  *           type: integer
