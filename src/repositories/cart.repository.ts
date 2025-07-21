@@ -17,32 +17,15 @@ export class CartRepository {
 		return manager ? manager.getRepository(CartItem) : this.cartItemRepo;
 	}
 
-	// Cart operations
 	async createCart(data: Partial<Cart>): Promise<Cart> {
 		const cart = this.cartRepo.create(data);
 		return await this.cartRepo.save(cart);
 	}
 
-	async getCartById(cartId: number): Promise<Cart | null> {
-		return await this.cartRepo.findOne({
-			where: { cartId },
-			relations: ['customer']
-		});
-	}
-
-	async getCarts(): Promise<Cart[] | null> {
-		return await this.cartRepo.find();
-	}
 	async getCartByCustomerId(customerId: number): Promise<Cart | null> {
 		return await this.cartRepo.findOne({
-			where: { customerId },
-			relations: ['customer']
+			where: { customerId }
 		});
-	}
-
-	async updateCart(cartId: number, data: Partial<Cart>): Promise<Cart | null> {
-		await this.cartRepo.update({ cartId }, data);
-		return await this.getCartById(cartId);
 	}
 
 	async deleteCart(cartId: number): Promise<void> {
@@ -54,12 +37,6 @@ export class CartRepository {
 		const cartItem = this.cartItemRepo.create(data);
 		return await this.cartItemRepo.save(cartItem);
 	}
-
-	// async getCartItems(cartId: number): Promise<CartItem[]> {
-	// 	return await this.cartItemRepo.find({
-	// 		where: { cartId },
-	// 		relations: ['menuItem.item']
-	// 	});
 
 	async getCartItems(cartId: number): Promise<CartItemResponse[]> {
 		return await this.cartItemRepo
@@ -77,14 +54,10 @@ export class CartRepository {
 				'i.image_path AS "imagePath"',
 				'i.is_available AS "isAvailable"'
 			])
-			.innerJoin('ci.restaurant', 'r')
-			.innerJoin('ci.item', 'i')
+			.leftJoin('ci.restaurant', 'r')
+			.leftJoin('ci.item', 'i')
 			.where('ci.cart_id = :cartId', { cartId })
 			.getRawMany();
-	}
-
-	async getCartItemById(cartItemId: number): Promise<CartItem | null> {
-		return await this.cartItemRepo.findOneBy({ cartItemId });
 	}
 
 	async getCartItem(filter: { cartId?: number; itemId?: number; cartItemId?: number }): Promise<CartItem | null> {
@@ -92,16 +65,10 @@ export class CartRepository {
 
 		const cartItem = await this.cartItemRepo.findOne({
 			where: { ...filter }
-			// relations: ['item']
 		});
 
 		return cartItem || null;
 	}
-
-	// async updateCartItem(cartItemId: number, data: Partial<CartItem>): Promise<CartItem | null> {
-	// 	await this.cartItemRepo.update(cartItemId, data);
-	// 	return await this.getCartItemById(cartItemId);
-	// }
 
 	async updateCartItem(cartItemId: number, data: Partial<CartItem>, manager?: EntityManager): Promise<CartItem | null> {
 		const repo = this.getCartItemRepo(manager);
@@ -125,21 +92,23 @@ export class CartRepository {
 	async getCartWithItems(filter: {
 		cartId?: number;
 		customerId?: number;
-		relations?: CartRelations[];
+		restaurantId?: number;
 	}): Promise<Cart | null> {
 		if (Object.keys(filter).length === 0) return null;
 
-		const { cartId, customerId } = filter;
+		const { cartId, customerId, restaurantId } = filter;
 
-		const query = this.cartRepo.createQueryBuilder('cart');
-
+		const query = this.cartRepo.createQueryBuilder('cart')
+			.select([
+				'cart.cartId',
+				'cart.customerId',
+				'cartItem.restaurantId',
+			])
+			.innerJoin('cart.cartItems', 'cartItem');
+			
 		if (cartId) query.andWhere('cart.cartId = :cartId', { cartId });
 		if (customerId) query.andWhere('cart.customerId = :customerId', { customerId });
-
-		if (filter?.relations) {
-			filter.relations.forEach((relation) => query.leftJoinAndSelect(`cart.${relation}`, relation));
-		}
-
+		if (restaurantId) query.andWhere('cartItem.restaurantId = :restaurantId', { restaurantId });
 		return query.getOne();
 	}
 }

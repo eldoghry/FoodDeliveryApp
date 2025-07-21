@@ -10,6 +10,7 @@ import {
 	ManyToMany,
 	ManyToOne,
 	OneToOne,
+	Index,
 } from 'typeorm';
 import { User } from '../user/user.entity';
 import { CartItem } from '../cart/cart-item.entity';
@@ -42,6 +43,10 @@ export enum RestaurantDeactivatedBy {
 
 export type RestaurantRelations = 'chain' | 'user' | 'menu' | 'cartItems' | 'orders' | 'ratings' | 'cuisines' | 'menu.categories' | 'menu.categories.items' | 'users.restaurants';
 @Entity()
+@Index('idx_restaurant_name',['name'])
+@Index('idx_restaurant_geo',['geoLocation']) 
+@Index('idx_restaurant_active_status',['isActive','status'])
+@Index('idx_restaurant_avg_rating',['averageRating'])
 export class Restaurant extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	restaurantId!: number;

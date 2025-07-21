@@ -122,7 +122,7 @@ export class RestaurantRepository {
 		const queryBuilder = this.createBaseRestaurantQuery({ lat, lng })
 
 		if (cuisines) queryBuilder.andWhere('cuisine.cuisineId IN (:...cuisinesIds)', { cuisinesIds: cuisines });
-		if (rating) queryBuilder.having(`restaurant.averageRating >= :rating`, { rating });
+		if (rating) queryBuilder.andWhere(`restaurant.averageRating >= :rating`, { rating });
 		if (cursor) queryBuilder.andWhere('restaurant.restaurantId < :cursor', { cursor });
 
 		queryBuilder.orderBy('restaurant.restaurantId', 'DESC').take(limit + 1)

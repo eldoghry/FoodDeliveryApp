@@ -19,7 +19,7 @@ export class OrderData {
     serviceFees!: number;
     totalAmount!: number;
     customerInstructions!: string;
-    paymentMethod!: PaymentMethodEnum;
+    paymentMethod!: string;
     createdAt!: Date;
     updatedAt!: Date;
 }

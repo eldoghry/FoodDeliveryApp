@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Check } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Check, Index } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { Order } from './order.entity';
 import { Item } from '../menu/item.entity';
@@ -7,6 +7,7 @@ import { Item } from '../menu/item.entity';
 @Check(`"total_price" >= 0.00`)
 @Check(`"quantity" > 0`)
 @Entity()
+@Index('idx_order_id', ['orderId'])
 export class OrderItem extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	orderItemId!: number;

@@ -6,15 +6,17 @@ import {
 	UpdateDateColumn,
 	JoinColumn,
 	OneToMany,
-	OneToOne
+	OneToOne,
+	Index
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { Customer } from '../customer/customer.entity';
 import { CartItem } from './cart-item.entity';
 import { OrderItem } from '../order/order-item.entity';
 
-export type CartRelations = 'customer' | 'cartItems';
+export type CartRelations = 'cartItems';
 
+@Index('idx_customer_id', ['customerId']) 
 @Entity()
 export class Cart extends AbstractEntity {
 	@PrimaryGeneratedColumn()
