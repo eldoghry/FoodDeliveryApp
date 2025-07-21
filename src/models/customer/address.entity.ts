@@ -1,10 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, DeleteDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, DeleteDateColumn, Index } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { Customer } from './customer.entity';
 import { Order } from '../order/order.entity';
 import { Point } from 'geojson';
 
 @Entity()
+@Index('idx_address_customer_created_at', ['customerId', 'createdAt'])
 export class Address extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	addressId!: number;

@@ -8,7 +8,8 @@ import {
 	JoinColumn,
 	OneToMany,
 	Check,
-	OneToOne
+	OneToOne,
+	Index
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { OrderStatusEnum, OrderStatusLog } from './order-status_log.entity';
@@ -18,6 +19,7 @@ import { OrderItem } from './order-item.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
 import { Transaction } from '../transaction/transaction.entity';
 import { Rating } from '../rating/rating.entity';
+import { PaymentMethod } from '../payment_method/payment-method.entity';
 
 export type OrderRelations =
 	| 'orderStatusLogs'
@@ -28,13 +30,16 @@ export type OrderRelations =
 	| 'transactions'
 	| 'customer.user'
 	| 'orderItems.item'
-	| 'transaction.paymentMethod'
+	| 'paymentMethod'
 	| 'rating';
 
 @Check(`"delivery_fees" >= 0.00`)
 @Check(`"service_fees" >= 0.00`)
 @Check(`"total_amount" >= 0.00`)
 @Entity()
+@Index('idx_order_customer_createdat', ['customerId', 'createdAt'])
+@Index('idx_order_restaurant_id', ['restaurantId'])
+@Index('idx_order_status', ['status'])
 export class Order extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	orderId!: number;
@@ -49,9 +54,8 @@ export class Order extends AbstractEntity {
 	@Column({ nullable: false })
 	customerId!: number;
 
-	@ManyToOne(() => Customer, (customer) => customer.orders)
-	@JoinColumn({ name: 'customer_id' })
-	customer!: Customer;
+	@Column({ nullable: false })
+	paymentMethodId!: number;
 
 	@Column({ nullable: false })
 	deliveryAddressId!: number;
@@ -100,4 +104,12 @@ export class Order extends AbstractEntity {
 
 	@OneToOne(() => Rating, (rating) => rating.order)
 	rating!: Rating;
+
+	@ManyToOne(() => PaymentMethod, (paymentMethod) => paymentMethod.orders)
+	@JoinColumn({ name: 'payment_method_id' })
+	paymentMethod!: PaymentMethod;
+
+	@ManyToOne(() => Customer, (customer) => customer.orders)
+	@JoinColumn({ name: 'customer_id' })
+	customer!: Customer;
 }

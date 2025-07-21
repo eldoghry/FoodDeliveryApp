@@ -393,8 +393,6 @@ export class OrderService {
 				restaurant: {
 					id: order.restaurantId,
 					name: order.restaurant.name,
-					email: order.restaurant.email,
-					location: order.restaurant.location
 				}
 			};
 		}
@@ -453,8 +451,7 @@ export class OrderService {
 			totalAmount: order.totalAmount,
 			customerInstructions: order.customerInstructions,
 			...statusData,
-			// paymentMethod: order.transactions[0]?.paymentMethod.methodName,
-			paymentMethod: order.transaction?.paymentMethodCode,
+			paymentMethod: order.paymentMethod.code,
 			createdAt: order.createdAt,
 			updatedAt: order.updatedAt
 		};
@@ -486,7 +483,7 @@ export class OrderService {
 	async getOrderDetails(orderId: number, actorType: string): Promise<OrderData> {
 		const order = await this.getOrderOrFailBy({
 			orderId,
-			relations: ['restaurant', 'customer.user', 'orderItems.item', 'transaction.paymentMethod']
+			relations: ['restaurant', 'customer.user', 'orderItems.item', 'paymentMethod']
 		});
 		return this.formatOrderData(order, actorType);
 	}

@@ -41,14 +41,6 @@ export class CartService {
 		return this.cartRepo.createCart(newCart);
 	}
 
-	// async getCartItems(cartId: number) {
-	// 	return this.cartRepo.getCartItems(cartId);
-	// }
-
-	// async addCartItem(cartItem: Partial<CartItem>) {
-	// 	return this.cartRepo.addCartItem(cartItem);
-	// }
-
 	async deleteAllCartItems(cartId: number, manager?: EntityManager) {
 		const deleted = await this.cartRepo.deleteAllCartItems(cartId, manager);
 		if (!deleted) {
@@ -203,10 +195,7 @@ export class CartService {
 			const customer = await this.validateCustomer(userId);
 			await this.validateCart(customer!.customerId);
 
-			const cartItem = await this.cartRepo.getCartItemById(cartItemId);
-			if (!cartItem) {
-				throw new ApplicationError(ErrMessages.cart.CartItemNotFound, HttpStatusCodes.NOT_FOUND);
-			}
+			await this.getCartItemOrFail({ cartItemId });
 
 			const deleted = await this.cartRepo.deleteCartItem(cartItemId, manager);
 			if (!deleted) {
@@ -254,7 +243,7 @@ export class CartService {
 		return null;
 	}
 
-	async getCartWithItems(filter: { cartId?: number; customerId?: number; relations?: CartRelations[] }): Promise<Cart> {
+	async getCartWithItems(filter: { cartId?: number; customerId?: number; restaurantId?: number }): Promise<Cart> {
 		const cart = await this.cartRepo.getCartWithItems(filter);
 
 		if (!cart) throw new ApplicationError(ErrMessages.cart.CartNotFound, HttpStatusCodes.NOT_FOUND);
@@ -263,15 +252,10 @@ export class CartService {
 	}
 
 	async getAndValidateCart(customerId: number, restaurantId: number) {
-		const cart = await this.getCartWithItems({ customerId, relations: ['cartItems'] });
+		const cart = await this.getCartWithItems({ customerId , restaurantId });
 
 		// * validate cart not empty and cart items belong to restaurant
 		if (!cart.cartItems.length) throw new ApplicationError(ErrMessages.cart.CartIsEmpty, HttpStatusCodes.BAD_REQUEST);
-
-		const itemsNotBelongToRestaurant = cart.cartItems.filter((item) => item.restaurantId !== restaurantId);
-
-		if (itemsNotBelongToRestaurant.length)
-			throw new ApplicationError(ErrMessages.cart.CartItemDoesNotBelongToTheSpecifiedCart, HttpStatusCodes.BAD_REQUEST);
 
 		return cart;
 	}

@@ -33,7 +33,7 @@ export class SeedService {
 			database: process.env.DATABASE_NAME, // Replace with your DB name
 			synchronize: Boolean(process.env.DATABASE_SYNCHRONIZE), // Auto-create tables (set to false in production)
 			// logging: Boolean(process.env.DATABASE_LOGGING), // Enable logging for debugging (optional)
-			logging: false, // Enable logging for debugging (optional)
+			logging: true, // Enable logging for debugging (optional)
 			entities: ['src/models/**/*.ts'], // Path to your entity files
 			migrations: ['src/migrations/**/*.ts'], // Path to migration files
 			subscribers: ['src/subscribers/**/*.ts'], // Path to subscriber files
