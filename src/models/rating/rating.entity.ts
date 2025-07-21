@@ -36,7 +36,7 @@ export class Rating {
 	@Column({ nullable: false, type: 'smallint' })
 	rating!: number;
 
-	@Column({ nullable: true, length: 500 })
+	@Column({ type: 'text', nullable: true })
 	comment!: string;
 
 	@CreateDateColumn()

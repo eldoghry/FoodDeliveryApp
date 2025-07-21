@@ -15,8 +15,9 @@ import { AbstractEntity } from '../base.entity';
 import { CartItem } from '../cart/cart-item.entity';
 import { OrderItem } from '../order/order-item.entity';
 import { Category } from './category.entity';
+import { Restaurant } from '../restaurant/restaurant.entity';
 
-export type ItemRelations = 'categories' | 'categories.menu' | 'cartItems' | 'ordersItem';
+export type ItemRelations = 'categories' | 'categories.menu' | 'cartItems' | 'ordersItem' | 'ordersItem.order';
 @Check(`"price" >= 0.00`)
 @Check(`"energy_val_cal" >= 0.00`)
 @Entity()
@@ -24,10 +25,13 @@ export class Item extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	itemId!: number;
 
+	@Column({ nullable: false })
+	restaurantId!: number;
+
 	@Column({ type: 'varchar', length: 512, default: '' })
 	imagePath!: string;
 
-	@Column({ type: 'varchar', length: 100, nullable: false, unique: true })
+	@Column({ type: 'varchar', length: 500, nullable: false})
 	name!: string;
 
 	@Column({ type: 'text', default: '' })
@@ -53,6 +57,10 @@ export class Item extends AbstractEntity {
 
 	@DeleteDateColumn()
 	deletedAt!: Date;
+
+	@ManyToOne(() => Restaurant, (restaurant) => restaurant.items)
+	@JoinColumn({ name: 'restaurant_id' })
+	restaurant!:Restaurant
 
 	@ManyToMany(() => Category, (category) => category.items)
 	categories!: Category[];

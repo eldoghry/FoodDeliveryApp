@@ -119,40 +119,83 @@ Links the user to a customer profile, including optional personal data.
 - `created_at`, `updated_at`
 
 
-### `address` and `customer_address`
+### `address`
 Manages customer addresses. A customer may have multiple addresses with one marked as default.
 
 - `address_id` (PK)
-- `address_line1`, `address_line2`, `city`
+- `customer_id` – Foreign key to `customer`
+- `label` – Address label (e.g., "Home", "Work")
+- `city`, `area`, `street`, `building`, `floor`
+- `geoLocation` (JSON)
+- `is_default` – Indicates default delivery address
+- `created_at`, `updated_at`, `deleted_at`
+  
+
+### `chain`
+Stores chain registration and profile details. Each restaurant can be linked to a chain.
+
+- `chain_id` (PK)
+- `name` – Unique chain name
+- `commercial_registration_number` – Unique commercial registration number
+- `vat_number` – Unique VAT number
+- `storeCount` – Number of stores in the chain
 - `created_at`, `updated_at`
 
-- `customer_address` (composite PK of `customer_id` + `address_id`)
-  - `is_default` – Indicates default delivery address
-    
+
+### `cuisine` & `restaurant_cuisine`
+Stores cuisine details. Each restaurant can have multiple cuisines.
+
+- `cuisine_id` (PK)
+- `name` – Unique cuisine name
+- `is_active` – Indicates if the cuisine is active
+- `created_at`, `updated_at`
+
+- `restaurant_cuisine`: Composite table linking `restaurant_id` with `cuisine_id`
+
 
 ### `restaurant`
 Stores restaurant registration and profile details.
 
 - `restaurant_id` (PK)
-- `user_id` – Foreign key to `user`
-- `name`, `commercial_registration_number`, `vat_number`
-- `logo_url`, `banner_url`, `location` (JSON)
+- `chain_id` – Foreign key to `chain`
+- `name`,`email`, `phone`
+- `logo_url`, `banner_url`
+- `location` (contains location details)
+- `geoLocation` (geography coordinates) 
+- `maxDeliveryDistance` – Maximum delivery distance in kilometers
+- `approvalStatus` (enum: pending_approval, approved, rejected)
 - `status` (enum: open, busy, pause, closed)
-- `is_active`, `created_at`, `updated_at`
+- `is_active`
+- `deactivationInfo` (contains deactivated_by, deactivation_reason, deactivated_at)
+- `activationInfo` (contains activated_by, activation_reason, activated_at)
+- `totalRating` , `ratingCount` ,`averageRating`
+- `created_at`, `updated_at`
+- `approvedAt`, `rejectedAt`
   
 
+### `restaurant_user`
+Stores the relationship between restaurants and users.
+
+- `restaurant_id` (PK)
+- `user_id` (PK)
+
+
 ### `menu`
-Defines menu for restaurants. Each restaurant can have One menu.
+Defines menu for restaurants. Each restaurant can have one menu.
 
 - `menu_id` (PK)
 - `restaurant_id` – Foreign key to `restaurant`
 - `is_active`
 - `created_at`, `updated_at`
 
+
 ### `category`
 Defines categories for menu. menu can have multiple categories.
 
-- `category_id` (PK), `menu_id` (Foreign key to `menu`), `title`, `is_active`
+- `category_id` (PK)
+- `menu_id` (Foreign key to `menu`)
+- `title`
+- `is_active`
 - `created_at`, `updated_at`
 
 
@@ -160,8 +203,10 @@ Defines categories for menu. menu can have multiple categories.
 Defines items with pricing and availability.
 
 - `item_id` (PK)
+- `restaurant_id` – Foreign key to `restaurant`
 - `image_path`, `name`, `description`, `price`, `energy_val_cal`, `notes`
-- `is_available`, `created_at`, `updated_at`
+- `is_available`
+- `created_at`, `updated_at`
 
 - `category_items`: Composite table linking `category_id` with `item_id`
 
@@ -185,7 +230,6 @@ Stores individual items within a cart along with pricing and quantity.
 - `quantity`, `price`, `total_price`
 - `created_at`, `updated_at`
 
-
 These entities together provide the full backend data structure for managing a customer's cart, supporting features such as adding/removing items, updating quantities, viewing total cost, and persisting cart state across sessions.
 
 ---
@@ -195,7 +239,7 @@ These entities together provide the full backend data structure for managing a c
 ```sql
 CREATE TABLE user_type (
     user_type_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
+    "name" VARCHAR(100) NOT NULL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -204,21 +248,28 @@ CREATE TABLE "user" (
     user_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    phone VARCHAR(15) UNIQUE,
+    phone VARCHAR(30) UNIQUE,
     password VARCHAR(250) NOT NULL CHECK (CHAR_LENGTH(password) BETWEEN 8 AND 250),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    user_type_id INT REFERENCES user_type(user_type_id),
+    user_type_id INT REFERENCES user_type(user_type_id) ON DELETE SET NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE address (
     address_id SERIAL PRIMARY KEY,
-    address_line1 TEXT NOT NULL,
-    address_line2 TEXT NOT NULL,
+    customer_id INT NOT NULL REFERENCES customer(customer_id),
+    label VARCHAR(50) NULL,
     city VARCHAR(255) NOT NULL,
+    area VARCHAR(255) NOT NULL,
+    street TEXT NOT NULL,
+    building VARCHAR(50) NULL,
+    floor VARCHAR(50) NULL,
+    geoLocation geography(Point, 4326) NOT NULL,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP DEFAULT NULL
 );
 
 CREATE TABLE customer (
@@ -230,33 +281,63 @@ CREATE TABLE customer (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE customer_address (
-    address_id INT NOT NULL REFERENCES address(address_id),
-    customer_id INT NOT NULL REFERENCES customer(customer_id),
-    is_default BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (address_id, customer_id)
-);
-
-CREATE TABLE restaurant (
-    restaurant_id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL UNIQUE REFERENCES "user"(user_id),
-    name VARCHAR(255) NOT NULL,
-    logo_url VARCHAR(512) DEFAULT '',
-    banner_url VARCHAR(512) NOT NULL DEFAULT '',
-    location JSONB,
-    status VARCHAR(6) NOT NULL CHECK (status IN ('open', 'busy', 'pause', 'closed')),
+CREATE TABLE chain (
+    chain_id SERIAL PRIMARY KEY,
+    "name" VARCHAR(255) NOT NULL,
     commercial_registration_number VARCHAR(20) UNIQUE NOT NULL,
     vat_number VARCHAR(15) UNIQUE NOT NULL,
+    store_count INT DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE cuisine (
+    cuisine_id SERIAL PRIMARY KEY,
+    "name" VARCHAR(255) NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE restaurant (
+    restaurant_id SERIAL PRIMARY KEY,
+    chain_id INT NOT NULL UNIQUE REFERENCES "chain"(chain_id),
+    "name" VARCHAR(255) NOT NULL,
+    logo_url VARCHAR(512) DEFAULT '',
+    banner_url VARCHAR(512) NOT NULL DEFAULT '',
+    "location" JSONB NOT NULL,
+    geoLocation GEOGRAPHY(POINT, 4326) NOT NULL,
+    max_delivery_distance INT NOT NULL DEFAULT 5000,
+    approval_status VARCHAR(6) NOT NULL CHECK (approval_status IN ('pending_approval', 'approved', 'rejected')),
+    "status" VARCHAR(6) NOT NULL CHECK ("status" IN ('open', 'busy', 'pause', 'closed')),
+    email VARCHAR(255) DEFAULT '',
+    phone VARCHAR(30) DEFAULT '',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    deactivation_info JSONB DEFAULT NULL,
+    activation_info JSONB DEFAULT NULL,
+    total_rating DECIMAL NOT NULL DEFAULT 0,
+    rating_count INT NOT NULL DEFAULT 0,
+    average_rating DECIMAL NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    approved_at TIMESTAMP DEFAULT NULL,
+    rejected_at TIMESTAMP DEFAULT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE restaurant_user (
+    restaurant_id INT NOT NULL REFERENCES restaurant(restaurant_id),
+    user_id INT NOT NULL REFERENCES user(user_id)
+);
+
+CREATE TABLE restaurant_cuisine (
+    restaurant_id INT NOT NULL UNIQUE REFERENCES "restaurant"(restaurant_id),
+    cuisine_id INT NOT NULL UNIQUE REFERENCES "cuisine"(cuisine_id)
+);
+
+
 CREATE TABLE menu (
     menu_id SERIAL PRIMARY KEY,
     restaurant_id INT NOT NULL UNIQUE REFERENCES restaurant(restaurant_id),
-    menu_title VARCHAR(100) NOT NULL CHECK (CHAR_LENGTH(menu_title) BETWEEN 2 AND 100),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -264,30 +345,31 @@ CREATE TABLE menu (
 
 CREATE TABLE category (
     category_id SERIAL PRIMARY KEY,
-    title VARCHAR(100) NOT NULL CHECK (CHAR_LENGTH(title) BETWEEN 2 AND 100),
+    menu_id INT NOT NULL UNIQUE REFERENCES menu(menu_id),
+    title VARCHAR(100) NOT NULL UNIQUE CHECK (CHAR_LENGTH(title) BETWEEN 2 AND 100),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE menu_category (
-    menu_category_id SERIAL PRIMARY KEY,
-    menu_id INT NOT NULL REFERENCES menu(menu_id),
-    category_id INT NOT NULL REFERENCES category(category_id)
+CREATE TABLE category_items (
+    category_id INT NOT NULL REFERENCES category(category_id),
+    item_id INT NOT NULL REFERENCES item(item_id)
 );
 
 CREATE TABLE item (
     item_id SERIAL PRIMARY KEY,
-    category_id INT NOT NULL REFERENCES category(category_id),
+    restaurant_id INT NOT NULL UNIQUE REFERENCES restaurant(restaurant_id),
     image_path VARCHAR(512) NOT NULL DEFAULT '',
-    name VARCHAR(100) NOT NULL CHECK (CHAR_LENGTH(name) BETWEEN 2 AND 100),
-    description TEXT DEFAULT '',
+    "name" VARCHAR(100) NOT NULL UNIQUE CHECK (CHAR_LENGTH("name") BETWEEN 2 AND 100),
+    "description" TEXT DEFAULT '',
     price DECIMAL(10,2) NOT NULL CHECK (price >= 0.00),
     energy_val_cal DECIMAL(10,2) NOT NULL DEFAULT 0.0 CHECK (energy_val_cal >= 0.00),
     notes TEXT DEFAULT '',
     is_available BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP DEFAULT NULL
 );
 
 CREATE TABLE cart (
