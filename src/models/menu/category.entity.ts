@@ -16,7 +16,7 @@ import { Menu } from './menu.entity';
 
 export type CategoryRelations = 'menu' | 'items';
 @Entity()
-@Index('idx_category_active_menu', ['menu_id', 'is_active'])
+@Index('idx_category_active_menu', ['menuId', 'isActive'])
 export class Category extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	categoryId!: number;
