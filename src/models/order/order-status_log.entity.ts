@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Order } from './order.entity';
 import { AbstractEntity } from '../base.entity';
 
@@ -19,6 +19,7 @@ export enum OrderStatusChangeBy {
 }
 
 @Entity()
+@Index('idx_order_status_log_order_id',['orderId'])
 export class OrderStatusLog extends AbstractEntity {
 	@PrimaryGeneratedColumn()
 	orderStatusLogId!: number;

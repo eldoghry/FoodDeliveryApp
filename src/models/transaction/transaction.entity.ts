@@ -29,7 +29,10 @@ export class Transaction extends AbstractEntity {
 	@Column({ nullable: false })
 	customerId!: number;
 
-	@Column({ nullable: false, enum: PaymentMethodEnum })
+	@Column({ nullable: false })
+	paymentMethodId!: number;
+
+	@Column({ nullable: false, enum: PaymentMethodEnum }) // will remove this column later because its wrong
 	paymentMethodCode!: PaymentMethodEnum;
 
 	@Column({ nullable: false })
