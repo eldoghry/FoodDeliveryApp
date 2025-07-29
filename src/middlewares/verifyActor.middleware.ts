@@ -9,29 +9,30 @@ const restaurantRepo = new RestaurantRepository();
 
 type actorType = 'customer' | 'restaurant_user' | 'restaurant_owner';
 interface actorTypeOptions {
-    allowedActorTypes: actorType[];
+	allowedActorTypes: actorType[];
 }
 
+// TODO: add roles + appy strategy pattern to runtime validation
 export const verifyActor =
-    ({ allowedActorTypes }: actorTypeOptions) =>
-        async (req: Request, _res: Response, next: NextFunction) => {
-            const { actorId, actorType } = req?.user || {};
+	({ allowedActorTypes }: actorTypeOptions) =>
+	async (req: Request, _res: Response, next: NextFunction) => {
+		const { actorId, actorType } = req?.user || {};
 
-            if (!actorId || !actorType || !allowedActorTypes.includes(actorType as actorType)) {
-                throw new ApplicationError(ErrMessages.auth.forbidden, StatusCodes.FORBIDDEN);
-            }
+		if (!actorId || !actorType || !allowedActorTypes.includes(actorType as actorType)) {
+			throw new ApplicationError(ErrMessages.auth.forbidden, StatusCodes.FORBIDDEN);
+		}
 
-            let actor = null;
+		let actor = null;
 
-            if (actorType.includes('customer')) {
-                actor = await customerRepo.getCustomerById(actorId);
-            } else if (actorType.includes('restaurant')) {
-                actor = await restaurantRepo.getRestaurantBy({ restaurantId: actorId });
-            }
+		if (actorType.includes('customer')) {
+			actor = await customerRepo.getCustomerById(actorId);
+		} else if (actorType.includes('restaurant')) {
+			actor = await restaurantRepo.getRestaurantBy({ restaurantId: actorId });
+		}
 
-            if (!actor) {
-                throw new ApplicationError(ErrMessages.auth.forbidden, StatusCodes.FORBIDDEN);
-            }
+		if (!actor) {
+			throw new ApplicationError(ErrMessages.auth.forbidden, StatusCodes.FORBIDDEN);
+		}
 
-            next();
-        };
+		next();
+	};

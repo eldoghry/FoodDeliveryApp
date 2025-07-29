@@ -15,6 +15,7 @@ import { customRateLimiter } from '../config/ratelimiter';
 const controller = new AuthController();
 
 AuthRouter.post('/login', validateRequest({ body: authLoginBodySchema }), controller.login.bind(controller));
+
 AuthRouter.post(
 	'/register',
 	validateRequest({ body: authCustomerRegisterBodySchema }),

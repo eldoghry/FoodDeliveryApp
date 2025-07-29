@@ -21,6 +21,7 @@ export class AuthService {
 	private roleService: RoleService = new RoleService();
 
 	async login(dto: AuthLoginDto) {
+		// TODO:decouple customer and restaurant login logic
 		const user = await this.validateAndGetUser(dto);
 		const userType = user.userType.name;
 		let actorId = userType === 'customer' ? user.customer.customerId : user.userId; // TODO: create user restaurant enitity
@@ -89,6 +90,8 @@ export class AuthService {
 			gender: dto.gender as Gender,
 			userId: newUser.userId
 		});
+
+		// TODO: hashedPassword + dynamicSalt per user
 
 		// 4) create Authorize payload
 		const payload: AuthorizedUser = {
