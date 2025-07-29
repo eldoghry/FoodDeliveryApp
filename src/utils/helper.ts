@@ -1,7 +1,6 @@
 import { PaginatedResultsDto } from '../dtos/shared.dto';
 import { Request } from 'express';
 
-
 /**
  * Paginates an array of items using cursor-based pagination.
  *
@@ -35,7 +34,6 @@ export function cursorPaginate<T>(
 		hasNextPage
 	};
 }
-
 
 /**
  * Checks if a given date is within a specified time limit.
@@ -113,4 +111,8 @@ export function generatePaymentReference(prefix = 'PAY') {
 
 export function normalizeString(str: string) {
 	return str.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+export function isProduction() {
+	return `${process.env.NODE_ENV}`.trim().toLowerCase() === 'production';
 }
