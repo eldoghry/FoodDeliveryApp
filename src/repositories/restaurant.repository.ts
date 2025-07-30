@@ -145,8 +145,6 @@ export class RestaurantRepository {
 				.innerJoin('cuisine', 'cuisine', 'cuisine.cuisineId = rc.cuisineId')
 				.setParameters(restaurantCuisineSubquery.getParameters())
 				
-
-				console.log(finalQB.getQuery());
 			return finalQB;		
 	}
 

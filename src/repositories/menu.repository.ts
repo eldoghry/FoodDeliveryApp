@@ -113,8 +113,6 @@ export class MenuRepository {
 				})
 			)
 			.orderBy('item.name', 'ASC')
-
-			console.log(queryBuilder.getQuery());
 		const result = await queryBuilder.getMany();
 		return result;
 	}
