@@ -1,5 +1,5 @@
 import { AppDataSource } from '../config/data-source';
-import { Brackets, ILike, In, Repository } from 'typeorm';
+import { Brackets, In, Repository } from 'typeorm';
 import { ListRecommendedRestaurantsFilterDto, ListRestaurantsFilterDto, ListTopRatedRestaurantsFilterDto, RestaurantResponseDto, SearchRestaurantsQueryDto } from '../dtos/restaurant.dto';
 import {
 	Restaurant,
@@ -94,26 +94,60 @@ export class RestaurantRepository {
 
 	// Base query builder method (depends on geoLocation)
 	private createBaseRestaurantQuery(query: { lat: number; lng: number }) {
+			// Step 1: Filter restaurants by geolocation
+			const filteredRestaurantQB = this.restaurantRepo.createQueryBuilder('restaurant')
+				.where('restaurant.isActive = :isActive', { isActive: true })
+				.andWhere('restaurant.status NOT IN (:...excludedStatuses)', {
+					excludedStatuses: [RestaurantStatus.pause],
+				})
+				.andWhere(`
+					ST_DWithin(
+						restaurant.geo_location,
+						ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
+						restaurant.max_delivery_distance
+					)
+				`)
+				.setParameters({ lat: query.lat, lng: query.lng });
+		
+			// Step 2: Prefilter restaurant_cuisine using filtered restaurant ids
+			const restaurantCuisineSubquery = AppDataSource
+				.createQueryBuilder()
+				.select(['rc.restaurant_id AS restaurantId','rc.cuisine_id AS cuisineId'])
+				.from('restaurant_cuisine', 'rc')
+				.where(`rc.restaurant_id IN (${filteredRestaurantQB.clone().select('restaurant.restaurantId').getQuery()})`)
+				.setParameters(filteredRestaurantQB.getParameters());
+		
+			// Step 3: Join everything in a final query
+			const finalQB = filteredRestaurantQB
+				.select([
+					'restaurant.restaurantId',
+					'restaurant.name',
+					'restaurant.email',
+					'restaurant.phone',
+					'restaurant.chainId',
+					'restaurant.logoUrl',
+					'restaurant.location',
+					'restaurant.geoLocation',
+					'restaurant.maxDeliveryDistance',
+					'restaurant.status',
+					'restaurant.totalRating',
+					'restaurant.ratingCount',
+					'restaurant.averageRating',
+					'restaurant.createdAt',
+					'cuisine.cuisineId',
+					'cuisine.name',
+				])
+				.innerJoin(
+					`(${restaurantCuisineSubquery.getQuery()})`,
+					'rc',
+					'rc.restaurantId = restaurant.restaurantId'
+				)
+				.innerJoin('cuisine', 'cuisine', 'cuisine.cuisineId = rc.cuisineId')
+				.setParameters(restaurantCuisineSubquery.getParameters())
+				
 
-		return this.restaurantRepo.createQueryBuilder('restaurant')
-			.leftJoinAndSelect('restaurant.cuisines', 'cuisine')
-			.where('restaurant.isActive = :isActive', { isActive: true })
-			.andWhere('restaurant.status NOT IN (:...excludedStatuses)', {
-				excludedStatuses: [RestaurantStatus.pause]
-			})
-			.andWhere(`
-			ST_DWithin(
-			  restaurant.geoLocation,
-			  ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
-			  restaurant."max_delivery_distance"
-			)
-		`)
-			.setParameters({
-				lat: query.lat,
-				lng: query.lng,
-			})
-			.groupBy('restaurant.restaurantId')
-			.addGroupBy('cuisine.cuisineId')
+				console.log(finalQB.getQuery());
+			return finalQB;		
 	}
 
 	async getFilteredRestaurants(filter: ListRestaurantsFilterDto): Promise<Partial<RestaurantResponseDto>[]> {
@@ -127,8 +161,8 @@ export class RestaurantRepository {
 
 		queryBuilder.orderBy('restaurant.restaurantId', 'DESC').take(limit + 1)
 
-		return await queryBuilder.getMany();
-
+		const results = await queryBuilder.getRawAndEntities();
+		return this.formatRestaurantsSearchResults(results);
 	}
 
 	async updateRestaurant(restaurantId: number, data: Partial<Restaurant>): Promise<Restaurant | null> {
@@ -156,7 +190,8 @@ export class RestaurantRepository {
 
 		queryBuilder.orderBy("restaurant.averageRating", 'DESC').take(limit + 1)
 
-		return await queryBuilder.getMany();
+		const results = await queryBuilder.getRawAndEntities();
+		return this.formatRestaurantsSearchResults(results);
 	}
 
 	async searchRestaurants(query: SearchRestaurantsQueryDto): Promise<Partial<RestaurantResponseDto>[]> {
@@ -182,7 +217,7 @@ export class RestaurantRepository {
 			.getOne();
 
 		if (exactMatch?.cuisines?.length) {
-			cuisineIdsFromExactMatch = exactMatch.cuisines.map((c) => c.cuisineId);
+			cuisineIdsFromExactMatch = exactMatch.cuisines.map((c: any) => c.cuisineId);
 		}
 
 		// 2. Build the main query conditions
@@ -279,7 +314,8 @@ export class RestaurantRepository {
 		}
 
 		queryBuilder.take(limit);
-		return await queryBuilder.getMany();
+		const results = await queryBuilder.getRawAndEntities();
+		return this.formatRestaurantsSearchResults(results);
 	}
 
 
@@ -310,12 +346,22 @@ export class RestaurantRepository {
 
 	private formatRestaurantsSearchResults(results: { entities: Restaurant[], raw: any[] }): Partial<RestaurantResponseDto>[] {
 		const { entities, raw } = results;
-		return entities.map((entity: Restaurant, index: number) => {
+		const cuisineMap: Record<number, string[]> = {};
+		raw.forEach(row => {
+			const restId = row.restaurant_restaurant_id;
+			if (!cuisineMap[restId]) {
+				cuisineMap[restId] = [];
+			}
+			cuisineMap[restId].push(row.cuisine_name);
+		});
+		const formattedRestaurants = entities.map((entity: Restaurant, index: number) => {
 			return {
 				...entity,
+				cuisineList:cuisineMap[entity.restaurantId] || [] as string[],
 				rank: raw[index].rank
 			};
 		});
+		return formattedRestaurants;
 	}
 
 }

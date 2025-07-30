@@ -55,7 +55,7 @@ export class CartService {
 	 * @returns
 	 */
 	async getItemByIdOrFail(itemId: number): Promise<Item> {
-		const item = await this.menuRepo.getItemById({ itemId });
+		const item = await this.menuRepo.getItemBy({ itemId });
 
 		if (!item) throw new ApplicationError(ErrMessages.item.ItemNotFound, StatusCodes.NOT_FOUND);
 

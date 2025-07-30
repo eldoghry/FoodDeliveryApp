@@ -9,7 +9,8 @@ import {
 	ManyToMany,
 	ManyToOne,
 	JoinColumn,
-	DeleteDateColumn
+	DeleteDateColumn,
+	Index
 } from 'typeorm';
 import { AbstractEntity } from '../base.entity';
 import { CartItem } from '../cart/cart-item.entity';
@@ -20,6 +21,8 @@ import { Restaurant } from '../restaurant/restaurant.entity';
 export type ItemRelations = 'categories' | 'categories.menu' | 'cartItems' | 'ordersItem' | 'ordersItem.order';
 @Check(`"price" >= 0.00`)
 @Check(`"energy_val_cal" >= 0.00`)
+@Index('idx_item_restaurant_id', ['restaurantId'])
+@Index('idx_item_restaurant_available_deleted_at', ['restaurantId', 'isAvailable', 'deletedAt'])
 @Entity()
 export class Item extends AbstractEntity {
 	@PrimaryGeneratedColumn()

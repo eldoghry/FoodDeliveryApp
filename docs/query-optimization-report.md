@@ -247,8 +247,11 @@ This document outlines SQL query performance improvements implemented across var
 * **Time Before Optimization**: 47.350 ms
 * **Optimization Technique**:
 
-  * Created index: `CREATE INDEX idx_category_active_menu ON category(menu_id, is_active)`
-* **Time After Optimization**: 13.599 ms
+  * Created index: 
+   `CREATE INDEX idx_category_active_menu ON category(menu_id, is_active)`
+  * Created partial index: 
+   `CREATE INDEX idx_item_available ON item(item_id) WHERE is_available = true AND deleted_at IS NULL;`
+* **Time After Optimization**: 2.966 ms
 
 ### 🔹 Function Name: `getFilteredRestaurants`
 
@@ -275,11 +278,7 @@ This document outlines SQL query performance improvements implemented across var
         )
         AND (:cuisinesIds IS NULL OR "cuisine"."cuisine_id" IN (:...cuisinesIds))
         AND (:cursor IS NULL OR "restaurant"."restaurant_id" < :cursor)
-    GROUP BY 
-        "restaurant"."restaurant_id",
-        "cuisine"."cuisine_id"
-    HAVING 
-        (:rating IS NULL OR "restaurant"."average_rating" >= :rating)
+        AND (:rating IS NULL OR "restaurant"."average_rating" >= :rating)
     ORDER BY 
         "restaurant"."restaurant_id" DESC
     LIMIT :limitPlusOne;
@@ -292,6 +291,193 @@ This document outlines SQL query performance improvements implemented across var
     * `CREATE INDEX idx_restaurant_active_status ON restaurant(is_active, status)`
     * `CREATE INDEX idx_restaurant_avg_rating ON restaurant(average_rating)`
 * **Time After Optimization**: 3.643 ms
+
+### 🔹 Function Name: `searchRestaurantsByKeyword`
+
+* **Query Description**: Search restaurants by keyword (search by name, cuisine name)
+* **SQL Query**:
+
+  ```sql
+    -- sql before optimization
+    SELECT 
+      r.*,
+      c.*,
+      CASE
+        WHEN r.name ILIKE :keyword THEN 0
+        WHEN c.name ILIKE :keyword THEN 2
+        WHEN c.cuisine_id IN (:...cuisinesIds) THEN 10
+        ELSE 20
+      END AS rank
+    FROM restaurant r
+    LEFT JOIN restaurant_cuisine rc ON rc.restaurant_id = r.restaurant_id
+    LEFT JOIN cuisine c ON c.cuisine_id = rc.cuisine_id
+    WHERE 
+    r.is_active = true
+        AND r.status <> 'pause'::restaurant_status_enum
+        AND ST_DWithin(
+              r.geo_location,
+              ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
+              r.max_delivery_distance
+            )
+      AND (r.name ILIKE :keyword
+          OR c.name ILIKE :keyword
+          OR c.cuisine_id IN (:...cuisinesIds)
+        )
+    ORDER BY rank ASC, r.name ASC;
+
+    -- sql after optimization
+    WITH 
+    filtered_restaurants AS (
+      SELECT r.*
+      FROM restaurant r
+      WHERE r.is_active = true
+        AND r.status <> 'pause'::restaurant_status_enum
+        AND ST_DWithin(
+              r.geo_location,
+              ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
+              r.max_delivery_distance
+            )
+    ),
+    filtered_restaurants_cuisine AS (
+      SELECT *
+      FROM restaurant_cuisine
+      WHERE restaurant_id IN (SELECT restaurant_id FROM filtered_restaurants)
+    )
+
+    SELECT 
+      fr.restaurant_id, fr.name as restaurant_name, fr.email, fr.phone, 
+      fr.chain_id, fr.logo_url, fr.location, fr.geo_location, 
+      fr.max_delivery_distance, fr.status, fr.total_rating,
+      fr.rating_count, fr.average_rating,
+      c.cuisine_id, c.name as cuisine_name,
+      CASE
+        WHEN fr.name ILIKE :keyword THEN 0
+        WHEN c.name ILIKE :keyword THEN 2
+        WHEN c.cuisine_id IN (:...cuisinesIds) THEN 10
+        ELSE 20
+      END AS rank
+    FROM filtered_restaurants fr
+    INNER JOIN filtered_restaurants_cuisine rc ON rc.restaurant_id = fr.restaurant_id
+    INNER JOIN cuisine c ON c.cuisine_id = rc.cuisine_id
+    WHERE fr.name ILIKE :keyword
+      OR c.name ILIKE :keyword
+      OR c.cuisine_id IN (:...cuisinesIds)
+    ORDER BY rank ASC, fr.name ASC;
+  ```
+* **Time Before Optimization**: 275.702 ms
+* **Optimization Technique**:
+  * Created CTEs (Common Table Expressions) for filtered restaurants and cuisines to reduce the number of scans and improve performance
+  * Selected only required columns
+  * Added `CREATE EXTENSION IF NOT EXISTS pg_trgm;` to enable trigram index for ILIKE operations to improve search performance
+
+  * Created indexes:
+    * `CREATE index CONCURRENTLY idx_restaurant_name_trgm ON restaurant USING GIN (name gin_trgm_ops);`
+    * `CREATE index CONCURRENTLY idx_cuisine_name_trgm ON cuisine USING GIN (name gin_trgm_ops);`
+* **Time After Optimization**: 14.422 ms
+
+## 🍽️ **MENU Module**
+
+### 🔹 Function Name: `getMenuByRestaurantId`
+
+* **Query Description**: Get menu with all categories and items by restaurant ID
+* **SQL Query**:
+
+  ```sql
+    -- sql before optimization
+    SELECT
+      m.*,
+      c.*,
+      i.*
+    FROM menu m
+    LEFT JOIN category c ON c.menu_id = m.menu_id
+    LEFT JOIN category_items ci ON ci.category_id = c.category_id
+    LEFT JOIN item i ON i.item_id = ci.item_id AND i.deleted_at IS NULL
+    WHERE m.restaurant_id = :restaurantId;
+
+    -- sql after optimization
+    CREATE MATERIALIZED VIEW menu_restaurant_view AS
+    SELECT
+        m.menu_id,
+        m.restaurant_id as restaurant_id,
+
+        c.category_id,
+        c.title AS category_title,
+
+        i.item_id,
+        i.name AS item_name,
+        i.price AS item_price,
+        i.is_available AS item_is_available
+
+    FROM menu m
+    LEFT JOIN category c 
+        ON c.menu_id = m.menu_id
+    LEFT JOIN category_items ci 
+        ON ci.category_id = c.category_id
+    LEFT JOIN item i 
+        ON i.item_id = ci.item_id
+      AND i.deleted_at IS NULL;
+
+      select * from menu_restaurant_view WHERE restaurant_id = 800;
+
+  ```
+* **Time Before Optimization**: 35.558 ms
+* **Optimization Technique**:
+  * Selected only required columns
+  * Created materialized view for selected columns with joins
+  * Created indexes on materialized view:
+    * `CREATE INDEX idx_menu_restaurant_id ON menu_restaurant_view(restaurant_id);`
+* **Time After Optimization**: 0.246 ms
+
+### 🔹 Function Name: `getItemBy({ restaurantId, name: ILike(normalizeString(name))})`
+
+* **Query Description**: Get item by name and restaurant ID
+* **SQL Query**:
+
+  ```sql
+    SELECT 
+        "item".*
+    FROM 
+        "item" "item"
+    WHERE 
+        "item"."restaurant_id" = :restaurantId
+        AND "item"."name" ILIKE :name 
+        AND "item"."deleted_at" IS NULL
+    LIMIT 1;
+  ```
+* **Time Before Optimization**: 547.616 ms
+* **Optimization Technique**:
+
+  * Created index:
+    * `CREATE INDEX idx_item_restaurant_id ON item(restaurant_id);`
+* **Time After Optimization**: 1.440 ms
+
+### 🔹 Function Name: `searchItemsInMenu`
+
+* **Query Description**: Search items in menu by restaurant ID and keyword
+* **SQL Query**:
+
+  ```sql
+  SELECT "item".*
+    FROM "item" "item"
+    INNER JOIN "category_items" "category_item" ON "category_item"."item_id"="item"."item_id"
+    INNER JOIN "category" "category" ON "category"."category_id"="category_item"."category_id"
+    WHERE 
+    ( 
+      "item"."restaurant_id" = 1
+    AND "category"."is_active" = true 
+    AND "item"."is_available" = true 
+    AND ("item"."name" ILIKE '%sp%' OR "item"."description" ILIKE '%sp%')
+    ) 
+    AND ( "item"."deleted_at" IS NULL ) 
+    ORDER BY "item"."name" ASC
+
+  ```
+* **Time Before Optimization**: 35.368 ms
+* **Optimization Technique**:
+
+  * Created composite index:
+    * `CREATE INDEX idx_item_restaurant_available_deleted_at ON item(restaurant_id, is_available, deleted_at)`
+* **Time After Optimization**: 2.322 ms
 
 ---
 
@@ -306,5 +492,10 @@ This document outlines SQL query performance improvements implemented across var
 | getActiveOrderByRestaurantId    | Get active orders by restaurant ID         | 493.672 ms               | Select only order\_id, index on restaurant\_id, status | 2.448 ms                |
 | getAddressesByCustomerId        | Get addresses by customer                  | 88.804 ms                | Composite index on customer\_id and created\_at        | 0.250 ms                |
 | getRestaurantBy                 | Get restaurant by name                     | 81.657 ms                | Index on name                                          | 0.930 ms                |
-| getDetailedActiveRestaurantView | Full details of active restaurant          | 47.350 ms                | Index on category(menu\_id, is\_active)                | 13.599 ms               |
+| getDetailedActiveRestaurantView | Full details of active restaurant          | 47.350 ms                | Index on category(menu\_id, is\_active), partial index on item(is_available, deleted_at) | 13.599 ms               |
 | getFilteredRestaurants          | Filter restaurants by geo & other criteria | 187.566 ms               | indexes on geo_location, is_active, status, average_rating | 3.643 ms                |
+| searchRestaurantsByKeyword      | Search restaurants by keyword              | 275.702 ms               | CTEs, trigram index, selected only required columns    | 14.422 ms               |
+| getMenuByRestaurantId           | Get menu by restaurant ID                  | 35.558 ms                | Materialized view with joins , selected only required columns, index on materialized view for restaurant\_id                           | 0.246 ms                |
+| getItemBy({ restaurantId, name: ILike(normalizeString(name))}) | Get item by name and restaurant ID         | 547.616 ms               | Index on item\_restaurant\_id                           | 1.440 ms                |
+| searchItemsInMenu               | Search items in menu by restaurant ID and keyword | 35.368 ms               | Composite index on item\_restaurant\_available\_deleted\_at | 2.322 ms                |
+
