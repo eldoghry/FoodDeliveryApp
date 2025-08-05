@@ -8,6 +8,7 @@ import { defaultRateLimiter } from './config/ratelimiter';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsDocSpecs from './swagger/swagger';
 import { initializeTransactionalContext } from 'typeorm-transactional';
+import compression from 'compression';
 
 export const createApp = (): Application => {
 	initializeTransactionalContext();
@@ -24,6 +25,7 @@ export const createApp = (): Application => {
 	app.use(helmet());
 	app.use(morgan('dev'));
 	app.use(defaultRateLimiter);
+	app.use(compression());
 
 	// setup routes
 	app.use('/api/v1', ApiRouter);
