@@ -3,8 +3,10 @@ import { config } from './env';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import logger from './logger';
 import { initializeTransactionalContext, addTransactionalDataSource, StorageDriver } from 'typeorm-transactional';
+import { isProduction } from '../utils/helper';
 
-//
+const isProductionEnv = isProduction();
+
 export const AppDataSource = new DataSource({
 	type: 'postgres',
 	host: config.database.host, // Replace with your DB host
@@ -14,9 +16,9 @@ export const AppDataSource = new DataSource({
 	database: config.database.name, // Replace with your DB name
 	synchronize: config.database.synchronize, // Auto-create tables (set to false in production)
 	logging: config.database.logging, // Enable logging for debugging (optional)
-	entities: ['src/models/**/*.ts'], // Path to your entity files
-	migrations: ['src/migrations/**/*.ts'], // Path to migration files
-	subscribers: ['src/subscribers/**/*.ts'], // Path to subscriber files
+	entities: [isProductionEnv ? 'dist/src/models/**/*.js' : 'src/models/**/*.ts'], // Path to your entity files
+	migrations: [isProductionEnv ? 'dist/src/migrations/**/*.js' : 'src/migrations/**/*.ts'], // Path to migration files
+	subscribers: [isProductionEnv ? 'dist/src/subscribers/**/*.js' : 'src/subscribers/**/*.ts'], // Path to subscriber files
 	poolSize: 20, // Connection pool size (adjust based on your needs)
 	extra: {
 		connectionTimeoutMillis: 5000, // Timeout for acquiring a connection
