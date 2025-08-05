@@ -12,12 +12,13 @@ import {
 	updateOrderStatusBodySchema
 } from '../validators/order.validator';
 import { verifyActor } from '../middlewares/verifyActor.middleware';
-
+import { customRateLimiter } from '../config/ratelimiter';
 const OrderRouter = Router();
 const controller = new OrderController();
 
 OrderRouter.post(
 	'/checkout',
+	customRateLimiter(5, 300, true),
 	isAuthenticated,
 	verifyActor({ allowedActorTypes: ['customer'] }),
 	validateRequest({ body: checkoutBodySchema }),
@@ -72,6 +73,7 @@ OrderRouter.post(
  */
 OrderRouter.patch(
 	'/:orderId/status',
+	customRateLimiter(30, 300, true),
 	isAuthenticated,
 	verifyActor({ allowedActorTypes: ['restaurant_user'] }),
 	validateRequest({ params: orderParamsSchema, body: updateOrderStatusBodySchema }),
@@ -126,6 +128,7 @@ OrderRouter.patch(
  */
 OrderRouter.post(
 	'/:orderId/cancel',
+	customRateLimiter(10, 600, true),
 	isAuthenticated,
 	verifyActor({ allowedActorTypes: ['customer', 'restaurant_user'] }),
 	validateRequest({ params: orderParamsSchema, body: cancelOrderBodySchema }),
@@ -216,6 +219,7 @@ OrderRouter.get(
  */
 OrderRouter.get(
 	'/',
+	customRateLimiter(20, 300, true),
 	isAuthenticated,
 	verifyActor({ allowedActorTypes: ['customer', 'restaurant_user'] }),
 	validateRequest({ query: getOrdersQuerySchema }),

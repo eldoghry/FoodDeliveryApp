@@ -10,6 +10,7 @@ import {
 	customerRateOrderBodySchema,
 	customerRateOrderQuerySchema
 } from '../validators/customer.validator';
+import { customRateLimiter } from '../config/ratelimiter';
 
 const CustomerRouter = Router();
 const controller = new CustomerController();
@@ -35,6 +36,7 @@ const controller = new CustomerController();
  */
 CustomerRouter.post(
 	'/addresses',
+	customRateLimiter(10, 300, true),
 	isAuthenticated,
 	verifyActor({ allowedActorTypes: ['customer'] }),
 	validateRequest({ body: customerAddressBodySchema }),
@@ -106,6 +108,7 @@ CustomerRouter.get(
  */
 CustomerRouter.patch(
 	'/addresses/:addressId/default',
+	customRateLimiter(10, 300, true),
 	isAuthenticated,
 	verifyActor({ allowedActorTypes: ['customer'] }),
 	validateRequest({ params: customerAddressParamsSchema }),
@@ -159,6 +162,7 @@ CustomerRouter.patch(
  */
 CustomerRouter.put(
 	'/addresses/:addressId',
+	customRateLimiter(20, 300, true),
 	isAuthenticated,
 	verifyActor({ allowedActorTypes: ['customer'] }),
 	validateRequest({ params: customerAddressParamsSchema, body: customerAddressBodySchema }),
@@ -200,6 +204,7 @@ CustomerRouter.put(
  */
 CustomerRouter.delete(
 	'/addresses/:addressId',
+	customRateLimiter(10, 60, true),
 	isAuthenticated,
 	verifyActor({ allowedActorTypes: ['customer'] }),
 	validateRequest({ params: customerAddressParamsSchema }),
@@ -261,6 +266,7 @@ CustomerRouter.delete(
  */
 CustomerRouter.post(
 	'/:orderId/rate',
+	customRateLimiter(1, 86400, true),
 	isAuthenticated,
 	verifyActor({ allowedActorTypes: ['customer'] }),
 	validateRequest({
@@ -297,6 +303,7 @@ CustomerRouter.post(
  */
 CustomerRouter.patch(
 	'/account/deactivate',
+	customRateLimiter(1, 86400, true),
 	isAuthenticated,
 	verifyActor({ allowedActorTypes: ['customer'] }),
 	validateRequest({ body: customerDeactivateBodySchema }),

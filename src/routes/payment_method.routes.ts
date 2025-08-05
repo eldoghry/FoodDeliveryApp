@@ -1,8 +1,4 @@
-import { NextFunction, Request, Response, Router } from 'express';
-import { UserController } from '../controllers/user.controller';
-import { validateRequest } from '../middlewares/validate-request.middleware';
-import { createUserBodySchema, getUserParamsSchema, getUsersQuerySchema } from '../validators/user.validator';
-import { PaymentController } from '../controllers/payment.controller';
+import { Router } from 'express';
 import { PaymentMethodController } from '../controllers';
 
 const PaymentMethodRouter = Router();
