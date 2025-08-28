@@ -11,6 +11,7 @@ import {
 	updateQuantityBodySchema,
 	updateQuantityParamsSchema
 } from '../validators/cart.validator';
+import { customRateLimiter } from '../config/ratelimiter';
 
 const CartRouter = Router();
 const controller = new CartController();
@@ -47,6 +48,7 @@ const controller = new CartController();
  */
 CartRouter.post(
 	'/items',
+	customRateLimiter(20, 60, true),
 	isAuthenticated,
 	validateRequest({ body: addItemToCartBodySchema }),
 	isRestaurantAvailable,
@@ -129,6 +131,7 @@ CartRouter.get(
 
 CartRouter.patch(
 	'/items/:cartItemId',
+	customRateLimiter(20, 60, true),
 	isAuthenticated,
 	validateRequest({ params: updateQuantityParamsSchema, body: updateQuantityBodySchema }),
 	controller.updateQuantity.bind(controller)
@@ -155,6 +158,7 @@ CartRouter.patch(
  */
 CartRouter.delete(
 	'/',
+	customRateLimiter(10, 60, true),
 	isAuthenticated,
 	controller.clearCart.bind(controller)
 );
@@ -187,6 +191,7 @@ CartRouter.delete(
  */
 CartRouter.delete(
 	'/items/:cartItemId',
+	customRateLimiter(20, 60, true),
 	isAuthenticated,
 	validateRequest({ params: deleteCartItemParamsSchema }),
 	controller.deleteCartItem.bind(controller)

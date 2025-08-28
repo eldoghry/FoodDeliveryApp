@@ -20,10 +20,12 @@ export class MenuRepository {
 	}
 
 	async getMenuByRestaurantId(restaurantId: number): Promise<Menu | null> {
-		return await this.menuRepo.findOne({
-			where: { restaurantId },
-			relations: ['categories', 'categories.items']
-		});
+		return await this.menuRepo
+			.createQueryBuilder('menu')
+			.leftJoinAndSelect('menu.categories', 'category')
+			.leftJoinAndSelect('category.items', 'item')
+			.where('menu.restaurantId = :restaurantId', { restaurantId })
+			.getOne();
 	}
 
 	// Menu Category operations
@@ -39,8 +41,8 @@ export class MenuRepository {
 
 	async getCategories(menuId: number): Promise<Category[]> {
 		return await this.categoryRepo.find({
-			where: { menuId },
-			relations: ['items']
+			select: ['categoryId', 'title'],
+			where: {isActive: true, menuId }
 		});
 	}
 
@@ -65,10 +67,11 @@ export class MenuRepository {
 		return await this.itemRepo.save(item);
 	}
 
-	async getItemById(filter: { itemId: number, restaurantId?: number, relations?: ItemRelations[] }): Promise<Item | null> {
+	async getItemBy(filter: { itemId?: number, restaurantId?: number, name?: string, relations?: ItemRelations[] }): Promise<Item | null> {
+		const { relations, ...whereOptions } = filter;
 		return await this.itemRepo.findOne({
-			where: { itemId: filter.itemId, restaurantId: filter.restaurantId },
-			relations: filter.relations || []
+			where: whereOptions,
+			relations: relations || []
 		});
 	}
 
@@ -79,7 +82,7 @@ export class MenuRepository {
 
 	async setItemAvailability(itemId: number, isAvailable: boolean): Promise<Item | null> {
 		await this.itemRepo.update(itemId, { isAvailable });
-		return this.getItemById({ itemId })
+		return this.getItemBy({ itemId })
 	}
 
 	async getDeletedItems(restaurantId: number): Promise<Item[]> {
@@ -99,7 +102,7 @@ export class MenuRepository {
 		const { keyword } = query;
 		const searchTerm = `%${keyword}%`;
 		const queryBuilder = this.itemRepo.createQueryBuilder('item')
-			.innerJoinAndSelect('item.categories', 'category')
+			.innerJoin('item.categories', 'category')
 			.where('item.restaurantId = :restaurantId', { restaurantId })
 			.andWhere('category.isActive = :isActive', { isActive: true })
 			.andWhere('item.isAvailable = :isAvailable', { isAvailable: true })
@@ -110,7 +113,6 @@ export class MenuRepository {
 				})
 			)
 			.orderBy('item.name', 'ASC')
-
 		const result = await queryBuilder.getMany();
 		return result;
 	}
@@ -129,14 +131,6 @@ export class MenuRepository {
 		});
 
 		return category?.items || [];
-	}
-
-	async getItemsByMenu(menuId: number): Promise<Item[]> {
-		const menu = await this.menuRepo.findOne({
-			where: { menuId },
-			relations: ['categories', 'categories.items']
-		});
-		return menu?.categories.flatMap((category) => category.items) || [];
 	}
 
 	async getItemsByRestaurantId(restaurantId: number): Promise<Item[]> {

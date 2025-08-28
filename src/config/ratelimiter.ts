@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { Options, rateLimit } from 'express-rate-limit';
 import { getIpFromRequest, secondsToMilliseconds } from '../utils/helper';
 import { sendResponse } from '../utils/sendResponse';
+import { redisService } from '../shared/redis';
 
 // TODO: add it to database to make it more dynamic
 const skippedIps: string[] = []; // will be used to skip rate limiting on some ips
@@ -45,10 +46,17 @@ export const defaultRateLimiter = rateLimit({
  * @param windowInSeconds The time window in seconds for which the rate limit applies.
  * @returns An Express middleware function that applies the custom rate limiting.
  */
-export const customRateLimiter = (limit: number, windowInSeconds: number) => {
+export const customRateLimiter = (limit: number, windowInSeconds: number, perUser: boolean = false) => {
 	return rateLimit({
 		...defaultOptions,
 		windowMs: secondsToMilliseconds(windowInSeconds), // customs time in ms
-		limit // Limit each IP to custom number requests per `window`
+		limit, // Limit each IP to custom number requests per `window`
+		keyGenerator: (req: Request) => {
+			// support per-user limit
+			if (perUser && (req as any).user?.userId) {
+				return `user:${(req as any).user.userId}`;
+			}
+			return `ip:${getIpFromRequest(req)}`;
+		},
 	});
 };

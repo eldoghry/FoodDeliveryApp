@@ -8,6 +8,7 @@ import { defaultRateLimiter } from './config/ratelimiter';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsDocSpecs from './swagger/swagger';
 import { initializeTransactionalContext } from 'typeorm-transactional';
+import compression from 'compression';
 
 export const createApp = (): Application => {
 	initializeTransactionalContext();
@@ -18,12 +19,13 @@ export const createApp = (): Application => {
 	// register middlewares
 	app.use(addRequestTimeMiddleware); // add request time
 	app.set('trust proxy', '127.0.0.1');
-	app.use(express.json());
-	app.use(express.urlencoded({ extended: true }));
+	app.use(express.json({ limit: '1mb' })); // with limit json size for security
+	app.use(express.urlencoded({ extended: true, limit: '1mb' })); 
 	app.use(cors());
 	app.use(helmet());
 	app.use(morgan('dev'));
 	app.use(defaultRateLimiter);
+	app.use(compression());
 
 	// setup routes
 	app.use('/api/v1', ApiRouter);
