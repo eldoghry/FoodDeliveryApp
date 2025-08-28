@@ -1,4 +1,4 @@
-import { Restaurant } from '../models';
+import { Cuisine, Restaurant } from '../models';
 import { PaginationDto } from './shared.dto';
 
 export class ListRestaurantsFilterDto extends PaginationDto {
@@ -32,6 +32,7 @@ export class ListRecommendedRestaurantsFilterDto {
 export class RestaurantResponseDto extends Restaurant {
 	averageRating!: number;
 	ratingCount!: number;
+	cuisineList!: string[];
 	rank?: number;
 }
 
