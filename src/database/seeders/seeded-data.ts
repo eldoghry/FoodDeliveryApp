@@ -390,6 +390,7 @@ const orderSeedData: SeedData<any> = {
 		return {
 			orderId:index + 1,
 			customerId,
+			paymentMethodId: 2, // COD
 			restaurantId: faker.number.int({ min: 1, max: RESTAURANTS_COUNT }),
 			deliveryAddressId: faker.number.int({ min: 1, max: ADDRESSES_COUNT }),
 			deliveryAddress: {
