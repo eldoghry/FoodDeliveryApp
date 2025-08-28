@@ -19,9 +19,9 @@ export const AppDataSource = new DataSource({
 	entities: [isProductionEnv ? 'dist/src/models/**/*.js' : 'src/models/**/*.ts'], // Path to your entity files
 	migrations: [isProductionEnv ? 'dist/src/migrations/**/*.js' : 'src/migrations/**/*.ts'], // Path to migration files
 	subscribers: [isProductionEnv ? 'dist/src/subscribers/**/*.js' : 'src/subscribers/**/*.ts'], // Path to subscriber files
-	poolSize: 10, // Connection pool size (adjust based on your needs)
+	poolSize: 20, // Connection pool size (adjust based on your needs)
 	extra: {
-		connectionTimeoutMillis: 2000, // Timeout for acquiring a connection
+		connectionTimeoutMillis: 5000, // Timeout for acquiring a connection
 		idleTimeoutMillis: 30000 // Time before an idle connection is closed
 	},
 	namingStrategy: new SnakeNamingStrategy()

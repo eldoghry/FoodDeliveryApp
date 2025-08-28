@@ -10,6 +10,13 @@ export class AuthController {
 	async login(req: Request, res: Response) {
 		const { email, password } = req.validated?.body;
 		const tokens = await this.authService.login({ email, password });
+		// TODO: set cookie with security flags
+		// res.cookie("refreshToken", tokens.refresh, {
+		// 	httpOnly: true,   // JS can't read cookie (XSS protection)
+		// 	secure: process.env.NODE_ENV === "production",     // Only sent over HTTPS
+		// 	sameSite: "strict", // Prevents CSRF attacks
+		// 	maxAge: 60, // 1 hour
+		//   });
 		sendResponse(res, StatusCodes.OK, 'Login successfully', tokens);
 	}
 
